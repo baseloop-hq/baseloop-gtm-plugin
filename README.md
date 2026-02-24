@@ -13,8 +13,8 @@ Build automated GTM data workflows with Claude Code. This plugin teaches Claude 
 ### Install the plugin
 
 ```
-/plugin marketplace add https://github.com/baseloop-hq/baseloop-gtm-plugin
-/plugin install baseloop-gtm-plugin
+/plugin marketplace add baseloop-hq/baseloop-gtm-plugin
+/plugin install baseloop-gtm@baseloop-gtm-plugin
 ```
 
 ### Connect the MCP server
@@ -22,13 +22,11 @@ Build automated GTM data workflows with Claude Code. This plugin teaches Claude 
 The plugin requires a connection to your Baseloop MCP server. Choose one:
 
 **OAuth (recommended):**
-
 ```bash
 claude mcp add --transport http baseloop-gtm <your-api-url>/v1/mcp
 ```
 
 **API key:**
-
 ```bash
 claude mcp add --transport http --header "x-api-key: <your-key>" baseloop-gtm <your-api-url>/v1/mcp
 ```
@@ -38,22 +36,20 @@ Find your API URL and key in Baseloop under Settings > API Keys.
 ## What's Included
 
 ### Skill: GTM Engineering
-
 Auto-loads when you work with Baseloop workflows. Provides the mental model, build protocol, and critical rules for designing data flows.
 
 ### Commands
 
-| Command                  | Description                                                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/baseloop-gtm:plan`     | Design a workflow from a goal. Surveys your tables and integrations, then produces an architecture plan. Read-only — creates nothing. |
-| `/baseloop-gtm:build`    | Build a workflow step by step. Creates tables and columns, verifies each step before proceeding. Handles inline error diagnosis.      |
-| `/baseloop-gtm:diagnose` | Debug a failing column or workflow. Investigates the error, identifies root cause, applies a fix, and verifies the resolution.        |
-| `/baseloop-gtm:lfg`      | Autonomous end-to-end: plan, build, health check, diagnose, and deliver a working workflow with minimal intervention.                 |
+| Command | Description |
+|---|---|
+| `/baseloop-gtm:plan` | Design a workflow from a goal. Surveys your tables and integrations, then produces an architecture plan. Read-only — creates nothing. |
+| `/baseloop-gtm:build` | Build a workflow step by step. Creates tables and columns, verifies each step before proceeding. Handles inline error diagnosis. |
+| `/baseloop-gtm:diagnose` | Debug a failing column or workflow. Investigates the error, identifies root cause, applies a fix, and verifies the resolution. |
+| `/baseloop-gtm:lfg` | Autonomous end-to-end: plan, build, health check, diagnose, and deliver a working workflow with minimal intervention. |
 
 ## Examples
 
 ### Step-by-step workflow
-
 ```
 > /baseloop-gtm:plan Import HubSpot companies, qualify which are B2B SaaS, find their founders on LinkedIn, and sync contacts back to HubSpot
 
@@ -65,7 +61,6 @@ Auto-loads when you work with Baseloop workflows. Provides the mental model, bui
 ```
 
 ### Debugging a failing column
-
 ```
 > /baseloop-gtm:diagnose The enrichment column on the Companies table is returning errors
 
@@ -73,7 +68,6 @@ Auto-loads when you work with Baseloop workflows. Provides the mental model, bui
 ```
 
 ### Fully autonomous
-
 ```
 > /baseloop-gtm:lfg Import HubSpot companies, qualify B2B SaaS, find founders, sync contacts back
 
