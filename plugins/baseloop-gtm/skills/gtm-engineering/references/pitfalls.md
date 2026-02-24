@@ -6,6 +6,25 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
+## Running all rows without testing first
+
+**Symptom:** Hundreds of credits burned, garbage data in CRM, API errors discovered only after all rows processed. Workflow ran on the full dataset before being validated.
+
+**Cause:** Called `run_field` without the `runAction` parameter (runs ALL rows), or used `runAction: "first_hundred"` on a dataset with fewer than 100 rows (which also runs everything).
+
+**What happened in practice:** Agent created a column, immediately ran it on all 50 rows (~6 credits each), then created the next column and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
+
+**Fix:**
+1. **Never call `run_field` without `runAction`.** Treat a bare `run_field` as a bug.
+2. **Follow the Scaling Ladder**: `first_one` → `first_ten` → full scale (with user approval).
+3. **Create all columns before running any.** This lets the full chain be tested with a single row.
+4. **Watch for `first_hundred` on small datasets.** If the table has fewer than 100 rows, `first_hundred` runs everything. Use `first_ten` or `first_one` instead.
+5. **Get user approval before full scale.** Report the row count and estimated credit cost. Wait for explicit go-ahead.
+
+**Prevention:** Every `run_field` call should include `runAction`. During build/test: always `first_one`. During validation: `first_ten`. Full-scale: only after user approval.
+
+---
+
 ## Send to Table: pre-creating columns in destination
 
 **Symptom:** Duplicate columns (e.g., "Company Name" and "Company Name (1)") in the destination table.

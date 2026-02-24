@@ -21,6 +21,7 @@ Design every workflow around these principles:
 - **CRM audit trail** — write HubSpot engagement notes for every outcome (qualified, disqualified with reason, not found). Sales reps need to know why each account was or wasn't pursued.
 - **Lookup back to parent** — when contacts are created via Send to Table, use `lookup_single_record` to pull company-level data (HubSpot ID, AE assignment, qualification results) back into the contacts table.
 - **Incremental building** — build one step at a time. Verify output before adding the next step. Never build the entire workflow and run it all at once.
+- **Scaling Ladder** — every `run_field` call must follow the ladder: `first_one` (validate output) → `first_ten` (validate at scale) → all (only after user approval). Never skip rungs. Never call `run_field` without `runAction`.
 - **Shared reference tables** — blocklists, account tier data, and other lookup targets should live in their own workspace and be referenced via `lookup_single_record` from multiple workflows. Maintain them separately; never embed exclusion logic in each workflow.
 - **Template workspaces for campaign batches** — build a workflow once, then clone the workspace for each new campaign batch. Each batch gets its own data but the same column structure. Track the source batch with a "Table Source" formula or input field.
 - **Recency gating** — before re-enriching or re-contacting, check when the account was last touched. Use a formula like "Contacted Within 30 Days" gated on `hs_last_contacted_date` to avoid wasting credits on recently worked accounts.
@@ -46,13 +47,15 @@ Design every workflow around these principles:
 2. **Resolve names and options** — use `get_table_schema` for column `name` fields (never guess). Use `resolve_action_options` for dynamic values (HubSpot properties, list IDs, campaign IDs).
 3. **Create the column** — `create_column` with full configuration including autoRunCondition if needed.
 
-### Test end-to-end with a small sample
+### Test end-to-end using the Scaling Ladder
 
-After all columns are created, run a small sample (1-3 rows) through the **entire chain** — not column-by-column. This validates that data flows correctly through autoRunConditions and Send to Table.
+After all columns are created, test the **entire chain** — not column-by-column. This validates that data flows correctly through autoRunConditions and Send to Table.
 
-1. **Run columns sequentially** on a small sample — `run_field` with `runAction: "first_one"`, verify output, then the next column.
-2. **Follow data across tables** — after Send to Table runs, check destination tables with `list_rows`, then continue running columns there.
-3. **Report to the user** — show what each step produced. Only scale up after the end-to-end sample passes.
+1. **Rung 1 (`first_one`)** — `run_field` with `runAction: "first_one"` on each column sequentially. Verify output with `get_row_details` at every step. Follow data across tables via Send to Table.
+2. **Rung 2 (`first_ten`)** — only after Rung 1 passes with zero errors. `run_field` with `runAction: "first_ten"`. Verify with `get_run_status` (0 failures).
+3. **Rung 3 (full scale)** — only after Rung 2 passes AND user approves. Report row count and estimated credit cost. Wait for explicit go-ahead before running on the full dataset.
+
+Report results to the user after each rung. **STOP and get approval before Rung 3.**
 
 ### For source actions (imports)
 
@@ -94,6 +97,15 @@ Follow the investigate → diagnose → fix → verify cycle:
    - Scale up: re-run on 10 rows, confirm 0 failures in `get_run_status`
 
 ## Critical Rules
+
+### NEVER call run_field without runAction
+
+Every `run_field` call MUST include the `runAction` parameter. Omitting `runAction` runs ALL rows — the most expensive mistake possible. Treat a bare `run_field` (without `runAction`) as a bug.
+
+- **Testing a column:** `runAction: "first_one"`
+- **Small-scale validation:** `runAction: "first_ten"`
+- **Full dataset:** only after user approval — `runAction: "first_hundred"` or larger
+- **Watch for small datasets:** if a table has < 100 rows, `"first_hundred"` runs everything. Use `"first_ten"` or `"first_one"` instead.
 
 ### Send to Table auto-creates destination columns
 Create an empty destination table with `create_table` (no columns). The `fieldMappings` in Send to Table define what columns get created. **Never pre-create columns** in a Send to Table destination — it causes duplicate/mismatched columns.
