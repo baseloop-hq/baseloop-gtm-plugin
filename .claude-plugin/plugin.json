@@ -1,0 +1,17 @@
+{
+  "name": "baseloop-gtm",
+  "version": "0.2.0",
+  "description": "GTM workflow engineering for Baseloop. 1 skill, 4 commands for designing, building, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
+  "author": {
+    "name": "Baseloop",
+    "url": "https://baseloop.com"
+  },
+  "keywords": [
+    "gtm",
+    "data-pipeline",
+    "enrichment",
+    "hubspot",
+    "mcp",
+    "baseloop"
+  ]
+}
