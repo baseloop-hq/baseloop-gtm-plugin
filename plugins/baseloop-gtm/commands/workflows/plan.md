@@ -87,6 +87,15 @@ Approximate credit cost per row flowing through the full workflow. Note which ac
 
 Flag any concerns: missing integrations, data quality requirements, rate limits, non-deterministic steps.
 
+### Testing Strategy
+
+Define how the workflow will be validated before running on the full dataset:
+
+1. **Rung 1 checkpoints** — for each table, what does a successful 1-row test look like? (Expected output values, expected row count in destination tables, expected CRM state)
+2. **Rung 2 scope** — 10 rows through the full chain. What to verify at scale (error rate, data quality, CRM dedup).
+3. **Test cost** — estimated credits for Rung 1 (1 row × full chain) + Rung 2 (10 rows × full chain).
+4. **Full-scale cost** — estimated credits for all rows. This number will be reported to the user before Rung 3.
+
 ## Phase 4: Confirm and Handoff
 
 **Do NOT create any tables or columns.** This command is plan-only.
@@ -94,7 +103,7 @@ Flag any concerns: missing integrations, data quality requirements, rate limits,
 Present three options to the user:
 
 1. **Build step by step** — `/baseloop-gtm:build` — Create tables and columns one at a time, verifying each step before proceeding.
-2. **Build autonomously** — `/baseloop-gtm:lfg` — Plan, build, and diagnose the entire workflow end-to-end with minimal intervention.
+2. **Build autonomously** — `/baseloop-gtm:lfg` — Plan, build, and test (Rung 1 + Rung 2) autonomously. Pauses for your approval before running on the full dataset (Rung 3).
 3. **Adjust the plan** — Modify the architecture before building.
 
 Ask: "Ready to build? Choose **build** for step-by-step, **lfg** for autonomous end-to-end, or tell me what to adjust."

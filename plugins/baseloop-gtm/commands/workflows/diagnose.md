@@ -107,7 +107,7 @@ Present the resolution:
 **Fixed:** [What was wrong and what was changed]
 **Verified:** [X/Y rows passing after fix]
 **Next steps:**
-- Run on full dataset: `run_field` with skipCellsWithData: false
+- Scale up using the Scaling Ladder: `run_field` with `runAction: "first_ten"`, then full dataset with user approval
 - Check downstream tables for cascading issues
 - Run `/baseloop-gtm:diagnose` on any other failing columns
 ```
