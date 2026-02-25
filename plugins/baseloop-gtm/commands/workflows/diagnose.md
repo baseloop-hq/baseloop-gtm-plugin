@@ -3,7 +3,7 @@ name: baseloop-gtm:diagnose
 description: This command should be used when a Baseloop workflow column has errors, produces unexpected output, or data is not flowing between tables. It investigates the root cause, applies a fix, and verifies the resolution.
 argument-hint: "[table name, column name, or problem description]"
 disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__send_webhook_data
+allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__send_webhook_data
 ---
 
 # Diagnose a Workflow Error
@@ -14,7 +14,7 @@ allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, m
 
 If the problem description above is empty, ask: "Which table or column is having issues? Describe what you expected vs. what happened."
 
-Before starting, read [error-patterns.md](../skills/gtm-engineering/references/error-patterns.md) and [pitfalls.md](../skills/gtm-engineering/references/pitfalls.md) to load known error signatures.
+Before starting, read [error-patterns.md](../../skills/gtm-engineering/references/error-patterns.md) and [pitfalls.md](../../skills/gtm-engineering/references/pitfalls.md) to load known error signatures.
 
 ---
 

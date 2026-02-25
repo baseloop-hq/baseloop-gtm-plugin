@@ -2,6 +2,26 @@
 
 Production-proven workflow recipes from real Baseloop power users. Each pattern shows the architecture (tables + column chains), key decisions, and autoRunCondition gating. Use `get_action_schema` for full configuration details on each action.
 
+## Table of Contents
+
+| # | Pattern | Use When |
+|---|---------|----------|
+| 1 | HubSpot Import → ICP Qualification → Lead Finding → CRM Sync | Full B2B pipeline from HubSpot source |
+| 2 | Content Magnet / Inbound Leads → Account Qualification | Processing inbound leads or sign-ups |
+| 3 | Webhook-Sourced Workflow (External System Triggers) | Receiving data from ad platforms, dialers, outreach tools |
+| 4 | Dual Entry Point Workflow | Multiple data sources converging into one pipeline |
+| 5 | External Scoring Data → Enrichment → HubSpot | Working with third-party scoring/intent data |
+| 6 | Shared Blocklist with Multi-Source Feeding | Dedup across multiple workflows |
+| 7 | Content Magnet with Email Verification + Job Change | Inbound leads needing email quality + recency checks |
+| 8 | LinkedIn Ad Engagement → Workflow | Converting LinkedIn ad engagement into pipeline |
+| 9 | Call Data Analysis + Phone Number Workflow | Processing dialer/call platform data |
+| 10 | LinkedIn Network Analysis (Bidirectional Lookup) | Warm intro path mapping via mutual connections |
+| 11 | Outreach Reply Processing (Outreach → HubSpot → Slack) | Classifying and routing email replies |
+| 12 | Multi-Dimensional Campaign Routing via Formulas | Language × persona → dynamic campaign assignment |
+| 13 | Multi-Stage Company Qualification Funnel | Layered qualification (dedup → qualify → segment → enrich) |
+| 14 | Job Change Detection | Detecting when contacts switch companies |
+| 15 | AI-Powered Outreach Content Generation | Per-prospect personalized multi-email sequences |
+
 ---
 
 ## Pattern 1: HubSpot Import -> Full ICP Qualification -> Lead Finding -> CRM Sync
