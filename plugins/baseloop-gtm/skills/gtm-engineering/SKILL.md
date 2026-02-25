@@ -171,7 +171,7 @@ Use `run_field` (single column) with explicit `runAction` when first testing eac
 
 ## Quick Reference
 
-**Discovery:** `list_tables`, `get_table_schema`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_views`
+**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_views`
 **Mutations:** `create_workspace`, `create_table`, `update_table`, `create_column`, `update_column`, `delete_column`, `create_rows`, `delete_row`
 **Execution:** `run_field`, `run_fields`, `wait_for_run`, `get_run_status`, `send_webhook_data`
 **AI helpers:** `preview_formula`
