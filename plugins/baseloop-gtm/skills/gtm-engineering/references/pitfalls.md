@@ -6,6 +6,26 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
+## Referencing action column output instead of extracting fullValue
+
+**Symptom:** Downstream action receives `"Found"`, `"Sent"`, or `"Created"` instead of the actual data it needs (e.g., HubSpot object ID, API response field). HubSpot Update rejects the recordId. HTTP Request sends wrong body.
+
+**Cause:** Used `{{action_column_name}}` directly in a downstream action's config. `{{column_name}}` resolves to the column's **display output** (a summary string), NOT the structured data in `fullValue`.
+
+**Fix:** Create a **data extraction column** between the action and any downstream consumer:
+1. `create_column` with `type: "text"` (or appropriate type), `extractorFieldId` = the action column's ID, `extractionPath` = JMESPath expression to the field you need
+2. Reference the **extraction column** in downstream actions with `{{extraction_column_name}}`
+
+**Examples:**
+- HubSpot Lookup → need `hs_object_id` → extraction path: `results[0].properties.hs_object_id`
+- sendHttpRequest → need a response field → extraction path: `data.id` (depends on API)
+- enrichment → need email → extraction path: `email`
+- lookup_single_record → need a column value → extraction path: `field_name`
+
+**Prevention:** Before using `{{column_name}}` for any action column, ask: "Does this column's display output contain the actual value I need, or is it just a status string?" If it's a status string (Found, Sent, etc.), you need extraction.
+
+---
+
 ## Running all rows without testing first
 
 **Symptom:** Hundreds of credits burned, garbage data in CRM, API errors discovered only after all rows processed. Workflow ran on the full dataset before being validated.

@@ -6,6 +6,30 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 ---
 
+## Action receives display output ("Found", "Sent") instead of actual data
+
+**Seen in:** HubSpot Update rejects recordId. HTTP Request sends `"Found"` or `"Sent"` in the body. Downstream action receives a status string instead of a data value.
+
+**Root cause:** `{{column_name}}` for an action column resolves to the **display output** (e.g., `"Found"`, `"Sent"`, `"Created"`), not the structured data in `fullValue`. The downstream action needed a specific field (like `hs_object_id`) but got a summary string instead.
+
+**Diagnosis:**
+1. `get_row_details` with fieldId on the failing column — check what value was received
+2. If the value is `"Found"`, `"Sent"`, `"Created"`, or similar status string — the template resolved to the display output instead of the actual data
+3. Trace the `{{column_name}}` reference back — is it pointing at an action column rather than an extraction column?
+
+**Fix:**
+1. Create a **data extraction column**: `create_column` with `extractorFieldId` = the source action column's ID, `extractionPath` = JMESPath to the field you need
+2. Update the failing downstream column to reference the **extraction column** instead: `update_column` replacing `{{action_column_name}}` with `{{extraction_column_name}}`
+3. Re-run with `skipCellsWithData: false`
+
+**Common extraction paths:**
+- HubSpot Lookup: `results[0].properties.hs_object_id` (or any property)
+- sendHttpRequest: depends on API response shape (e.g., `data.id`, `results[0].email`)
+- enrichment: `email`, `phone`, `linkedin_url`
+- lookup_single_record: `field_name` (column value from looked-up row)
+
+---
+
 ## Cell status "error" with empty or generic errorMessage
 
 **Seen in:** `get_row_details` returns `status: "error"` with null or unhelpful errorMessage.

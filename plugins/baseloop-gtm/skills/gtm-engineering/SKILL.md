@@ -113,6 +113,25 @@ Create an empty destination table with `create_table` (no columns). The `fieldMa
 ### Template resolution happens before actions run
 `{{field_name}}` in action input is resolved to actual cell values BEFORE the action executes. The action never sees the template string. In Send to Table field mappings, use plain column field names (e.g., `company_name_abc`), NOT `{{company_name_abc}}`. In `send_for_each_item` mode, use `column:field_name` to reference parent row columns.
 
+### Action output vs fullValue — always extract before referencing
+
+`{{column_name}}` resolves to the column's **display output** (e.g., `"Found"`, `"Sent"`, `"Created"`), NOT the structured data in `fullValue`. To access specific fields from any action's result, you MUST create a **data extraction column** first.
+
+**This applies to ALL action types:** HubSpot Lookup, sendHttpRequest, enrichment, AI agents, lookup_single_record — any action that returns structured data in `fullValue`.
+
+**Pattern:**
+1. Create the action column (e.g., HubSpot Lookup, HTTP Request)
+2. Create data extraction columns for each field you need downstream: `create_column` with `type`, `extractorFieldId` (the action column's ID), and `extractionPath` (JMESPath expression)
+3. Reference the **extraction columns** (not the action column) in downstream `{{column_name}}` templates
+
+**Common extraction paths:**
+- HubSpot Lookup → `results[0].properties.hs_object_id` (or any HubSpot property)
+- sendHttpRequest → `response_field.nested_field` (depends on API response shape)
+- enrichment → `email`, `phone`, `linkedin_url` (top-level fields)
+- lookup_single_record → `field_name` (column value from the looked-up row)
+
+**Common mistake:** Using `{{hubspot_lookup_column}}` in a HubSpot Update's `recordId`. This resolves to `"Found"` instead of the actual HubSpot object ID. Always extract first.
+
 ### AI actions are non-deterministic
 Custom AI Agent columns produce different results each run. Never re-run upstream AI columns to fix a downstream config issue. Ask: "Which column's *configuration* changed?" Re-run only that one.
 

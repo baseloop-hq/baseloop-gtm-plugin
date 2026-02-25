@@ -147,10 +147,12 @@ Create, update, and lookup records in CRMs. Always follow the **lookup before cr
 | `hubspot_create_engagement` | HubSpot | Create note, call, meeting, task, or email on a record | Free |
 | `hubspot_get_engagements` | HubSpot | Retrieve engagements for a contact | Free |
 
-### HubSpot Lookup-Before-Create Pattern
-1. Add `hubspot_lookup_object` column — search by email or domain
-2. Add `hubspot_create_object` column — gate with autoRunCondition: lookup column `isNotFound`
-3. Pass the company HubSpot ID (from lookup or previous create) so contacts get associated
+### HubSpot Lookup → Extract → Update/Create Pattern
+1. Add `hubspot_lookup_object` column — search by email or domain (include `hs_object_id` in propertiesConfig)
+2. Add a **data extraction column** for `hs_object_id`: `extractionPath: "results[0].properties.hs_object_id"` from the Lookup column. Add extraction columns for any other properties you need downstream.
+3. Add `hubspot_update_object` column — gate on lookup `isFound`, use **extraction column** in `recordId` (NOT the lookup column directly)
+4. Add `hubspot_create_object` column — gate on lookup `isNotFound`
+5. Pass the company HubSpot ID (from extraction column or previous create) so contacts get associated
 
 ### HubSpot Engagement Notes as Audit Trail
 Create separate `hubspot_create_engagement` columns for each workflow outcome:
@@ -265,4 +267,16 @@ Not an action, but a column type. Formulas are **free** and evaluate JavaScript 
 
 ## Data Extraction Columns
 
-Not an action, but a column type. Extract specific values from a JSON column using JMESPath paths. Created with `create_column` using `extractorFieldId` + `extractionPath`. Common use: pull specific fields from a Custom AI Agent's JSON Schema output or from an enrichment result.
+Not an action, but a column type. **Required whenever you need to reference a specific field from an action column's structured result.**
+
+`{{column_name}}` resolves to the column's display output (e.g., `"Found"`, `"Sent"`), NOT the raw data in `fullValue`. To access specific fields from any action's result, create a data extraction column with `create_column` using `extractorFieldId` + `extractionPath` (JMESPath).
+
+**When to create extraction columns:**
+- HubSpot Lookup → need `hs_object_id` for Update/Create association → `results[0].properties.hs_object_id`
+- HubSpot Lookup → need any property for downstream actions → `results[0].properties.<property_name>`
+- sendHttpRequest → need specific response fields → path depends on API response shape
+- enrichment actions → need specific enrichment fields → `email`, `phone`, `linkedin_url`, etc.
+- lookup_single_record → need specific column values from the looked-up row → `<field_name>`
+- Custom AI Agent (JSON Schema) → need individual fields from structured output → `<property_name>`
+
+**Common mistake:** Using `{{hubspot_lookup_column}}` directly in a HubSpot Update `recordId` or an HTTP Request body. This resolves to `"Found"` (the display value), not the actual data. Always extract first.
