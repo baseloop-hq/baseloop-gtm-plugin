@@ -10,23 +10,17 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Seen in:** HubSpot Update rejects recordId. HTTP Request sends `"Found"` or `"Sent"` in the body. Downstream action receives a status string instead of a data value.
 
-**Root cause:** `{{column_name}}` for an action column resolves to the **display output** (e.g., `"Found"`, `"Sent"`, `"Created"`), not the structured data in `fullValue`. The downstream action needed a specific field (like `hs_object_id`) but got a summary string instead.
+**Root cause:** `{{column_name}}` resolves to display output, not `fullValue`. See SKILL.md "Action output vs fullValue" for the full explanation.
 
 **Diagnosis:**
 1. `get_row_details` with fieldId on the failing column — check what value was received
-2. If the value is `"Found"`, `"Sent"`, `"Created"`, or similar status string — the template resolved to the display output instead of the actual data
+2. If the value is `"Found"`, `"Sent"`, `"Created"`, or similar status string — the template resolved to display output
 3. Trace the `{{column_name}}` reference back — is it pointing at an action column rather than an extraction column?
 
 **Fix:**
-1. Create a **data extraction column**: `create_column` with `extractorFieldId` = the source action column's ID, `extractionPath` = JMESPath to the field you need
-2. Update the failing downstream column to reference the **extraction column** instead: `update_column` replacing `{{action_column_name}}` with `{{extraction_column_name}}`
+1. `create_column` with `extractorFieldId` = the source action column's ID, `extractionPath` = JMESPath to the field you need
+2. `update_column` on the failing downstream column, replacing `{{action_column_name}}` with `{{extraction_column_name}}`
 3. Re-run with `skipCellsWithData: false`
-
-**Common extraction paths:**
-- HubSpot Lookup: `results[0].properties.hs_object_id` (or any property)
-- sendHttpRequest: depends on API response shape (e.g., `data.id`, `results[0].email`)
-- enrichment: `email`, `phone`, `linkedin_url`
-- lookup_single_record: `field_name` (column value from looked-up row)
 
 ---
 
@@ -216,24 +210,20 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Root causes:**
 1. Using AND when OR is needed: e.g., `Country = "USA" AND Country = "Canada"` — impossible, no row matches both
-2. Using OR when AND is needed: e.g., `Status = "Active" OR ICP Score > 80` — too permissive, runs on unqualified rows
-3. Multiple autoRunConditions expecting OR behavior: multiple FieldAutoRunCondition objects are always AND'd together. To get OR logic, put rules in a **single** condition with `combinator: "or"`.
-4. Default combinator is "and" if not set — users who add multiple rules without setting combinator get AND logic they may not have intended
-5. Wrong operator name: using a display label (e.g., "is not empty") instead of the operator name (e.g., `notNull`). See full operator reference in [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions).
+2. Using OR when AND is needed: e.g., `Status = "Active" OR ICP Score > 80` — too permissive
+3. Multiple autoRunCondition objects are always AND'd together. For OR logic, put rules in a **single** condition with `combinator: "or"`.
+4. Wrong operator name: using a display label instead of the operator name. See full operator reference in [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions).
 
 **Diagnosis:**
-1. `get_table_schema` — read the `autoRunCondition` or filter config. Check the `combinator` value at each level.
-2. For autoRunConditions: count how many condition objects exist. If >1, they're AND'd regardless of internal combinator.
-3. Check operator names are valid: `notNull`, `null`, `isFound`, `isNotFound`, `hasError`, `hasNoError`, `hasNotRun`, `runConditionNotMet`, `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `doesNotContain`, `startsWith`, `containsAnyOf`, `doesNotContainAnyOf`, `in`, `notIn`, `isDatePreset`, `between`.
-4. `get_row_details` on a row that was incorrectly skipped/included — check the values of the gating columns against the condition rules.
-5. Think through the boolean logic: write out what the condition evaluates to for that specific row's data.
+1. `get_table_schema` — read the `autoRunCondition`. Check `combinator` value at each level.
+2. Count how many condition objects exist. If >1, they're AND'd regardless of internal combinator.
+3. `get_row_details` on an incorrectly skipped/included row — check gating column values against condition rules.
 
 **Fix:**
-- Wrong combinator: `update_column` with corrected `autoRunCondition` — flip "and" to "or" or vice versa
+- Wrong combinator: `update_column` — flip "and" to "or" or vice versa
 - Multiple conditions that should be OR'd: merge into a single condition with `combinator: "or"`
-- Wrong operator: replace with valid operator name from the list above
-- For filters: update the view filter combinator in the UI
-- Re-run with `skipCellsWithData: false` after fixing autoRunConditions
+- Wrong operator: replace with valid operator name (see [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions))
+- Re-run with `skipCellsWithData: false` after fixing
 
 ---
 

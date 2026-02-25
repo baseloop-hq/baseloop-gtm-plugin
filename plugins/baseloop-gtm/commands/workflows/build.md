@@ -3,7 +3,7 @@ name: baseloop-gtm:build
 description: This command should be used when a workflow plan is ready and needs to be built step by step. It creates tables and columns, runs and verifies each step, and handles inline error diagnosis before proceeding.
 argument-hint: "[plan description or reference to a previous /baseloop-gtm:plan output]"
 disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__delete_row, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__infer_ai_column, mcp__baseloop-gtm__send_webhook_data
+allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__delete_row, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__send_webhook_data
 ---
 
 # Build a GTM Workflow
@@ -29,9 +29,9 @@ For each table in the plan, follow this sequence:
 
 ### Step 1: Create the table
 
-- **Source tables**: `create_table` with `sourceField` configuration (action type + actionKey + input).
-- **Send to Table destinations**: `create_table` with NO columns. Send to Table auto-creates them.
-- **Other tables**: `create_table` with just a name and workspace.
+- **Source tables**: `create_table` with `sourceField` configuration (action type + actionKey + input). Always include an `emoji` (emoji-mart shortcode, e.g. `":rocket:"`, `":briefcase:"`).
+- **Send to Table destinations**: `create_table` with NO columns and an `emoji`. Send to Table auto-creates them.
+- **Other tables**: `create_table` with a name, workspace, and `emoji`.
 
 ### Step 2: Trigger source import (if source table)
 
@@ -83,7 +83,7 @@ Run a single row through the **entire chain**. This validates that autoRunCondit
 
 **If a column fails — inline diagnosis:**
 
-1. Read [error-patterns.md](../skills/gtm-engineering/references/error-patterns.md) to load known error signatures.
+1. Read [error-patterns.md](../../skills/gtm-engineering/references/error-patterns.md) to load known error signatures.
 2. `get_row_details` with fieldId — read the `errorMessage` and `fullValue`.
 3. Match against known patterns (config mismatch, upstream null, auth failure, rate limit).
 4. Fix with `update_column`, then re-run with `run_field` using `skipCellsWithData: false` and `runAction: "first_one"` on that column ONLY.

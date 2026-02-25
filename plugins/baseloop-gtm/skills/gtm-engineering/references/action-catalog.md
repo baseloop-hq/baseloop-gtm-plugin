@@ -267,16 +267,14 @@ Not an action, but a column type. Formulas are **free** and evaluate JavaScript 
 
 ## Data Extraction Columns
 
-Not an action, but a column type. **Required whenever you need to reference a specific field from an action column's structured result.**
+Not an action, but a column type. **Required whenever you need to reference a specific field from an action column's structured result.** See SKILL.md "Action output vs fullValue" for why this is needed and common extraction paths.
 
-`{{column_name}}` resolves to the column's display output (e.g., `"Found"`, `"Sent"`), NOT the raw data in `fullValue`. To access specific fields from any action's result, create a data extraction column with `create_column` using `extractorFieldId` + `extractionPath` (JMESPath).
+Created with `create_column` using `extractorFieldId` (the source action column's ID) + `extractionPath` (JMESPath expression).
 
 **When to create extraction columns:**
-- HubSpot Lookup → need `hs_object_id` for Update/Create association → `results[0].properties.hs_object_id`
-- HubSpot Lookup → need any property for downstream actions → `results[0].properties.<property_name>`
-- sendHttpRequest → need specific response fields → path depends on API response shape
-- enrichment actions → need specific enrichment fields → `email`, `phone`, `linkedin_url`, etc.
-- lookup_single_record → need specific column values from the looked-up row → `<field_name>`
-- Custom AI Agent (JSON Schema) → need individual fields from structured output → `<property_name>`
-
-**Common mistake:** Using `{{hubspot_lookup_column}}` directly in a HubSpot Update `recordId` or an HTTP Request body. This resolves to `"Found"` (the display value), not the actual data. Always extract first.
+- HubSpot Lookup → need `hs_object_id` → `results[0].properties.hs_object_id`
+- HubSpot Lookup → need any property → `results[0].properties.<property_name>`
+- sendHttpRequest → need response fields → path depends on API shape
+- enrichment → need specific fields → `email`, `phone`, `linkedin_url`
+- lookup_single_record → need column values → `<field_name>`
+- Custom AI Agent (JSON Schema) → need individual fields → `<property_name>`

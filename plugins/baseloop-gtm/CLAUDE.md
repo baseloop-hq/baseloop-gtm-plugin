@@ -15,7 +15,7 @@
 ## Updating
 
 When modifying:
-1. Bump version in `.claude-plugin/plugin.json`
+1. Bump version in BOTH `.claude-plugin/plugin.json` AND `../../.claude-plugin/marketplace.json` — they must stay in sync (name, version, description, author, tags)
 2. Keep SKILL.md under 500 lines — move detail to `references/`
 3. Verify frontmatter fields match the plugin spec
 4. Test commands by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`
@@ -24,8 +24,12 @@ When modifying:
 
 The Baseloop MCP server is NOT bundled with this plugin. Users must configure
 it separately using one of:
-- OAuth: `claude mcp add --transport http baseloop-gtm <API_URL>/v1/mcp`
-- API key: `claude mcp add --transport http --header "x-api-key: <KEY>" baseloop-gtm <API_URL>/v1/mcp`
+- OAuth: `claude mcp add --transport http baseloop-gtm https://api-v2.baseloop.io/v1/mcp`
+- API key: `claude mcp add --transport http --header "x-api-key: $BASELOOP_API_KEY" baseloop-gtm https://api-v2.baseloop.io/v1/mcp`
+
+**Important:** The server MUST be registered with the name `baseloop-gtm`. All command
+`allowed-tools` lists use the `mcp__baseloop-gtm__` prefix, so a different server name
+will cause all commands to fail.
 
 The skill and commands assume the MCP server is already connected.
 

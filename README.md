@@ -23,15 +23,19 @@ The plugin requires a connection to your Baseloop MCP server. Choose one:
 
 **OAuth (recommended):**
 ```bash
-claude mcp add --transport http baseloop-gtm <your-api-url>/v1/mcp
+claude mcp add --transport http baseloop-gtm https://api-v2.baseloop.io/v1/mcp
 ```
 
 **API key:**
 ```bash
-claude mcp add --transport http --header "x-api-key: <your-key>" baseloop-gtm <your-api-url>/v1/mcp
+claude mcp add --transport http --header "x-api-key: $BASELOOP_API_KEY" baseloop-gtm https://api-v2.baseloop.io/v1/mcp
 ```
 
-Find your API URL and key in Baseloop under Settings > API Keys.
+> **Note:** Using an environment variable (`$BASELOOP_API_KEY`) avoids persisting the key in your shell history. Set it with `export BASELOOP_API_KEY=<your-key>` first.
+
+> **Important:** The server must be registered with the name `baseloop-gtm` (the last argument before the URL). The plugin's commands depend on this exact name.
+
+Find your API key in Baseloop under Settings > API Keys.
 
 ## What's Included
 

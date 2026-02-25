@@ -3,7 +3,7 @@ name: baseloop-gtm:lfg
 description: This command should be used when the user wants to plan, build, and debug an entire Baseloop workflow autonomously from a goal description, with minimal intervention.
 argument-hint: "[workflow goal, e.g. 'Import HubSpot companies, qualify B2B SaaS, find founders, sync contacts back']"
 disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__delete_row, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__infer_ai_column, mcp__baseloop-gtm__send_webhook_data
+allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__delete_row, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__send_webhook_data
 ---
 
 # LFG — Autonomous Workflow Engineering
@@ -29,52 +29,21 @@ Follow the `/baseloop-gtm:plan` workflow:
 
 ---
 
-## Step 2: Build — Scaling Ladder Rung 1 (first_one)
+## Step 2: Build and Rung 1
 
-Follow the `/baseloop-gtm:build` workflow using the approved plan:
-
-1. **Create tables** — create all tables in the plan.
-2. **Create ALL columns per table** — create every column for a table before running anything. Do not create-then-run one column at a time.
-3. **Test with `first_one`** — `run_field` with `runAction: "first_one"` on each column sequentially. Verify output with `get_row_details` at every step. Follow data across Send to Table connections.
-4. **Fix inline errors** — read error-patterns.md, diagnose, fix with `update_column`, re-run with `runAction: "first_one"` and `skipCellsWithData: false`.
-
-**Every `run_field` call in this step MUST include `runAction: "first_one"`. Never omit `runAction`. Never use `first_ten` or `first_hundred` during the build phase.**
-
-Rung 1 must pass (all columns healthy on the test row) before proceeding.
+Follow the `/baseloop-gtm:build` workflow (Steps 1 through 4.5) using the approved plan. Every `run_field` in this step MUST use `runAction: "first_one"`. Rung 1 must pass (all columns healthy on the test row) before proceeding.
 
 ---
 
-## Step 3: Scaling Ladder Rung 2 (first_ten)
+## Step 3: Rung 2
 
-After Rung 1 passes, scale to 10 rows:
-
-1. Enable `autoRunEnabled` on all columns that should auto-trigger.
-2. `run_field` on the first column of each source table with `runAction: "first_ten"`.
-3. `wait_for_run` and `get_run_status` — confirm zero failures across the chain.
-4. Follow data across tables: `list_rows` on destination tables, verify row counts.
-5. For each table: `get_row_details` on 3 sample rows — check for errors or unexpected nulls.
-6. Compile a health report:
-   - Healthy columns (passing on all sampled rows)
-   - Failing columns (error status, unexpected output)
-   - Skipped columns (autoRunCondition not met — verify this is expected)
-
-Rung 2 must pass before proceeding.
+Follow `/baseloop-gtm:build` Step 5 — Rung 2 (`first_ten`). Enable `autoRunEnabled`, run with `first_ten`, verify zero failures across the full chain. Rung 2 must pass before proceeding.
 
 ---
 
 ## Step 4: Diagnose and Fix
 
-For each failing column found in Rung 1 or Rung 2:
-
-1. Follow the `/baseloop-gtm:diagnose` workflow:
-   - Investigate (read error, trace upstream, match patterns)
-   - Diagnose (identify root cause)
-   - Fix (`update_column` + `run_field` with `runAction: "first_one"` and `skipCellsWithData: false`)
-   - Verify (confirm fix on 1 row, then re-run Rung 2)
-
-2. After fixing a column, re-check downstream columns — the fix may unblock them.
-
-3. Repeat until all columns are healthy or escalate unresolvable issues to the user.
+For each failing column found in Rung 1 or Rung 2, follow the `/baseloop-gtm:diagnose` workflow. After fixing a column, re-check downstream columns — the fix may unblock them. Repeat until all columns are healthy or escalate to the user.
 
 ---
 

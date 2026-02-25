@@ -8,19 +8,11 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ## Referencing action column output instead of extracting fullValue
 
-**Symptom:** Downstream action receives `"Found"`, `"Sent"`, or `"Created"` instead of the actual data it needs (e.g., HubSpot object ID, API response field). HubSpot Update rejects the recordId. HTTP Request sends wrong body.
+**Symptom:** Downstream action receives `"Found"`, `"Sent"`, or `"Created"` instead of the actual data it needs (e.g., HubSpot object ID). HubSpot Update rejects the recordId. HTTP Request sends wrong body.
 
-**Cause:** Used `{{action_column_name}}` directly in a downstream action's config. `{{column_name}}` resolves to the column's **display output** (a summary string), NOT the structured data in `fullValue`.
+**Cause:** Used `{{action_column_name}}` directly. `{{column_name}}` resolves to display output, not `fullValue`. See SKILL.md "Action output vs fullValue" for details and extraction paths.
 
-**Fix:** Create a **data extraction column** between the action and any downstream consumer:
-1. `create_column` with `type: "text"` (or appropriate type), `extractorFieldId` = the action column's ID, `extractionPath` = JMESPath expression to the field you need
-2. Reference the **extraction column** in downstream actions with `{{extraction_column_name}}`
-
-**Examples:**
-- HubSpot Lookup → need `hs_object_id` → extraction path: `results[0].properties.hs_object_id`
-- sendHttpRequest → need a response field → extraction path: `data.id` (depends on API)
-- enrichment → need email → extraction path: `email`
-- lookup_single_record → need a column value → extraction path: `field_name`
+**Fix:** Create a data extraction column (`extractorFieldId` + `extractionPath`) and reference that instead.
 
 **Prevention:** Before using `{{column_name}}` for any action column, ask: "Does this column's display output contain the actual value I need, or is it just a status string?" If it's a status string (Found, Sent, etc.), you need extraction.
 
@@ -28,20 +20,15 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ## Running all rows without testing first
 
-**Symptom:** Hundreds of credits burned, garbage data in CRM, API errors discovered only after all rows processed. Workflow ran on the full dataset before being validated.
+**Symptom:** Hundreds of credits burned, garbage data in CRM, API errors discovered only after all rows processed.
 
-**Cause:** Called `run_field` without the `runAction` parameter (runs ALL rows), or used `runAction: "first_hundred"` on a dataset with fewer than 100 rows (which also runs everything).
+**Cause:** Called `run_field` without `runAction` (runs ALL rows), or used `first_hundred` on a table with <100 rows.
 
 **What happened in practice:** Agent created a column, immediately ran it on all 50 rows (~6 credits each), then created the next column and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
 
-**Fix:**
-1. **Never call `run_field` without `runAction`.** Treat a bare `run_field` as a bug.
-2. **Follow the Scaling Ladder**: `first_one` → `first_ten` → full scale (with user approval).
-3. **Create all columns before running any.** This lets the full chain be tested with a single row.
-4. **Watch for `first_hundred` on small datasets.** If the table has fewer than 100 rows, `first_hundred` runs everything. Use `first_ten` or `first_one` instead.
-5. **Get user approval before full scale.** Report the row count and estimated credit cost. Wait for explicit go-ahead.
+**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_field` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required).
 
-**Prevention:** Every `run_field` call should include `runAction`. During build/test: always `first_one`. During validation: `first_ten`. Full-scale: only after user approval.
+**Prevention:** Every `run_field` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows.
 
 ---
 
