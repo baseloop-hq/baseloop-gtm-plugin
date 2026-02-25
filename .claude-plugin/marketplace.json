@@ -1,11 +1,11 @@
 {
-  "name": "baseloop-gtm-plugin",
+  "name": "baseloop",
   "owner": {
     "name": "Baseloop",
     "email": "support@baseloop.com"
   },
   "metadata": {
-    "description": "Baseloop GTM plugin marketplace for Claude Code"
+    "description": "Plugin marketplace for Claude extensions"
   },
   "plugins": [
     {
@@ -14,9 +14,9 @@
       "version": "0.4.0",
       "author": {
         "name": "Baseloop",
-        "url": "https://baseloop.com"
+        "url": "https://baseloop.io"
       },
-      "homepage": "https://baseloop.com",
+      "homepage": "https://baseloop.io",
       "tags": ["gtm", "data-pipeline", "enrichment", "hubspot", "mcp", "baseloop"],
       "source": "./plugins/baseloop-gtm"
     }
