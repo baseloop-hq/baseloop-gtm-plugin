@@ -2,6 +2,8 @@
 
 Production-proven workflow recipes from real Baseloop power users. Each pattern shows the architecture (tables + column chains), key decisions, and autoRunCondition gating. Use `get_action_schema` for full configuration details on each action.
 
+**Note:** Patterns below that include extraction columns assume you follow the Extraction Column Rule from SKILL.md: run the source action on 1 row, inspect `fullValue` with `get_row_details`, then create extraction columns with verified paths. Never use example paths below without confirming them against actual action output.
+
 ## Table of Contents
 
 | # | Pattern | Use When |
@@ -748,7 +750,7 @@ HubSpot Contact Import
 | 14 | Unemployed | `sendToTable` | Employment Status = "Disqualified" | Route to "unemployed" table |
 
 ### Key Decisions
-- **AI for company name matching**: Company names differ between HubSpot and LinkedIn (abbreviations, legal suffixes). An AI agent fuzzy-matches instead of exact string comparison.
+- **AI for company name matching**: Company names differ between HubSpot and LinkedIn (abbreviations, legal suffixes). An AI agent fuzzy-matches instead of exact string comparison. Use a formula to normalize before comparing: lowercase, remove dots, strip common legal suffixes (Inc, LLC, Ltd, GmbH, Corp, etc.), and trim whitespace. Watch for false positives with domain-style names and names containing taglines or symbols.
 - **Conditional AI extraction**: Only extract new company details if the person changed jobs (match = "No"). Don't waste credits on people still at the same company.
 - **Three routing destinations**: Each employment status gets its own destination table for different follow-up workflows (re-engage, new company pitch, pause).
 - **Email re-enrichment at new company**: If someone changed jobs, their old email is likely invalid. Run waterfall email enrichment to get their new work email.

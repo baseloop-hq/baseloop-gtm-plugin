@@ -131,7 +131,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 - Upstream empty: fix upstream columns first
 - Prompt issue: `update_column` with improved prompt (add few-shot examples, tighten constraints)
 - Model issue: `update_column` to switch model (e.g., GPT-4o to Claude Sonnet for nuance)
-- Web search noise: `update_column` to disable `useWebSearch` if not needed
+- Web search noise: `update_column` to disable `enableWebSearch` if not needed
 - Re-run with `skipCellsWithData: false` after any fix
 
 ---
@@ -171,6 +171,12 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 1. Poll `get_run_status` 2-3 times, 30 seconds apart -- is `progress.completed` increasing?
 2. If progress is moving slowly: normal for web search AI or enrichment with rate limits
 3. If progress is frozen for 3+ polls: likely stuck
+
+**Known slow actions (normal, not stuck):**
+- `waterfall_email_enrichment`: 30-60 seconds per row (tries multiple providers sequentially). For 10+ rows, use `pollIntervalMs: 10000` and `timeoutMs: 120000`.
+- `custom_ai_agent` with `enableWebSearch: true`: 20-45 seconds per row depending on research depth.
+- `enrich_contact` / `enrich_company`: 10-30 seconds per row.
+- `sendHttpRequest` to rate-limited APIs: varies by provider.
 
 **Fix:**
 - Slow but progressing: wait. Web search AI columns can take 30-60 seconds per row.
@@ -224,6 +230,27 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 - Multiple conditions that should be OR'd: merge into a single condition with `combinator: "or"`
 - Wrong operator: replace with valid operator name (see [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions))
 - Re-run with `skipCellsWithData: false` after fixing
+
+---
+
+## Extraction column returns null despite action succeeding
+
+**Seen in:** Action column shows "Found" / "Sent" / "Created" (success), but the extraction column for that same row is null or empty.
+
+**Root cause:** `extractionPath` doesn't match the actual `fullValue` structure. This happens when extraction columns were created without first inspecting the action's real output. Every action type has its own response shape.
+
+**Diagnosis:**
+1. `get_row_details` with the **action** column's fieldId — read `fullValue`
+2. Compare the JSON structure against the extraction column's `extractionPath`
+3. The path will be wrong (e.g., `id` when the actual structure is `results[0].id`, or `email` when it's `data.email`)
+
+**Fix:**
+1. Delete the wrong extraction column
+2. Create a new one with `extractionPath` matching the actual `fullValue` structure
+3. Update any downstream columns referencing the old extraction column name (it will have a new auto-generated name)
+4. Re-run with `skipCellsWithData: false`
+
+**Prevention:** Always run the action on 1 row and inspect `fullValue` before creating extraction columns. This applies to ALL action types — HubSpot, HTTP requests, AI agents, enrichment, email finders, lookups.
 
 ---
 

@@ -52,12 +52,20 @@ Create all columns for the table before running anything. This lets you set up t
 
 **Do NOT run any column until ALL columns for this table are created.** Creating and running columns one at a time prevents end-to-end testing and leads to running all rows before the chain is validated.
 
+**Exception — extraction columns:** Do NOT create extraction columns during initial column creation. Instead:
+1. Create the action column in this step
+2. Wait until Rung 1 (Step 4) to run it
+3. Inspect the `fullValue` with `get_row_details` using the action column's `fieldId`
+4. THEN create extraction columns with verified paths derived from the actual response
+5. Resume creating downstream columns that depend on the extracted values
+
 For each column in the plan:
 
 1. **Read the action guide** — `get_action_schema` to get the `aiDescription`. Read it fully before configuring.
 2. **Resolve column names** — `get_table_schema` for current column `name` fields (never guess).
 3. **Resolve dynamic options** — `resolve_action_options` for any dynamic values (HubSpot properties, campaign IDs, list IDs).
 4. **Create the column** — `create_column` with full configuration including `autoRunCondition`. Set `autoRunEnabled: false` for now — we'll test with explicit runs first.
+5. **Type safety check** — if this column has `selectedOutputFields` or is an extraction column (`extractorFieldId`), verify that EVERY output/extraction column uses `type: "text"`. No booleans, no numbers, no selects. This is the #1 silent data loss mistake.
 
 For Send to Table columns:
 1. Create the destination table first (empty, no columns)
