@@ -46,7 +46,7 @@ Design every workflow around these principles:
 1. **Read the action guide** — call `get_action_schema` for the action. The `aiDescription` contains critical constraints and configuration examples. Read it before configuring.
 2. **Resolve names and options** — use `get_table_schema` for column `name` fields (never guess). Use `resolve_action_options` for dynamic values (HubSpot properties, list IDs, campaign IDs).
 3. **Create the column** — `create_column` with full configuration including autoRunCondition if needed. `autoRunEnabled` defaults to `true`. For action columns, the tool validates that `{{fieldName}}` defaults reference existing columns — if a required input column is missing, it returns which columns to create first.
-4. **Output fields** — for multi-output actions, pass `selectedOutputFields` (array of `{ fieldName, columnType }`) to auto-create linked storage columns for each output field.
+4. **Output fields** — for multi-output actions, pass `selectedOutputFields` (array of `{ fieldName, columnType }`) to auto-create linked storage columns for each output field. **Always use `columnType: "text"`** — never mirror the origin field's type.
 
 ### Test end-to-end using the Scaling Ladder
 
@@ -131,7 +131,7 @@ Create an empty destination table with `create_table` (no columns, but always in
 
 **Pattern:**
 1. Create the action column (e.g., HubSpot Lookup, HTTP Request)
-2. Create data extraction columns for each field you need downstream: `create_column` with `type`, `extractorFieldId` (the action column's ID), and `extractionPath` (JMESPath expression)
+2. Create data extraction columns for each field you need downstream: `create_column` with `type: "text"`, `extractorFieldId` (the action column's ID), and `extractionPath` (JMESPath expression). **Always use `type: "text"` for extraction columns** — never mirror the source field's type.
 3. Reference the **extraction columns** (not the action column) in downstream `{{column_name}}` templates
 
 **Common extraction paths:**
