@@ -727,7 +727,7 @@ HubSpot Contact Import
     └→ Unemployed
 ```
 
-**Check Job Changes Table** (41 columns)
+**Check Job Changes Table** (44 columns)
 | # | Column | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | HubSpot Contacts | `hubspot_contacts_list_import` | — | Import contacts with company name, email, LinkedIn URL |
@@ -737,9 +737,11 @@ HubSpot Contact Import
 | 5 | Still at current company? | `custom_ai_agent` | Employment Status = "Active" | Match current employer to HubSpot company name |
 | 6 | New Company Started | `custom_ai_agent` | match result = "No" | Extract new company LinkedIn URL + job title |
 | 7 | Enrich Company | `enrich_company` | new company URL `notNull` | Get new company details |
-| 8 | Lookup Object | `hubspot_lookup_object` | company enriched | Check if new company exists in CRM |
-| 9 | Create Company | `hubspot_create_object` | lookup `isNotFound` | Create new company in CRM |
-| 10 | Update Contact | `hubspot_update_object` | always | Update contact with new company info |
+| 7a | Resolve Company Domain | `custom_ai_agent` | email `notNull` AND companyWebsite is `null` | AI web search to find company domain when enrichment didn't return it (~4 credits). Skip if companyWebsite already populated. |
+| 8 | Lookup Object | `hubspot_lookup_object` | company domain `notNull` (from enrichment or AI) | Look up company by domain in CRM |
+| 9 | Create Company | `hubspot_create_object` | lookup `isNotFound` | Create new company with name, domain, industry |
+| 9a | Company HubSpot ID | formula or extraction | — | Consolidate company ID from Lookup (if found) or Create (if new) |
+| 10 | Update Contact | `hubspot_update_object` | company ID `notNull` | Update contact with `associateWithObject: true`, `associatedObjectType: "companies"`, `associatedObjectHubspotId` from consolidated company ID |
 | 11 | NEW Email | `waterfall_email_enrichment` | new company `notNull` | Get new email at new company |
 | 12 | Still working | `sendToTable` | match = "Yes" | Route to "still employed" table |
 | 13 | Updated this month | `sendToTable` | match = "No" | Route to "changed jobs" table |
@@ -750,6 +752,9 @@ HubSpot Contact Import
 - **Conditional AI extraction**: Only extract new company details if the person changed jobs (match = "No"). Don't waste credits on people still at the same company.
 - **Three routing destinations**: Each employment status gets its own destination table for different follow-up workflows (re-engage, new company pitch, pause).
 - **Email re-enrichment at new company**: If someone changed jobs, their old email is likely invalid. Run waterfall email enrichment to get their new work email.
+- **Company object creation is mandatory**: Never update a contact's company as flat text. The workflow must create the Company object in HubSpot and associate the contact with it. This preserves HubSpot's relationship graph, reporting, deal pipelines, and ABM features.
+- **Domain resolution fallback**: `enrich_contact` may return null for `companyWebsite`. When this happens, an AI agent with web search resolves the domain before the HubSpot company lookup. This costs ~4 credits per row but only runs when needed.
+- **Consolidated company ID**: The contact update needs a single company HubSpot ID regardless of whether the company was found via lookup or newly created. A formula or extraction column merges both sources.
 
 ---
 
