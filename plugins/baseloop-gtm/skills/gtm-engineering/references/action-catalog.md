@@ -50,7 +50,7 @@ The workhorse for any AI task. Supports:
 - **Text output**: classification (B2B/B2C), scoring, summaries
 - **Boolean output**: yes/no qualification
 - **JSON Schema output**: structured extraction (e.g., list of founders with name, title, email)
-- **Web search**: enable `useWebSearch` for real-time research
+- **Web search**: set `enableWebSearch: true` for real-time research
 - **Multiple models**: OpenAI GPT-4o, Anthropic Claude, Google Gemini
 
 When the output is an array (JSON Schema with array property), pair with Send to Table `send_for_each_item` using the array property name as `sourceArrayPath`.
@@ -149,7 +149,7 @@ Create, update, and lookup records in CRMs. Always follow the **lookup before cr
 
 ### HubSpot Lookup → Extract → Update/Create Pattern
 1. Add `hubspot_lookup_object` column — search by email or domain (include `hs_object_id` in propertiesConfig)
-2. Add a **data extraction column** (type: `"text"`) for `hs_object_id`: `extractionPath: "results[0].properties.hs_object_id"` from the Lookup column. Add extraction columns for any other properties you need downstream — always type `"text"`.
+2. Run the lookup on 1 row, then `get_row_details` with its `fieldId` to inspect `fullValue`. Add a **data extraction column** (type: `"text"`) for `hs_object_id` with `extractionPath` derived from the actual response structure. Add extraction columns for any other properties you need downstream — always type `"text"`.
 3. Add `hubspot_update_object` column — gate on lookup `isFound`, use **extraction column** in `recordId` (NOT the lookup column directly)
 4. Add `hubspot_create_object` column — gate on lookup `isNotFound`
 5. Pass the company HubSpot ID (from extraction column or previous create) so contacts get associated
@@ -267,14 +267,10 @@ Not an action, but a column type. Formulas are **free** and evaluate JavaScript 
 
 ## Data Extraction Columns
 
-Not an action, but a column type. **Required whenever you need to reference a specific field from an action column's structured result.** See SKILL.md "Action output vs fullValue" for why this is needed and common extraction paths.
+Not an action, but a column type. **Required whenever you need to reference a specific field from an action column's structured result.** See SKILL.md "Action output vs fullValue" for why this is needed.
 
 Created with `create_column` using `type: "text"`, `extractorFieldId` (the source action column's ID), and `extractionPath` (JMESPath expression). **Always use `type: "text"`** for extraction columns — never mirror the origin field's type.
 
-**When to create extraction columns:**
-- HubSpot Lookup → need `hs_object_id` → `results[0].properties.hs_object_id`
-- HubSpot Lookup → need any property → `results[0].properties.<property_name>`
-- sendHttpRequest → need response fields → path depends on API shape
-- enrichment → need specific fields → `email`, `phone`, `linkedin_url`
-- lookup_single_record → need column values → `<field_name>`
-- Custom AI Agent (JSON Schema) → need individual fields → `<property_name>`
+**Extraction paths:** Run the action on 1 row first, then `get_row_details` with its `fieldId` to see the actual `fullValue` structure. Derive your `extractionPath` from the real response — do not use hardcoded paths. Every action type has its own response shape, and even actions within the same integration (e.g., HubSpot Create vs HubSpot Lookup) return different JSON structures.
+
+**When to create extraction columns:** Any time you need a specific field from an action's structured output. Always inspect `fullValue` first to derive the correct `extractionPath` — see SKILL.md "Extraction Column Rule."

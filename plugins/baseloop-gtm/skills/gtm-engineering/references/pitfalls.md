@@ -442,3 +442,87 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 **Cause:** Company research (Target Personas, Core Intelligence, Prospecting Signals) was done on the Companies Master List but not pulled into the contacts table.
 
 **Fix:** On every contact-level table (Outbound, CRM Enrichment, Inbound), add a `lookup_single_record` back to the Companies Master List. Pull all intelligence fields (Core Intelligence, Target Companies, Target Personas, Prospecting Signals, Go-to-market Motion, Using CRM, Hiring Roles, Traffic, etc.). Feed these fields into the AI email prompt so it can write informed, personalized emails.
+
+---
+
+## Guessing extraction paths without inspecting fullValue
+
+**Risk level:** HIGH — causes silent null values across entire columns, often not caught until downstream actions fail.
+
+**Symptom:** Extraction column is empty despite source action succeeding.
+
+**Cause:** Creating extraction columns with assumed JMESPath expressions instead of inspecting the actual action output. Different actions return different JSON structures (e.g., `hubspot_create_object` returns flat `{"id": "..."}` while `hubspot_lookup_object` returns nested `{"results": [...]}`). There is no universal pattern. See SKILL.md "Extraction Column Rule" for the mandatory inspection protocol.
+
+**Prevention:**
+1. Create the action column first
+2. `run_field` on at least 1 row (Rung 1)
+3. `get_row_details` with the action column's `fieldId` — read the complete `fullValue`
+4. Derive the `extractionPath` from the actual JSON structure you see
+5. THEN create the extraction column
+
+**If you already made this mistake:**
+1. `get_row_details` on a successful row to see the real `fullValue`
+2. Delete the wrong extraction column
+3. Recreate with the correct path
+4. Update any downstream columns that referenced the old column name (see "Cascading name changes" below)
+5. Re-run with `skipCellsWithData: false`
+
+---
+
+## HubSpot enum property mismatch
+
+**Risk level:** MEDIUM — causes row-level failures that block CRM sync.
+
+**Symptom:** `INVALID_OPTION` error on HubSpot create/update. Error message lists allowed values in SCREAMING_SNAKE_CASE.
+
+**Cause:** Mapping a field like `industry` or `lifecyclestage` with human-readable values ("Computer Software", "IT Services and IT Consulting") instead of HubSpot's internal enum format (SCREAMING_SNAKE_CASE). This happens when sourcing data from external enrichment (LinkedIn, Apollo, etc.) — their format will NOT match HubSpot's enum format.
+
+**Prevention:**
+- Use `resolve_action_options` to check valid enum values before mapping
+- When sourcing data from external enrichment, assume the format will NOT match HubSpot's enum format
+- Omit enum fields from automated mappings unless you can guarantee format conversion
+
+**If you already made this mistake:**
+- `update_column` to remove the enum field from fieldMapping
+- Re-run failed rows with `skipCellsWithData: false`
+
+---
+
+## Cascading column name changes when recreating extraction columns
+
+**Risk level:** MEDIUM — silently breaks downstream formulas and action templates.
+
+**Symptom:** After deleting and recreating an extraction column, downstream formulas return empty.
+
+**Cause:** Deleting and recreating an extraction column generates a new `name` (e.g., `lookup_company_hs_id_zefz` instead of `lookup_company_hs_id_abc1`). Any formula or action template referencing `{{old_name}}` now resolves to null — silently, without erroring.
+
+**Prevention:** After recreating any column:
+1. `get_table_schema` — note the new column's `name`
+2. Search all downstream columns for references to the old name
+3. `update_column` on each downstream column to replace old name with new name
+
+**If you already made this mistake:**
+- `get_table_schema` to find the new name
+- `update_column` on every downstream column that referenced the old name
+- Re-run affected columns with `skipCellsWithData: false`
+
+---
+
+## Using boolean/number/select types for output fields or extraction columns
+
+**Risk level:** HIGH — causes silent null values and broken autoRunConditions.
+
+**Symptom:** AI agent output fields show null or unexpected values. Extraction columns silently coerce data. Downstream `autoRunCondition` with `=` operator fails because it's comparing against a boolean instead of a string.
+
+**Cause:** Created `selectedOutputFields` with `columnType: "boolean"` (or "number", "select") instead of `"text"`. Or created an extraction column with a type other than `text`.
+
+**Why this breaks:**
+- Boolean columns coerce AI output. If the AI returns `"Yes"` instead of `true`, the boolean column stores `null`.
+- Number columns reject non-numeric AI output silently.
+- Select columns reject values not in the predefined options list.
+- autoRunConditions using `=` or `contains` behave differently on booleans vs text strings.
+- Text columns accept ANY value the AI or API returns, making them the only safe default.
+
+**Fix:** Delete the wrong-type column, recreate with `columnType: "text"`. Update any downstream references to the new column name.
+
+**Prevention:** Every output field and every extraction column must use `type: "text"`. No exceptions, regardless of whether the data "looks like" a boolean, number, or enum.
