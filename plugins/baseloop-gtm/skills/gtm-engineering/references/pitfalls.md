@@ -108,6 +108,24 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
+## Updating contact company as flat text without Company object
+
+**Symptom:** Contact's company field is updated in HubSpot, but the contact has no Company object association. HubSpot's company-level reporting, deal pipelines, and ABM features show incomplete data. Sales reps can't navigate from the contact to the company record.
+
+**Cause:** Workflow detects a job change and pushes the new company name as a text field on the contact, but never creates the Company object in HubSpot or associates the contact with it.
+
+**Fix:** Any workflow that updates a contact's company after a job change must include the full company chain:
+
+1. **Resolve company domain** — if `enrich_contact` didn't return `companyWebsite`, add a `custom_ai_agent` with web search (~4 credits) to find the company domain from the company name. Gate on: email found AND companyWebsite is null. Skip if companyWebsite is already populated.
+2. **HubSpot Lookup Company** — `hubspot_lookup_object` for companies, filtered by domain (prefer `companyWebsite` from enrichment, fall back to AI-resolved domain). Gate on: domain is not null.
+3. **HubSpot Create Company** — `hubspot_create_object` for companies with name, domain, industry. Gate on: lookup = `isNotFound`.
+4. **Consolidate Company ID** — use a formula or extraction column to get the company HubSpot ID from whichever source produced it (lookup or create).
+5. **HubSpot Update Contact** — `hubspot_update_object` with `associateWithObject: true`, `associatedObjectType: "companies"`, and `associatedObjectHubspotId` pointing to the consolidated company ID.
+
+**Prevention:** Before designing any job-change or company-enrichment workflow, ask: "Does this workflow create/link the Company object, or just update flat text?" If the answer is flat text, the workflow is incomplete.
+
+---
+
 ## HubSpot property name mismatch
 
 **Symptom:** HubSpot create/update fails or ignores fields silently.

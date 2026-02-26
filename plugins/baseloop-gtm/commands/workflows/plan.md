@@ -59,6 +59,7 @@ Any CRM sync MUST follow the lookup-before-create pattern. Verify that:
 - Lookup columns exist before create columns
 - Create columns are gated on lookup returning `isNotFound`
 - Parent record IDs are passed through (e.g., company HubSpot ID to contacts)
+- **Company association rule:** If the workflow pushes contacts to HubSpot after a job change or company enrichment, the plan MUST include company lookup-before-create and contact-company association. Never update a contact's company as a flat text field without also creating/linking the Company object. This means: resolve company domain → lookup company in HubSpot → create if not found → update contact with `associateWithObject: true` pointing to the company's HubSpot ID.
 
 ## Phase 3: Present the Plan
 
@@ -86,6 +87,9 @@ Approximate credit cost per row flowing through the full workflow. Note which ac
 ### Risks and Considerations
 
 Flag any concerns: missing integrations, data quality requirements, rate limits, non-deterministic steps.
+
+Standard risk items to check:
+- **Company domain availability:** If the workflow enriches contacts and the enrichment may return null for `companyWebsite`, the plan must include an AI domain resolution step (custom_ai_agent with web search, ~4 credits per row) before HubSpot company lookup. Flag this cost in the estimate.
 
 ### Testing Strategy
 
