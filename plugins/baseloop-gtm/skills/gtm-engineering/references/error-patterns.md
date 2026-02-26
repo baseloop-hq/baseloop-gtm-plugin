@@ -176,7 +176,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 - `waterfall_email_enrichment`: 30-60 seconds per row (tries multiple providers sequentially). For 10+ rows, use `pollIntervalMs: 10000` and `timeoutMs: 120000`.
 - `custom_ai_agent` with `enableWebSearch: true`: 20-45 seconds per row depending on research depth.
 - `enrich_contact` / `enrich_company`: 10-30 seconds per row.
-- `sendHttpRequest` to rate-limited APIs: varies by provider.
+- `baseloop_send_http_request` to rate-limited APIs: varies by provider.
 
 **Fix:**
 - Slow but progressing: wait. Web search AI columns can take 30-60 seconds per row.

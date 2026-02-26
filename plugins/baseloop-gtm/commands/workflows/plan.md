@@ -3,7 +3,7 @@ name: baseloop-gtm:plan
 description: This command should be used when the user wants to design a Baseloop data workflow from a goal description. It analyzes requirements, surveys available tools, and produces a step-by-step workflow architecture without creating anything.
 argument-hint: "[workflow goal, e.g. 'Import HubSpot companies, qualify B2B, find founders, sync contacts back']"
 disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views
+allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_workspaces, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views
 ---
 
 # Design a GTM Workflow
@@ -45,7 +45,7 @@ For each table, define the column chain in order:
   - **Mixed/uncertain**: both, with AI web search gated on LinkedIn `isNotFound`
   - See workflow-patterns.md "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
 - **Qualification**: What filtering/scoring is needed? (custom_ai_agent, formula, perplexity)
-- **Routing**: Does data flow to other tables? (sendToTable with mode and field mappings)
+- **Routing**: Does data flow to other tables? (send_to_table with mode and field mappings)
 - **Sync**: Does data go to a CRM or outreach tool? (hubspot_create_object, outreach actions)
 
 ### 3. Define autoRunConditions
@@ -77,7 +77,7 @@ For each table:
 
 Show the table-to-table flow:
 ```
-[Companies] --sendToTable(send_for_each_item)--> [Contacts] --hubspot_create_object--> HubSpot
+[Companies] --send_to_table(send_for_each_item)--> [Contacts] --hubspot_create_object--> HubSpot
 ```
 
 ### Cost Estimate

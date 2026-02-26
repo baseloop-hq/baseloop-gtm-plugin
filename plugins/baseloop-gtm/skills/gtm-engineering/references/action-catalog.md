@@ -8,10 +8,11 @@ Import data into Baseloop tables. These are SOURCE-type columns created via `cre
 
 | Action Key | Provider | Purpose | Cost |
 |---|---|---|---|
-| `importSalesNavContacts` | LinkedIn | Import contacts from Sales Navigator search | Free |
-| `importSalesNavCompanies` | LinkedIn | Import companies from Sales Navigator search | Free |
-| `hubspot_import_contacts_from_list` | HubSpot | Import contacts from a HubSpot static list | Free |
-| `hubspot_import_companies_from_list` | HubSpot | Import companies from a HubSpot static list | Free |
+| `li_import_sales_nav_contacts` | LinkedIn | Import contacts from Sales Navigator search | Free |
+| `li_import_sales_nav_companies` | LinkedIn | Import companies from Sales Navigator search | Free |
+| `li_import_profile_engagement` | LinkedIn | Import likes & comments from LinkedIn profile posts | Free |
+| `hubspot_contacts_list_import` | HubSpot | Import contacts from a HubSpot static list | Free |
+| `hubspot_companies_list_import` | HubSpot | Import companies from a HubSpot static list | Free |
 
 **Remember:** Source actions require the two-step process — create table with sourceField, create placeholder row, then run_field.
 
@@ -84,8 +85,8 @@ Move data between tables or to external systems.
 
 | Action Key | Provider | Purpose | Cost |
 |---|---|---|---|
-| `sendToTable` | Baseloop | Route rows between tables with upsert semantics | Free |
-| `sendHttpRequest` | Baseloop | Send data to external webhooks/APIs | Free |
+| `send_to_table` | Baseloop | Route rows between tables with upsert semantics | Free |
+| `baseloop_send_http_request` | Baseloop | Send data to external webhooks/APIs | Free |
 
 ### Send to Table — Key Configuration
 
@@ -102,15 +103,15 @@ Move data between tables or to external systems.
 ### Send HTTP Request
 Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE) with dynamic URL, body, headers, and query params. Values can reference columns via `{{field_name}}`. Supports rate limiting and timeouts.
 
-**Power user pattern — custom API enrichment**: Many teams use `sendHttpRequest` to hit third-party APIs (e.g., RapidAPI LinkedIn endpoints) for enrichment not covered by built-in actions. The response is stored as JSON, then AI agents or data extraction columns pull specific fields out. This is the basis of the "standard enrichment stack" pattern:
+**Power user pattern — custom API enrichment**: Many teams use `baseloop_send_http_request` to hit third-party APIs (e.g., RapidAPI LinkedIn endpoints) for enrichment not covered by built-in actions. The response is stored as JSON, then AI agents or data extraction columns pull specific fields out. This is the basis of the "standard enrichment stack" pattern:
 1. Formula: extract LinkedIn slug from URL
 2. HTTP Request: call RapidAPI with slug → get staff count, HQ, offices, description
 3. HTTP Request: call employee distribution API
 4. AI agents: extract structured data from JSON responses
 
-**Advanced pattern — dynamic campaign routing via HTTP**: For standard outreach enrollment, use the built-in outreach actions (see [Outreach Actions](#outreach-actions) below). However, when you need **dynamic campaign routing computed by formulas** (e.g., Language × Job Title Cluster → campaign ID in a single HTTP request), use `sendHttpRequest` to POST leads directly to the outreach platform API with a formula-computed campaign ID in the URL path. URL: `https://api.outreach-platform.com/campaigns/{{campaign_id_formula}}/leads`. Body: `{"lead_list": [{"first_name": "{{firstname}}", "email": "{{email}}"}]}`. This replaces N separate enrollment columns with 3 formulas + 1 HTTP request.
+**Advanced pattern — dynamic campaign routing via HTTP**: For standard outreach enrollment, use the built-in outreach actions (see [Outreach Actions](#outreach-actions) below). However, when you need **dynamic campaign routing computed by formulas** (e.g., Language × Job Title Cluster → campaign ID in a single HTTP request), use `baseloop_send_http_request` to POST leads directly to the outreach platform API with a formula-computed campaign ID in the URL path. URL: `https://api.outreach-platform.com/campaigns/{{campaign_id_formula}}/leads`. Body: `{"lead_list": [{"first_name": "{{firstname}}", "email": "{{email}}"}]}`. This replaces N separate enrollment columns with 3 formulas + 1 HTTP request.
 
-**Power user pattern — Slack Block Kit notifications**: Use `sendHttpRequest` to POST to Slack webhook URLs with rich Block Kit JSON formatting. Include section blocks with fields (name, email, LinkedIn, company, campaign, HubSpot URL) and a reply text section. Set `Content-Type: application/json` header. Gate with autoRunCondition to filter which events trigger notifications (e.g., exclude bounces and OOO from outreach reply alerts).
+**Power user pattern — Slack Block Kit notifications**: Use `baseloop_send_http_request` to POST to Slack webhook URLs with rich Block Kit JSON formatting. Include section blocks with fields (name, email, LinkedIn, company, campaign, HubSpot URL) and a reply text section. Set `Content-Type: application/json` header. Gate with autoRunCondition to filter which events trigger notifications (e.g., exclude bounces and OOO from outreach reply alerts).
 
 ## Cross-Table Lookup Actions
 
@@ -203,7 +204,7 @@ Not an action column, but a column type. Webhook columns receive data POSTed fro
 **Key patterns:**
 - **Ad platform engagement**: Ad analytics platforms push LinkedIn ad engagement data (company name, LinkedIn URL, engagement level). High volume in production.
 - **Phone enrichment providers**: Push new phone numbers with contact record IDs. Pair with `hubspot_update_object` to sync to CRM automatically.
-- **Call/dialer platforms**: Dialer platforms push call data (outcome, disposition, transcript, email, phone number, direction). Use a formula to classify disposition as Interested/Not Interested, then two `sendHttpRequest` columns POST to the outreach platform API (e.g., Lemlist `/leads/interested/` and `/leads/not_interested/` endpoints) to feed call outcomes back. Gate each HTTP request on the formula result. This closes the cold call → email outreach feedback loop.
+- **Call/dialer platforms**: Dialer platforms push call data (outcome, disposition, transcript, email, phone number, direction). Use a formula to classify disposition as Interested/Not Interested, then two `baseloop_send_http_request` columns POST to the outreach platform API (e.g., Lemlist `/leads/interested/` and `/leads/not_interested/` endpoints) to feed call outcomes back. Gate each HTTP request on the formula result. This closes the cold call → email outreach feedback loop.
 - **Follower/intent events**: Follower tracking tools push company follower events. Triggers enrichment workflow via `autoRunOnNewRow: true`.
 - **LinkedIn connection exports**: Bulk import of LinkedIn connections for network analysis.
 - **Outreach platform events**: Email outreach platforms push all email events (sent, reply, bounce, OOO) with 16+ fields (event_type, reply_category, campaign_name, lead_email, reply text, timestamps). High volume in production. Branch processing by event_type and reply_category via autoRunConditions.
@@ -214,7 +215,7 @@ Always pair webhook columns with `autoRunOnNewRow: true` on the table so process
 
 ## Email Verification via HTTP Request
 
-Not a built-in action, but a common `sendHttpRequest` pattern. Call email verification APIs (MillionVerifier, ZeroBounce, etc.) to check email quality before routing to outreach.
+Not a built-in action, but a common `baseloop_send_http_request` pattern. Call email verification APIs (MillionVerifier, ZeroBounce, etc.) to check email quality before routing to outreach.
 
 **Response fields to extract:**
 - `mv_freemail` — is it a freemail address (gmail, yahoo)?

@@ -228,6 +228,31 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 - Different columns, all required (e.g., Status = Active AND Score > 80): **single condition, combinator: "and"** (or separate conditions, since they're AND'd)
 - Mixed logic (e.g., (Country = USA OR Country = Canada) AND Status = Active): **two conditions** — one with combinator "or" for countries, one for status (multiple conditions are AND'd)
 
+**Nested combinator groups** are fully supported. You can nest rule groups for complex logic like `(A OR B) AND (C OR D)`:
+```json
+{
+  "combinator": "and",
+  "rules": [
+    {
+      "combinator": "or",
+      "rules": [
+        { "fieldId": "country_abc", "operator": "=", "value": "USA" },
+        { "fieldId": "country_abc", "operator": "=", "value": "Canada" }
+      ]
+    },
+    {
+      "combinator": "or",
+      "rules": [
+        { "fieldId": "score_xyz", "operator": ">", "value": "80" },
+        { "fieldId": "tier_def", "operator": "=", "value": "enterprise" }
+      ]
+    }
+  ]
+}
+```
+
+**Value coercion:** All condition values are coerced to strings before comparison. Boolean `true` becomes `"true"`, number `1` becomes `"1"`. When writing conditions against formula or AI output, always use string values (e.g., `"value": "true"` not `"value": true`).
+
 ### Available operators for filters and autoRunConditions
 
 Use the correct operator `name` value (left column) when configuring rules:
@@ -260,8 +285,8 @@ Use the correct operator `name` value (left column) when configuring rules:
 | `doesNotContainAnyOf` | does not contain any of | array (JSON) | Exclude multiple keywords (max 20) |
 | `in` | is any of | array | Value is one of the options |
 | `notIn` | is none of | array | Value is not any of the options |
-| `isDatePreset` | is | string | Relative date: "today", "last7Days", "thisMonth", etc. |
-| `between` | is between | object `{start, end}` | Absolute date range |
+| `isDatePreset` | is | string | Relative date preset. Values: `today`, `yesterday`, `thisWeek`, `lastWeek`, `thisMonth`, `lastMonth`, `last7Days`, `last30Days`, `last90Days` |
+| `between` | is between | object `{start, end}` | Absolute date range (ISO date strings) |
 
 **Common autoRunCondition patterns:**
 - Gate enrichment on upstream being populated: `operator: "notNull"`, field = upstream column
@@ -335,7 +360,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** Workflow routes leads to outreach without checking email quality first.
 
-**Fix:** Add a `sendHttpRequest` column calling an email verification API (e.g., MillionVerifier) before routing. Check the response for freemail, quality, and validity. Gate outreach routing on email quality being acceptable. Write a "NOTE: Bad Email" HubSpot engagement note for failed verifications so sales reps know.
+**Fix:** Add a `baseloop_send_http_request` column calling an email verification API (e.g., MillionVerifier) before routing. Check the response for freemail, quality, and validity. Gate outreach routing on email quality being acceptable. Write a "NOTE: Bad Email" HubSpot engagement note for failed verifications so sales reps know.
 
 ---
 
@@ -389,7 +414,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 1. Formula: infer language from email domain (`.it` → IT, else → EN)
 2. Formula: classify job title into clusters (keyword matching)
 3. Formula: map Language × Cluster → campaign ID (lookup table in formula logic)
-4. One `sendHttpRequest` with `{{campaign_id_formula}}` in the URL path
+4. One `baseloop_send_http_request` with `{{campaign_id_formula}}` in the URL path
 
 This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dimensions by adding formulas, not columns.
 
@@ -421,7 +446,7 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 
 **Cause:** Reply classification happens in Baseloop but the outreach platform doesn't know about it. The platform continues the sequence because its lead category wasn't updated.
 
-**Fix:** After reply classification, add a `sendHttpRequest` column that POSTs to the outreach platform API to update the lead's category and pause the sequence. Use a formula to map category names to the API's numeric IDs. Gate on reply classification being complete.
+**Fix:** After reply classification, add a `baseloop_send_http_request` column that POSTs to the outreach platform API to update the lead's category and pause the sequence. Use a formula to map category names to the API's numeric IDs. Gate on reply classification being complete.
 
 ---
 
@@ -526,3 +551,15 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 **Fix:** Delete the wrong-type column, recreate with `columnType: "text"`. Update any downstream references to the new column name.
 
 **Prevention:** Every output field and every extraction column must use `type: "text"`. No exceptions, regardless of whether the data "looks like" a boolean, number, or enum.
+
+---
+
+## Attempting to modify system fields
+
+**Symptom:** `update_column` returns an error: "System fields (Created At, Updated At, Created By) are read-only and cannot be modified."
+
+**Cause:** Tried to update or reconfigure a system-generated field. Every table has three read-only system fields: Created At, Updated At, and Created By.
+
+**Fix:** These fields cannot be modified via `update_column`. If you need custom timestamp or user tracking, create a separate column (e.g., a formula that references the system field value).
+
+**Prevention:** Before calling `update_column`, check `get_table_schema` — system fields have `isSystem: true`. Skip them in any batch update logic.

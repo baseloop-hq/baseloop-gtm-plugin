@@ -3,7 +3,7 @@ name: baseloop-gtm:build
 description: This command should be used when a workflow plan is ready and needs to be built step by step. It creates tables and columns, runs and verifies each step, and handles inline error diagnosis before proceeding.
 argument-hint: "[plan description or reference to a previous /baseloop-gtm:plan output]"
 disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__delete_row, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__send_webhook_data
+allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_workspaces, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__update_row, mcp__baseloop-gtm__delete_row, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__send_webhook_data
 ---
 
 # Build a GTM Workflow
@@ -69,7 +69,7 @@ For each column in the plan:
 
 For Send to Table columns:
 1. Create the destination table first (empty, no columns)
-2. Read `get_action_schema` for sendToTable
+2. Read `get_action_schema` for `send_to_table`
 3. Configure fieldMappings using plain column `name` fields (NOT `{{field_name}}`)
 4. For `send_for_each_item`: set `sourceColumnField` (plain name) and `sourceArrayPath`
 5. For parent row data: use `column:field_name` prefix in mapping values
