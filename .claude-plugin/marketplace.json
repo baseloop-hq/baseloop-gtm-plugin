@@ -5,13 +5,14 @@
     "email": "support@baseloop.com"
   },
   "metadata": {
-    "description": "Plugin marketplace for Claude extensions"
+    "description": "Plugin marketplace for Claude extensions",
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "baseloop-gtm",
       "description": "GTM workflow engineering for Baseloop. 1 skill, 4 commands for designing, building, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "author": {
         "name": "Baseloop",
         "url": "https://baseloop.io"

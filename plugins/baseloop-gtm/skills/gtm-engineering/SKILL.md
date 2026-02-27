@@ -182,16 +182,17 @@ Use `run_field` (single column) with explicit `runAction` when first testing eac
 - **Async:** returns immediately. Use `wait_for_run` or `get_run_status` to monitor progress.
 - **Per-column runIds:** each column in a `run_fields` batch gets its own `runId` — monitor each separately.
 - **Skipped columns:** columns with unmet autoRunConditions show status "skipped" (not "failed") — this is expected behavior, not an error.
+- **Source columns excluded:** `run_fields` rejects source action columns — use `run_field` for source imports (they must be run individually).
 - **When to use which:** use sequential `run_field` for Rung 1 (need manual inspection of each step), `run_fields` for Rung 3 (automatic dependency ordering + parallel execution).
 
-### Destructive tools: `delete_column` and `delete_row`
+### Destructive tools: `delete_column` and `delete_rows`
 - `delete_column` — use only when a column was created with the wrong action type and needs to be replaced. Prefer `update_column` for config fixes. Action columns with extraction mappings will also delete their linked storage columns.
-- `delete_row` — accepts an array of `rowIds` (max 100 per call). Use only to clean up test/placeholder rows after validation. Never delete production data rows.
+- `delete_rows` — accepts an array of `rowIds` (max 100 per call). Use only to clean up test/placeholder rows after validation. Never delete production data rows.
 
 ## Quick Reference
 
 **Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_views`
-**Mutations:** `create_workspace`, `create_table`, `update_table`, `create_column`, `update_column`, `delete_column`, `create_rows`, `update_row`, `delete_row`
+**Mutations:** `create_workspace`, `create_table`, `update_table`, `create_column`, `update_column`, `delete_column`, `create_rows`, `update_row`, `delete_rows`
 **Execution:** `run_field`, `run_fields`, `wait_for_run`, `get_run_status`, `send_webhook_data`
 **AI helpers:** `preview_formula`
 
