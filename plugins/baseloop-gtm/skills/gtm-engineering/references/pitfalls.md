@@ -539,7 +539,7 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 
 **Symptom:** AI agent output fields show null or unexpected values. Extraction columns silently coerce data. Downstream `autoRunCondition` with `=` operator fails because it's comparing against a boolean instead of a string.
 
-**Cause:** Created `selectedOutputFields` with `columnType: "boolean"` (or "number", "select") instead of `"text"`. Or created an extraction column with a type other than `text`.
+**Cause:** Created an extraction column with a type other than `text` (e.g., `"boolean"`, `"number"`, `"select"`).
 
 **Why this breaks:**
 - Boolean columns coerce AI output. If the AI returns `"Yes"` instead of `true`, the boolean column stores `null`.
@@ -548,7 +548,7 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 - autoRunConditions using `=` or `contains` behave differently on booleans vs text strings.
 - Text columns accept ANY value the AI or API returns, making them the only safe default.
 
-**Fix:** Delete the wrong-type column, recreate with `columnType: "text"`. Update any downstream references to the new column name.
+**Fix:** Delete the wrong-type column, recreate with `type: "text"`. Update any downstream references to the new column name.
 
 **Prevention:** Every output field and every extraction column must use `type: "text"`. No exceptions, regardless of whether the data "looks like" a boolean, number, or enum.
 

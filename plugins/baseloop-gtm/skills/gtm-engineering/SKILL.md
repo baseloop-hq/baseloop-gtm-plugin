@@ -46,9 +46,7 @@ Design every workflow around these principles:
 1. **Read the action guide** — call `get_action_schema` for the action. The `aiDescription` contains critical constraints and configuration examples. Read it before configuring.
 2. **Resolve names and options** — use `get_table_schema` for column `name` fields (never guess). Use `resolve_action_options` for dynamic values (HubSpot properties, list IDs, campaign IDs).
 3. **Create the column** — `create_column` with full configuration including autoRunCondition if needed. `autoRunEnabled` defaults to `true`. For action columns, the tool validates that `{{fieldName}}` defaults reference existing columns — if a required input column is missing, it returns which columns to create first.
-4. **Output fields** — for multi-output actions, pass `selectedOutputFields` (array of `{ fieldName, columnType }`) to auto-create linked storage columns for each output field.
-
-   **`columnType` must ALWAYS be `"text"`.** Even if the field represents a yes/no, a number, or a category — use `"text"`. Never use `"boolean"`, `"number"`, or `"select"`. Non-text types silently coerce or reject AI output.
+4. **Output fields** — for actions that produce structured output, create data extraction columns after running the action on at least one row. Use `get_row_details` to inspect the `fullValue` structure, then `create_column` with `extractorFieldId` + `extractionPath` for each field you need. Always use `type: "text"` for extraction columns — non-text types silently coerce or reject values.
 5. **Verify before extracting** — never create extraction columns without first inspecting the action's real output. See "Extraction Column Rule" below.
 
 ### Extraction Column Rule (mandatory for ALL action types)

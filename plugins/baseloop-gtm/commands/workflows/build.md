@@ -65,7 +65,7 @@ For each column in the plan:
 2. **Resolve column names** — `get_table_schema` for current column `name` fields (never guess).
 3. **Resolve dynamic options** — `resolve_action_options` for any dynamic values (HubSpot properties, campaign IDs, list IDs).
 4. **Create the column** — `create_column` with full configuration including `autoRunCondition`. Set `autoRunEnabled: false` for now — we'll test with explicit runs first.
-5. **Type safety check** — if this column has `selectedOutputFields` or is an extraction column (`extractorFieldId`), verify that EVERY output/extraction column uses `type: "text"`. No booleans, no numbers, no selects. This is the #1 silent data loss mistake.
+5. **Type safety check** — if this column has extraction columns (`extractorFieldId`), verify that EVERY extraction column uses `type: "text"`. No booleans, no numbers, no selects. This is the #1 silent data loss mistake.
 
 For Send to Table columns:
 1. Create the destination table first (empty, no columns)
