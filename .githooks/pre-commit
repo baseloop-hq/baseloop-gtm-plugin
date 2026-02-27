@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook: sync marketplace.json from plugin.json sources.
+# If any plugin.json was modified, re-sync and stage the result.
+#
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+SCRIPT="$ROOT_DIR/scripts/sync-marketplace.sh"
+MARKETPLACE=".claude-plugin/marketplace.json"
+
+# Only run if a plugin.json was staged
+if git diff --cached --name-only | grep -q '\.claude-plugin/plugin\.json$'; then
+  "$SCRIPT"
+  git add "$MARKETPLACE"
+fi
