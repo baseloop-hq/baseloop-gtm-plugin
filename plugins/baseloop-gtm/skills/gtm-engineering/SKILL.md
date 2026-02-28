@@ -185,15 +185,29 @@ Use `run_field` (single column) with explicit `runAction` when first testing eac
 - **Source columns excluded:** `run_fields` rejects source action columns — use `run_field` for source imports (they must be run individually).
 - **When to use which:** use sequential `run_field` for Rung 1 (need manual inspection of each step), `run_fields` for Rung 3 (automatic dependency ordering + parallel execution).
 
-### Destructive tools: `delete_column` and `delete_rows`
+### Destructive tools
 - `delete_column` — use only when a column was created with the wrong action type and needs to be replaced. Prefer `update_column` for config fixes. Action columns with extraction mappings will also delete their linked storage columns.
 - `delete_rows` — accepts an array of `rowIds` (max 100 per call). Use only to clean up test/placeholder rows after validation. Never delete production data rows.
+- `delete_table` — soft-deletes a table (recoverable). Use when a table was created with the wrong structure and needs to be rebuilt from scratch.
+- `delete_workspace` — deletes a workspace. Must be empty (no tables) first — move or delete tables before calling.
+- `delete_view` — deletes a view. Cannot delete the last remaining view in a table.
+- `delete_view_filters` — removes all filter criteria from a view. Use when clearing filters to start fresh.
+- `cancel_run` — cancels all active runs for a column. Rows already completed keep their results.
+
+### View management
+Views control how data is displayed: visible columns, sorting, and filters. Use views to create segment-specific slices of a table (e.g., "Qualified Only", "Needs Review").
+- `list_views` — shows current filters and sorting with column IDs (fieldId) for each rule.
+- `set_view_filters` — creates or replaces the entire filter tree on a view. Supports nested rule groups (AND/OR with sub-rules). Use column IDs from `get_table_schema` as `fieldId` values.
+- `delete_view_filters` — clears all filters from a view.
+- `create_view` — duplicates an existing view (copies columns, sorting, filters). Rename after creation with `update_view`.
+- `reorder_columns` — reorder columns in a view by passing fieldIds in desired order. Frozen columns cannot be reordered.
+- `update_view_columns` — show/hide/freeze/unfreeze/resize columns in a view. Frozen columns cannot be hidden.
 
 ## Quick Reference
 
-**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_views`
-**Mutations:** `create_workspace`, `create_table`, `update_table`, `create_column`, `update_column`, `delete_column`, `create_rows`, `update_row`, `delete_rows`
-**Execution:** `run_field`, `run_fields`, `wait_for_run`, `get_run_status`, `send_webhook_data`
+**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_views`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`
+**Mutations:** `create_workspace`, `update_workspace`, `delete_workspace`, `clone_workspace`, `create_table`, `update_table`, `delete_table`, `duplicate_table`, `create_column`, `update_column`, `delete_column`, `create_rows`, `update_row`, `delete_rows`, `create_view`, `update_view`, `delete_view`, `set_view_filters`, `delete_view_filters`, `reorder_columns`, `update_view_columns`, `send_webhook_data`
+**Execution:** `run_field`, `run_fields`, `get_run_status`, `list_runs`, `cancel_run`, `wait_for_run`
 **AI helpers:** `preview_formula`
 
 ## Reference Documents

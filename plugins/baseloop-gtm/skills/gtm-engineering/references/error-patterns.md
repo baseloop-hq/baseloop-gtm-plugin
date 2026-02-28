@@ -180,7 +180,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 - Slow but progressing: wait. Web search AI columns can take 30-60 seconds per row.
-- Frozen: ask user to cancel the run in the Baseloop UI, then re-run with `run_field`
+- Frozen: cancel with `cancel_run`, then re-run with `run_field`
 
 ---
 
