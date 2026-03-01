@@ -22,6 +22,7 @@ These tools only read data. Call them freely for exploration and validation.
 | `get_run_status` | Check run progress |
 | `list_runs` | See run history |
 | `preview_formula` | Test a formula (no column created) |
+| `list_presets` | List saved action presets/templates |
 
 ## Mutation Tools (Modify Data)
 
@@ -42,11 +43,15 @@ These tools create, update, or delete data. Require explicit `organizationId` wh
 | `update_view` | Low | Config changes |
 | `set_view_filters` | Low | Can be removed |
 | `delete_view_filters` | Low | Filters only |
+| `set_view_sorting` | Low | Can be removed |
+| `delete_view_sorting` | Low | Sorting only |
 | `reorder_columns` | Low | Column order in a view |
 | `update_view_columns` | Low | Show/hide/freeze/resize columns |
 | `send_webhook_data` | Low | Test data ingestion |
 | `duplicate_table` | Low | Creates a copy |
 | `clone_workspace` | Low | Creates a copy with all tables |
+| `clone_field` | Low | Creates a copy of a column with all config |
+| `reorder_tables` | Low | Table order within a workspace |
 
 ### Medium Risk (Data Loss Possible)
 | Tool | Risk | Notes |
@@ -74,6 +79,38 @@ These tools consume external API credits or trigger LLM inference. Limited to 20
 - CRM sync (HubSpot): Free
 - Formulas: Free
 - Send to Table: Free
+
+## Preset Tools
+
+Presets let you save a working action configuration and reuse it across tables.
+
+### Read-Only
+| Tool | Purpose |
+|------|---------|
+| `list_presets` | List saved action presets for an action key |
+
+### Mutations (Low Risk)
+| Tool | Risk | Notes |
+|------|------|-------|
+| `create_preset` | Low | Save an action config as a reusable preset |
+| `update_preset` | Low | Update preset name, description, or config |
+| `delete_preset` | Low | Remove a preset (cannot delete public presets) |
+
+## Template Tools
+
+Workspace templates let you save a workflow structure and clone it for new campaigns.
+
+### Read-Only
+| Tool | Purpose |
+|------|---------|
+| `list_workspace_templates` | See saved workspace templates |
+
+### Mutations (Low Risk)
+| Tool | Risk | Notes |
+|------|------|-------|
+| `mark_workspace_as_template` | Low | Marks an existing workspace as a template |
+| `unmark_workspace_as_template` | Low | Removes template marking (workspace preserved) |
+| `clone_workspace_template` | Low | Creates a new workspace from a template (structure only, no row data) |
 
 ## Execution Control Tools
 

@@ -32,6 +32,14 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `get_action_schema` | Read an action's full configuration guide |
 | `get_connected_platforms` | Check which integrations are connected |
 | `resolve_action_options` | Load dynamic dropdowns (HubSpot properties, campaign IDs) |
+| `list_presets` | See saved action configuration presets |
+
+### Preset Management
+| Tool | Purpose |
+|------|---------|
+| `create_preset` | Save an action config as a reusable preset |
+| `update_preset` | Update a preset's name, description, or config |
+| `delete_preset` | Remove a preset |
 
 ### Table & Workspace Management
 | Tool | Purpose |
@@ -44,6 +52,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `delete_table` | Soft-delete a table |
 | `duplicate_table` | Clone a table with all columns (no row data) |
 | `clone_workspace` | Clone a workspace with all tables and columns |
+| `reorder_tables` | Reorder tables within a workspace |
 
 ### Column Management
 | Tool | Purpose |
@@ -51,6 +60,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `create_column` | Add action, formula, extraction, or plain columns |
 | `update_column` | Change column config, label, or auto-run settings |
 | `delete_column` | Remove a column |
+| `clone_field` | Clone a column with all its configuration |
 
 ### Row Management
 | Tool | Purpose |
@@ -84,6 +94,14 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `list_runs` | See run history for a table |
 | `cancel_run` | Cancel an in-progress run |
 | `wait_for_run` | Poll until a run completes |
+
+### Templates
+| Tool | Purpose |
+|------|---------|
+| `list_workspace_templates` | See saved workspace templates |
+| `mark_workspace_as_template` | Save a workspace structure as a reusable template |
+| `unmark_workspace_as_template` | Remove template marking |
+| `clone_workspace_template` | Create a new workspace from a template |
 
 ### AI Helpers
 | Tool | Purpose |

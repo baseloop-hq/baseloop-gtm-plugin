@@ -15,7 +15,7 @@
 ## Updating
 
 When modifying:
-1. Bump version in BOTH `.claude-plugin/plugin.json` AND `../../.claude-plugin/marketplace.json` — they must stay in sync (name, version, description, author, tags)
+1. Bump version in BOTH `.claude-plugin/plugin.json` AND `../../.claude-plugin/marketplace.json` — they must stay in sync (name, version, description, author, tags). **Never change `metadata.version`** in marketplace.json — it is always `1.0.0`. Only bump the plugin `version` inside the `plugins[]` array.
 2. Keep SKILL.md under 500 lines — move detail to `references/`
 3. Verify frontmatter fields match the plugin spec
 4. Test commands by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`

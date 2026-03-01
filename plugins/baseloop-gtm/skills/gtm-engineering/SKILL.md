@@ -192,21 +192,36 @@ Use `run_field` (single column) with explicit `runAction` when first testing eac
 - `delete_workspace` — deletes a workspace. Must be empty (no tables) first — move or delete tables before calling.
 - `delete_view` — deletes a view. Cannot delete the last remaining view in a table.
 - `delete_view_filters` — removes all filter criteria from a view. Use when clearing filters to start fresh.
+- `delete_view_sorting` — removes all sorting criteria from a view. Use when clearing sorting to start fresh.
 - `cancel_run` — cancels all active runs for a column. Rows already completed keep their results.
+
+### Workspace templates
+Templates let you save a workflow structure and clone it for new campaign batches. The clone copies all tables, columns, views, and autoRunConditions — but no row data.
+
+1. **Build the workflow** in a workspace (tables, columns, views, filters).
+2. **Mark as template:** `mark_workspace_as_template` with the workspace ID. Returns a `templateId`.
+3. **Clone for each batch:** `clone_workspace_template` with the template ID. Creates a new workspace with identical structure.
+4. **List templates:** `list_workspace_templates` to see saved templates.
+5. **Unmark:** `unmark_workspace_as_template` to remove the template flag (workspace itself is preserved).
+
+Cross-table references (e.g., Send to Table destinations, lookup_single_record targets within the same workspace) are automatically remapped to the cloned table IDs.
 
 ### View management
 Views control how data is displayed: visible columns, sorting, and filters. Use views to create segment-specific slices of a table (e.g., "Qualified Only", "Needs Review").
 - `list_views` — shows current filters and sorting with column IDs (fieldId) for each rule.
 - `set_view_filters` — creates or replaces the entire filter tree on a view. Supports nested rule groups (AND/OR with sub-rules). Use column IDs from `get_table_schema` as `fieldId` values.
 - `delete_view_filters` — clears all filters from a view.
+- `set_view_sorting` — creates or replaces sorting criteria on a view. Each rule needs a column ID (fieldId) and direction (asc/desc). Pass an empty array to clear sorting.
+- `delete_view_sorting` — clears all sorting criteria from a view.
 - `create_view` — duplicates an existing view (copies columns, sorting, filters). Rename after creation with `update_view`.
 - `reorder_columns` — reorder columns in a view by passing fieldIds in desired order. Frozen columns cannot be reordered.
 - `update_view_columns` — show/hide/freeze/unfreeze/resize columns in a view. Frozen columns cannot be hidden.
 
 ## Quick Reference
 
-**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_views`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`
-**Mutations:** `create_workspace`, `update_workspace`, `delete_workspace`, `clone_workspace`, `create_table`, `update_table`, `delete_table`, `duplicate_table`, `create_column`, `update_column`, `delete_column`, `create_rows`, `update_row`, `delete_rows`, `create_view`, `update_view`, `delete_view`, `set_view_filters`, `delete_view_filters`, `reorder_columns`, `update_view_columns`, `send_webhook_data`
+**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_views`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_presets`
+**Mutations:** `create_workspace`, `update_workspace`, `delete_workspace`, `clone_workspace`, `create_table`, `update_table`, `delete_table`, `duplicate_table`, `reorder_tables`, `create_column`, `update_column`, `delete_column`, `clone_field`, `create_rows`, `update_row`, `delete_rows`, `create_view`, `update_view`, `delete_view`, `set_view_filters`, `delete_view_filters`, `set_view_sorting`, `delete_view_sorting`, `reorder_columns`, `update_view_columns`, `send_webhook_data`, `create_preset`, `update_preset`, `delete_preset`
+**Templates:** `list_workspace_templates`, `mark_workspace_as_template`, `unmark_workspace_as_template`, `clone_workspace_template`
 **Execution:** `run_field`, `run_fields`, `get_run_status`, `list_runs`, `cancel_run`, `wait_for_run`
 **AI helpers:** `preview_formula`
 
