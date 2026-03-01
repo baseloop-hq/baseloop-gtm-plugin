@@ -1,7 +1,7 @@
 {
   "name": "baseloop-gtm",
-  "version": "0.4.5",
-  "description": "GTM workflow engineering for Baseloop. 1 skill, 4 commands for designing, building, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
+  "version": "0.5.2",
+  "description": "GTM workflow engineering for Baseloop. 1 skill, 5 commands, 3 agents for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
   "author": {
     "name": "Baseloop",
     "url": "https://baseloop.io"
@@ -14,5 +14,11 @@
     "hubspot",
     "mcp",
     "baseloop"
-  ]
+  ],
+  "mcpServers": {
+    "baseloop": {
+      "type": "http",
+      "url": "https://api-v2.baseloop.io/v1/mcp"
+    }
+  }
 }

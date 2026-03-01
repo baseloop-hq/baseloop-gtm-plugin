@@ -9,16 +9,21 @@
   - `error-patterns.md` — Error signatures mapped to root causes and fixes
 - `commands/workflows/plan.md` — Workflow design workflow (read-only)
 - `commands/workflows/build.md` — Workflow execution workflow (with inline diagnosis)
+- `commands/workflows/review.md` — Proactive workflow audit (read-only)
 - `commands/workflows/diagnose.md` — 3-phase debugging workflow (investigate → diagnose → fix)
 - `commands/lfg.md` — Autonomous plan→build→diagnose chain
+- `agents/workflow/` — Specialized agents (read-only auditors)
+  - `workflow-cost-optimizer.md` — Credit consumption analysis and savings recommendations
+  - `crm-integrity-checker.md` — HubSpot sync integrity audit (duplicates, associations, enums)
+  - `data-quality-auditor.md` — Row data inspection (nulls, extraction paths, type coercion)
 
 ## Updating
 
 When modifying:
-1. Bump version in BOTH `.claude-plugin/plugin.json` AND `../../.claude-plugin/marketplace.json` — they must stay in sync (name, version, description, author, tags). **Never change `metadata.version`** in marketplace.json — it is always `1.0.0`. Only bump the plugin `version` inside the `plugins[]` array.
+1. Bump version in `.claude-plugin/plugin.json` — the pre-commit hook syncs `marketplace.json` automatically. **Never change `metadata.version`** in marketplace.json — it is always `1.0.0`.
 2. Keep SKILL.md under 500 lines — move detail to `references/`
 3. Verify frontmatter fields match the plugin spec
-4. Test commands by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`
+4. Test commands by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`, `/baseloop-gtm:review`
 
 ## MCP Server
 

@@ -116,6 +116,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 |---------|---------|
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
+| `/baseloop-gtm:review` | Audit an existing workflow for pitfalls and missing safeguards |
 | `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
 | `/baseloop-gtm:diagnose` | Investigate and fix a failing column |
 | `/baseloop-gtm:help` | This help page |
@@ -129,6 +130,9 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 
 **"Find decision makers at my target companies"**
 → `/baseloop-gtm:plan Find contacts at companies, enrich, sync to HubSpot`
+
+**"Check my workflow for issues before I scale up"**
+→ `/baseloop-gtm:review ICP Pipeline workspace`
 
 **"My enrichment column is failing"**
 → `/baseloop-gtm:diagnose enrichment column errors`
