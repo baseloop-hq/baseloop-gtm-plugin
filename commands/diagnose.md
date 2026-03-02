@@ -14,7 +14,7 @@ allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizat
 
 If the problem description above is empty, ask: "Which table or column is having issues? Describe what you expected vs. what happened."
 
-Before starting, read [error-patterns.md](../../skills/gtm-engineering/references/error-patterns.md) and [pitfalls.md](../../skills/gtm-engineering/references/pitfalls.md) to load known error signatures.
+Before starting, read [error-patterns.md](../skills/gtm-engineering/references/error-patterns.md) and [pitfalls.md](../skills/gtm-engineering/references/pitfalls.md) to load known error signatures.
 
 ---
 
