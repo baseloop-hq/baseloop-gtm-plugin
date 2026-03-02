@@ -16,7 +16,7 @@ Inspect an existing workflow for known pitfalls, missing safeguards, and credit-
 
 If the target above is empty, ask: "Which workspace or table should I audit? I'll check it for known pitfalls and missing safeguards."
 
-Before starting, read [pitfalls.md](../../skills/gtm-engineering/references/pitfalls.md) and [error-patterns.md](../../skills/gtm-engineering/references/error-patterns.md) to load the full checklist.
+Before starting, read [pitfalls.md](../skills/gtm-engineering/references/pitfalls.md) and [error-patterns.md](../skills/gtm-engineering/references/error-patterns.md) to load the full checklist.
 
 ---
 

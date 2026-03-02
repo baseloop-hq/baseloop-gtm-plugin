@@ -91,7 +91,7 @@ Run a single row through the **entire chain**. This validates that autoRunCondit
 
 **If a column fails — inline diagnosis:**
 
-1. Read [error-patterns.md](../../skills/gtm-engineering/references/error-patterns.md) to load known error signatures.
+1. Read [error-patterns.md](../skills/gtm-engineering/references/error-patterns.md) to load known error signatures.
 2. `get_row_details` with fieldId — read the `errorMessage` and `fullValue`.
 3. Match against known patterns (config mismatch, upstream null, auth failure, rate limit).
 4. Fix with `update_column`, then re-run with `run_field` using `skipCellsWithData: false` and `runAction: "first_one"` on that column ONLY.

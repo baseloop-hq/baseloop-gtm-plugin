@@ -7,10 +7,10 @@
   - `workflow-patterns.md` — Common end-to-end workflow recipes
   - `pitfalls.md` — Known failure modes and how to avoid them
   - `error-patterns.md` — Error signatures mapped to root causes and fixes
-- `commands/workflows/plan.md` — Workflow design workflow (read-only)
-- `commands/workflows/build.md` — Workflow execution workflow (with inline diagnosis)
-- `commands/workflows/review.md` — Proactive workflow audit (read-only)
-- `commands/workflows/diagnose.md` — 3-phase debugging workflow (investigate → diagnose → fix)
+- `commands/plan.md` — Workflow design workflow (read-only)
+- `commands/build.md` — Workflow execution workflow (with inline diagnosis)
+- `commands/review.md` — Proactive workflow audit (read-only)
+- `commands/diagnose.md` — 3-phase debugging workflow (investigate → diagnose → fix)
 - `commands/lfg.md` — Autonomous plan→build→diagnose chain
 - `agents/workflow/` — Specialized agents (read-only auditors)
   - `workflow-cost-optimizer.md` — Credit consumption analysis and savings recommendations
