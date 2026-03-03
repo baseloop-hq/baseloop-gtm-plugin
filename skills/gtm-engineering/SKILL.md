@@ -21,7 +21,7 @@ Design every workflow around these principles:
 - **CRM audit trail** — write HubSpot engagement notes for every outcome (qualified, disqualified with reason, not found). Sales reps need to know why each account was or wasn't pursued.
 - **Lookup back to parent** — when contacts are created via Send to Table, use `lookup_single_record` to pull company-level data (HubSpot ID, AE assignment, qualification results) back into the contacts table.
 - **Incremental building** — build one step at a time. Verify output before adding the next step. Never build the entire workflow and run it all at once.
-- **Scaling Ladder** — every `run_field` call must follow the ladder: `first_one` (validate output) → `first_ten` (validate at scale) → `first_hundred` or larger (only after user approval). Never skip rungs. Never call `run_field` without `runAction`.
+- **Scaling Ladder** — every `run_field` call must follow the ladder: `first_one` (validate output) → `first_ten` (validate at scale) → full scale (only after user approval). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `custom_range` (max 100 rows per call). Never skip rungs. Never call `run_field` without `runAction`.
 - **Shared reference tables** — blocklists, account tier data, and other lookup targets should live in their own workspace and be referenced via `lookup_single_record` from multiple workflows. Maintain them separately; never embed exclusion logic in each workflow.
 - **Template workspaces for campaign batches** — build a workflow once, then clone the workspace for each new campaign batch. Each batch gets its own data but the same column structure. Track the source batch with a "Table Source" formula or input field.
 - **Recency gating** — before re-enriching or re-contacting, check when the account was last touched. Use a formula like "Contacted Within 30 Days" gated on `hs_last_contacted_date` to avoid wasting credits on recently worked accounts.
@@ -67,6 +67,8 @@ After all columns are created, test the **entire chain** — not column-by-colum
 1. **Rung 1 (`first_one`)** — `run_field` with `runAction: "first_one"` on each column sequentially. Verify output with `get_row_details` at every step. Follow data across tables via Send to Table.
 2. **Rung 2 (`first_ten`)** — only after Rung 1 passes with zero errors. `run_field` with `runAction: "first_ten"`. Verify with `get_run_status` (0 failures).
 3. **Rung 3 (full scale)** — only after Rung 2 passes AND user approves. Report row count and estimated credit cost. Wait for explicit go-ahead before running on the full dataset.
+   - For tables with >100 rows, use the **batch processing pattern**: `list_row_ids` (with filters like `hasNotRun` to get only unprocessed rows) → chunk IDs into batches of 100 → `run_fields` with `rowIds` for each batch → `wait_for_run` between batches.
+   - For tables with ≤100 rows, `first_hundred` covers everything.
 
 Report results to the user after each rung. **STOP and get approval before Rung 3.**
 
@@ -185,6 +187,14 @@ Use `run_field` (single column) with explicit `runAction` when first testing eac
 - **Source columns excluded:** `run_fields` rejects source action columns — use `run_field` for source imports (they must be run individually).
 - **When to use which:** use sequential `run_field` for Rung 1 (need manual inspection of each step), `run_fields` for Rung 3 (automatic dependency ordering + parallel execution).
 
+### Batch processing with `list_row_ids`
+For tables with >100 rows, `first_hundred` only covers the first 100. To run the full dataset at Rung 3:
+1. **Collect IDs:** `list_row_ids` with `limit: 500` (max 10000). Supports filters (e.g., `hasNotRun` on a specific column to get only unprocessed rows), sorting, and text search — same filter format as `list_rows`.
+2. **Paginate:** if `hasNextPage` is true, increment `page` to get the next batch of IDs.
+3. **Chunk and run:** split IDs into batches of 100, call `run_fields` with `rowIds` for each batch.
+4. **Wait between batches:** `wait_for_run` on the returned `runIds` before starting the next batch.
+5. **Filter smart:** use `hasNotRun` or `hasError` filters on the column you're running to avoid re-fetching already-processed rows. This is more efficient than `skipCellsWithData` alone because it avoids sending rows that will just be skipped.
+
 ### Destructive tools
 - `delete_column` — use only when a column was created with the wrong action type and needs to be replaced. Prefer `update_column` for config fixes. Action columns with extraction mappings will also delete their linked storage columns.
 - `delete_rows` — accepts an array of `rowIds` (max 100 per call). Use only to clean up test/placeholder rows after validation. Never delete production data rows.
@@ -219,7 +229,7 @@ Views control how data is displayed: visible columns, sorting, and filters. Use 
 
 ## Quick Reference
 
-**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_views`, `list_rows`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_presets`
+**Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_views`, `list_rows`, `list_row_ids`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_presets`
 **Mutations:** `create_workspace`, `update_workspace`, `delete_workspace`, `clone_workspace`, `create_table`, `update_table`, `delete_table`, `duplicate_table`, `reorder_tables`, `create_column`, `update_column`, `delete_column`, `clone_field`, `create_rows`, `update_row`, `delete_rows`, `create_view`, `update_view`, `delete_view`, `set_view_filters`, `delete_view_filters`, `set_view_sorting`, `delete_view_sorting`, `reorder_columns`, `update_view_columns`, `send_webhook_data`, `create_preset`, `update_preset`, `delete_preset`
 **Templates:** `list_workspace_templates`, `mark_workspace_as_template`, `unmark_workspace_as_template`, `clone_workspace_template`
 **Execution:** `run_field`, `run_fields`, `get_run_status`, `list_runs`, `cancel_run`, `wait_for_run`

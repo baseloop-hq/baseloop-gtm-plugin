@@ -14,6 +14,7 @@ These tools only read data. Call them freely for exploration and validation.
 | `get_table_schema` | Read column definitions |
 | `list_views` | See table views |
 | `list_rows` | Browse rows with search, filters, and sorting |
+| `list_row_ids` | Lightweight row ID pagination for batch operations |
 | `get_row_details` | Inspect a single row |
 | `list_actions` | See available actions |
 | `get_action_schema` | Read action configuration guide |

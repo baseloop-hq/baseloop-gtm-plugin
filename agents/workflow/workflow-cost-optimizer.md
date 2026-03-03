@@ -30,7 +30,7 @@ Before starting, read [cost-estimation.md](../../skills/gtm-engineering/referenc
 1. `list_tables` — find all tables in the target workspace.
 2. For each table: `get_table_schema` — identify every column's action, type, and autoRunCondition.
 3. Classify each column as **free** or **paid** using the cost table from cost-estimation.md.
-4. `list_rows` (limit 5) — get the current row count per table.
+4. `list_row_ids` (limit 1) — get the accurate total row count per table without loading cell data.
 
 ### Step 2: Calculate current cost
 
