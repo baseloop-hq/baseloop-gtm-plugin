@@ -13,7 +13,7 @@ These tools only read data. Call them freely for exploration and validation.
 | `list_tables` | See all tables |
 | `get_table_schema` | Read column definitions |
 | `list_views` | See table views |
-| `list_rows` | Browse row data |
+| `list_rows` | Browse rows with search, filters, and sorting |
 | `get_row_details` | Inspect a single row |
 | `list_actions` | See available actions |
 | `get_action_schema` | Read action configuration guide |

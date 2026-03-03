@@ -46,12 +46,12 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 ## All rows failed in a run
 
-**Seen in:** `get_run_status` returns `progress: { completed: 0, failed: N, total: N }`.
+**Seen in:** `get_run_status` returns `progress: { succeeded: 0, failed: N, total: N }` with `failedRowIds`.
 
 **Root cause:** Every row hit the same error. Almost always a configuration problem, not a data problem.
 
 **Diagnosis:**
-1. `get_row_details` on any failed row with the column's fieldId -- read errorMessage
+1. `get_row_details` on a `failedRowIds` entry with the column's fieldId -- read errorMessage
 2. Common error messages:
    - "Property X is required" -- missing input field in column config
    - "Invalid value for X" -- wrong format (display name instead of internal name)
