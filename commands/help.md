@@ -24,8 +24,8 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | Tool | Purpose |
 |------|---------|
 | `list_tables` | See all tables grouped by workspace |
-| `get_table_schema` | See columns, types, and action config for a table |
-| `list_views` | See views (column visibility, sort, filters) |
+| `get_table_schema` | See fields, types, and action config for a table |
+| `list_views` | See views (field visibility, sort, filters) |
 | `list_rows` | Browse rows with search, advanced filters, and sorting |
 | `list_row_ids` | Get row IDs with pagination for batch operations (lightweight, no cell data) |
 | `get_row_details` | Inspect a single row's full data, AI reasoning, and errors |
@@ -51,17 +51,17 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `create_table` | Create a table (optionally with a data source) |
 | `update_table` | Rename, move, or toggle auto-run on a table |
 | `delete_table` | Soft-delete a table |
-| `duplicate_table` | Clone a table with all columns (no row data) |
-| `clone_workspace` | Clone a workspace with all tables and columns |
+| `duplicate_table` | Clone a table with all fields (no row data) |
+| `clone_workspace` | Clone a workspace with all tables and fields |
 | `reorder_tables` | Reorder tables within a workspace |
 
-### Column Management
+### Field Management
 | Tool | Purpose |
 |------|---------|
-| `create_column` | Add action, formula, extraction, or plain columns |
-| `update_column` | Change column config, label, or auto-run settings |
-| `delete_column` | Remove a column |
-| `clone_column` | Clone a column with all its configuration |
+| `create_field` | Add action, formula, extraction, or plain fields |
+| `update_field` | Change field config, label, or auto-run settings |
+| `delete_field` | Remove a field |
+| `clone_field` | Clone a field with all its configuration |
 
 ### Row Management
 | Tool | Purpose |
@@ -78,19 +78,19 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `delete_view` | Remove a view |
 | `set_view_filters` | Add filter rules to a view |
 | `delete_view_filters` | Remove all filters from a view |
-| `reorder_columns` | Reorder columns in a view |
-| `update_view_columns` | Show/hide/freeze/resize columns in a view |
+| `reorder_fields` | Reorder fields in a view |
+| `update_view_fields` | Show/hide/freeze/resize fields in a view |
 
 ### Webhooks
 | Tool | Purpose |
 |------|---------|
-| `send_webhook_data` | Send test data to a webhook column |
+| `send_webhook_data` | Send test data to a webhook field |
 
 ### Execution
 | Tool | Purpose |
 |------|---------|
-| `run_column` | Run an action/AI column on rows |
-| `run_columns` | Run multiple columns with dependency ordering |
+| `run_field` | Run an action/AI field on rows |
+| `run_fields` | Run multiple fields with dependency ordering |
 | `get_run_status` | Check progress of a running action |
 | `list_runs` | See run history for a table |
 | `cancel_run` | Cancel an in-progress run |
@@ -107,7 +107,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 ### AI Helpers
 | Tool | Purpose |
 |------|---------|
-| `preview_formula` | Test a formula before creating the column |
+| `preview_formula` | Test a formula before creating the field |
 
 ---
 
@@ -119,7 +119,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
 | `/baseloop-gtm:review` | Audit an existing workflow for pitfalls and missing safeguards |
 | `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
-| `/baseloop-gtm:diagnose` | Investigate and fix a failing column |
+| `/baseloop-gtm:diagnose` | Investigate and fix a failing field |
 | `/baseloop-gtm:help` | This help page |
 
 ---
@@ -135,8 +135,8 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 **"Check my workflow for issues before I scale up"**
 → `/baseloop-gtm:review ICP Pipeline workspace`
 
-**"My enrichment column is failing"**
-→ `/baseloop-gtm:diagnose enrichment column errors`
+**"My enrichment field is failing"**
+→ `/baseloop-gtm:diagnose enrichment field errors`
 
 **"What actions are available?"**
 → Call `list_actions` to see all enrichment, CRM, and AI actions

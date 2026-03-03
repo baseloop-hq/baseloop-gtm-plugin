@@ -73,6 +73,6 @@ Estimate credit costs before running workflows at scale.
 
 1. **Filter cheap before expensive** — formulas and lookups are free; gate paid actions behind them
 2. **Blocklist first** — `lookup_single_record` against existing CRM before enrichment
-3. **Skip enriched rows** — `run_column` defaults to `skipCellsWithData: true`
+3. **Skip enriched rows** — `run_field` defaults to `skipCellsWithData: true`
 4. **Choose the right AI model** — smaller models cost less for simple classification tasks
 5. **Avoid redundant web search** — only enable when the task requires real-time data

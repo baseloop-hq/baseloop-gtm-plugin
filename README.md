@@ -47,8 +47,8 @@ Auto-loads when you work with Baseloop workflows. Provides the mental model, bui
 | Command | Description |
 |---|---|
 | `/baseloop-gtm:plan` | Design a workflow from a goal. Surveys your tables and integrations, then produces an architecture plan. Read-only — creates nothing. |
-| `/baseloop-gtm:build` | Build a workflow step by step. Creates tables and columns, verifies each step before proceeding. Handles inline error diagnosis. |
-| `/baseloop-gtm:diagnose` | Debug a failing column or workflow. Investigates the error, identifies root cause, applies a fix, and verifies the resolution. |
+| `/baseloop-gtm:build` | Build a workflow step by step. Creates tables and fields, verifies each step before proceeding. Handles inline error diagnosis. |
+| `/baseloop-gtm:diagnose` | Debug a failing field or workflow. Investigates the error, identifies root cause, applies a fix, and verifies the resolution. |
 | `/baseloop-gtm:lfg` | Autonomous end-to-end: plan, build, health check, diagnose, and deliver a working workflow with minimal intervention. |
 
 ## Examples
@@ -61,12 +61,12 @@ Auto-loads when you work with Baseloop workflows. Provides the mental model, bui
 
 > /baseloop-gtm:build
 
-[Claude creates tables and columns one at a time, running and verifying each step]
+[Claude creates tables and fields one at a time, running and verifying each step]
 ```
 
-### Debugging a failing column
+### Debugging a failing field
 ```
-> /baseloop-gtm:diagnose The enrichment column on the Companies table is returning errors
+> /baseloop-gtm:diagnose The enrichment field on the Companies table is returning errors
 
 [Claude investigates the error, traces upstream, identifies root cause, fixes the config, and verifies]
 ```
