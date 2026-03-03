@@ -61,7 +61,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `create_column` | Add action, formula, extraction, or plain columns |
 | `update_column` | Change column config, label, or auto-run settings |
 | `delete_column` | Remove a column |
-| `clone_field` | Clone a column with all its configuration |
+| `clone_column` | Clone a column with all its configuration |
 
 ### Row Management
 | Tool | Purpose |
@@ -89,8 +89,8 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 ### Execution
 | Tool | Purpose |
 |------|---------|
-| `run_field` | Run an action/AI column on rows |
-| `run_fields` | Run multiple columns with dependency ordering |
+| `run_column` | Run an action/AI column on rows |
+| `run_columns` | Run multiple columns with dependency ordering |
 | `get_run_status` | Check progress of a running action |
 | `list_runs` | See run history for a table |
 | `cancel_run` | Cancel an in-progress run |

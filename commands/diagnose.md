@@ -3,7 +3,7 @@ name: baseloop-gtm:diagnose
 description: This command should be used when a Baseloop workflow column has errors, produces unexpected output, or data is not flowing between tables. It investigates the root cause, applies a fix, and verifies the resolution.
 argument-hint: "[table name, column name, or problem description]"
 disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_workspaces, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__list_row_ids, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__update_workspace, mcp__baseloop-gtm__delete_workspace, mcp__baseloop-gtm__clone_workspace, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__delete_table, mcp__baseloop-gtm__duplicate_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__update_row, mcp__baseloop-gtm__delete_rows, mcp__baseloop-gtm__create_view, mcp__baseloop-gtm__update_view, mcp__baseloop-gtm__delete_view, mcp__baseloop-gtm__set_view_filters, mcp__baseloop-gtm__delete_view_filters, mcp__baseloop-gtm__reorder_columns, mcp__baseloop-gtm__update_view_columns, mcp__baseloop-gtm__send_webhook_data, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__list_runs, mcp__baseloop-gtm__cancel_run, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__clone_field, mcp__baseloop-gtm__reorder_tables, mcp__baseloop-gtm__list_presets, mcp__baseloop-gtm__create_preset, mcp__baseloop-gtm__update_preset, mcp__baseloop-gtm__delete_preset, mcp__baseloop-gtm__list_workspace_templates, mcp__baseloop-gtm__mark_workspace_as_template, mcp__baseloop-gtm__unmark_workspace_as_template, mcp__baseloop-gtm__clone_workspace_template
+allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_workspaces, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__list_row_ids, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__update_workspace, mcp__baseloop-gtm__delete_workspace, mcp__baseloop-gtm__clone_workspace, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__delete_table, mcp__baseloop-gtm__duplicate_table, mcp__baseloop-gtm__create_column, mcp__baseloop-gtm__update_column, mcp__baseloop-gtm__delete_column, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__update_row, mcp__baseloop-gtm__delete_rows, mcp__baseloop-gtm__create_view, mcp__baseloop-gtm__update_view, mcp__baseloop-gtm__delete_view, mcp__baseloop-gtm__set_view_filters, mcp__baseloop-gtm__delete_view_filters, mcp__baseloop-gtm__reorder_columns, mcp__baseloop-gtm__update_view_columns, mcp__baseloop-gtm__send_webhook_data, mcp__baseloop-gtm__run_column, mcp__baseloop-gtm__run_columns, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__list_runs, mcp__baseloop-gtm__cancel_run, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__clone_column, mcp__baseloop-gtm__reorder_tables, mcp__baseloop-gtm__list_presets, mcp__baseloop-gtm__create_preset, mcp__baseloop-gtm__update_preset, mcp__baseloop-gtm__delete_preset, mcp__baseloop-gtm__list_workspace_templates, mcp__baseloop-gtm__mark_workspace_as_template, mcp__baseloop-gtm__unmark_workspace_as_template, mcp__baseloop-gtm__clone_workspace_template
 ---
 
 # Diagnose a Workflow Error
@@ -86,7 +86,7 @@ Based on the diagnosis:
 
 ### Step 2: Re-run the fixed column
 
-1. `run_field` with `skipCellsWithData: false` and `runAction: "first_one"` — test on a single row.
+1. `run_column` with `skipCellsWithData: false` and `runAction: "first_one"` — test on a single row.
 2. `wait_for_run` to wait for completion.
 
 ### Step 3: Verify the fix
@@ -96,7 +96,7 @@ Based on the diagnosis:
 
 ### Step 4: Scale up
 
-1. `run_field` with `skipCellsWithData: false` and `runAction: "first_ten"` — re-run on 10 rows.
+1. `run_column` with `skipCellsWithData: false` and `runAction: "first_ten"` — re-run on 10 rows.
 2. `wait_for_run`, then `get_run_status` — confirm 0 failures.
 3. If any failures remain, investigate the failing rows (they may have different data that triggers a different error).
 
@@ -107,7 +107,7 @@ Present the resolution:
 **Fixed:** [What was wrong and what was changed]
 **Verified:** [X/Y rows passing after fix]
 **Next steps:**
-- Scale up using the Scaling Ladder: `run_field` with `runAction: "first_ten"`, then full dataset with user approval
+- Scale up using the Scaling Ladder: `run_column` with `runAction: "first_ten"`, then full dataset with user approval
 - Check downstream tables for cascading issues
 - Run `/baseloop-gtm:diagnose` on any other failing columns
 ```

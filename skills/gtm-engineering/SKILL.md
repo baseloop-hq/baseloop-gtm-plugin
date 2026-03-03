@@ -21,7 +21,7 @@ Design every workflow around these principles:
 - **CRM audit trail** — write HubSpot engagement notes for every outcome (qualified, disqualified with reason, not found). Sales reps need to know why each account was or wasn't pursued.
 - **Lookup back to parent** — when contacts are created via Send to Table, use `lookup_single_record` to pull company-level data (HubSpot ID, AE assignment, qualification results) back into the contacts table.
 - **Incremental building** — build one step at a time. Verify output before adding the next step. Never build the entire workflow and run it all at once.
-- **Scaling Ladder** — every `run_field` call must follow the ladder: `first_one` (validate output) → `first_ten` (validate at scale) → full scale (only after user approval). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `custom_range` (max 100 rows per call). Never skip rungs. Never call `run_field` without `runAction`.
+- **Scaling Ladder** — every `run_column` call must follow the ladder: `first_one` (validate output) → `first_ten` (validate at scale) → full scale (only after user approval). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_columns` with `custom_range` (max 100 rows per call). Never skip rungs. Never call `run_column` without `runAction`.
 - **Shared reference tables** — blocklists, account tier data, and other lookup targets should live in their own workspace and be referenced via `lookup_single_record` from multiple workflows. Maintain them separately; never embed exclusion logic in each workflow.
 - **Template workspaces for campaign batches** — build a workflow once, then clone the workspace for each new campaign batch. Each batch gets its own data but the same column structure. Track the source batch with a "Table Source" formula or input field.
 - **Recency gating** — before re-enriching or re-contacting, check when the account was last touched. Use a formula like "Contacted Within 30 Days" gated on `hs_last_contacted_date` to avoid wasting credits on recently worked accounts.
@@ -53,7 +53,7 @@ Design every workflow around these principles:
 
 Before creating ANY extraction column from an action:
 
-1. `run_field` the action column on at least 1 row
+1. `run_column` the action column on at least 1 row
 2. `get_row_details` with the action column's `fieldId` — read the full `fullValue`
 3. Study the actual JSON structure returned
 4. THEN create extraction columns with `extractionPath` that matches the real structure
@@ -64,10 +64,10 @@ This applies to every action: HubSpot lookups, HubSpot creates, HTTP requests, A
 
 After all columns are created, test the **entire chain** — not column-by-column. This validates that data flows correctly through autoRunConditions and Send to Table.
 
-1. **Rung 1 (`first_one`)** — `run_field` with `runAction: "first_one"` on each column sequentially. Verify output with `get_row_details` at every step. Follow data across tables via Send to Table.
-2. **Rung 2 (`first_ten`)** — only after Rung 1 passes with zero errors. `run_field` with `runAction: "first_ten"`. Verify with `get_run_status` (0 failures).
+1. **Rung 1 (`first_one`)** — `run_column` with `runAction: "first_one"` on each column sequentially. Verify output with `get_row_details` at every step. Follow data across tables via Send to Table.
+2. **Rung 2 (`first_ten`)** — only after Rung 1 passes with zero errors. `run_column` with `runAction: "first_ten"`. Verify with `get_run_status` (0 failures).
 3. **Rung 3 (full scale)** — only after Rung 2 passes AND user approves. Report row count and estimated credit cost. Wait for explicit go-ahead before running on the full dataset.
-   - For tables with >100 rows, use the **batch processing pattern**: `list_row_ids` (with filters like `hasNotRun` to get only unprocessed rows) → chunk IDs into batches of 100 → `run_fields` with `rowIds` for each batch → `wait_for_run` between batches.
+   - For tables with >100 rows, use the **batch processing pattern**: `list_row_ids` (with filters like `hasNotRun` to get only unprocessed rows) → chunk IDs into batches of 100 → `run_columns` with `rowIds` for each batch → `wait_for_run` between batches.
    - For tables with ≤100 rows, `first_hundred` covers everything.
 
 Report results to the user after each rung. **STOP and get approval before Rung 3.**
@@ -77,7 +77,7 @@ Report results to the user after each rung. **STOP and get approval before Rung 
 Source actions require a two-step creation:
 1. `create_table` with `sourceField` and an `emoji` (emoji-mart shortcode, e.g. `":rocket:"`, `":briefcase:"`) to create the table and source column atomically.
 2. Create one placeholder row with `create_rows` (pass `[{}]`).
-3. `run_field` on the source column with `skipCellsWithData: false` to trigger the import.
+3. `run_column` on the source column with `skipCellsWithData: false` to trigger the import.
 4. Verify with `list_rows` — the import creates the actual data rows.
 
 ### Scheduling recurring imports
@@ -93,7 +93,7 @@ Schedules are only for **source action columns**. To add a schedule:
 
 If a column's configuration is wrong:
 1. Fix with `update_column`.
-2. Re-run **only that column** with `run_field` (skipCellsWithData: false).
+2. Re-run **only that column** with `run_column` (skipCellsWithData: false).
 3. Never re-run upstream columns that already have correct data.
 
 ### When diagnosing errors
@@ -113,7 +113,7 @@ Follow the investigate → diagnose → fix → verify cycle:
 
 3. **Fix** — smallest change that resolves the issue:
    - `update_column` for config fixes (property names, field mappings, prompts)
-   - `run_field` with `skipCellsWithData: false` on ONLY the fixed column
+   - `run_column` with `skipCellsWithData: false` on ONLY the fixed column
    - For formula issues: iterate with `preview_formula` before updating (note: `create_column` with `type=formula` also auto-validates via `preview_formula` during creation)
 
 4. **Verify** — prove the fix worked:
@@ -122,9 +122,9 @@ Follow the investigate → diagnose → fix → verify cycle:
 
 ## Critical Rules
 
-### NEVER call run_field without runAction
+### NEVER call run_column without runAction
 
-Every `run_field` call MUST include the `runAction` parameter. Omitting `runAction` defaults to `first_ten` for `run_field` and `first_hundred` for `run_fields` — but relying on defaults is fragile and error-prone. Always pass `runAction` explicitly. Treat a bare `run_field` (without `runAction`) as a bug.
+Every `run_column` call MUST include the `runAction` parameter. Omitting `runAction` defaults to `first_ten` for `run_column` and `first_hundred` for `run_columns` — but relying on defaults is fragile and error-prone. Always pass `runAction` explicitly. Treat a bare `run_column` (without `runAction`) as a bug.
 
 - **Testing a column:** `runAction: "first_one"`
 - **Small-scale validation:** `runAction: "first_ten"`
@@ -176,22 +176,22 @@ Create action columns with the `custom_ai_agent` action key for any classificati
 ### Think about implicit triggers
 Creating tables, running columns, and autoRunConditions can trigger downstream effects. Before each action, ask: "What else will this trigger?"
 
-### `run_fields` vs `run_field`
-Use `run_field` (single column) with explicit `runAction` when first testing each column individually. Once columns are validated, use `run_fields` to re-run multiple columns together:
+### `run_columns` vs `run_column`
+Use `run_column` (single column) with explicit `runAction` when first testing each column individually. Once columns are validated, use `run_columns` to re-run multiple columns together:
 - **Dependency ordering:** columns referencing others via `{{fieldName}}` run in the correct order — independent columns run in parallel, dependent columns wait for their upstream to finish.
 - **`skipCellsWithData`** defaults to `true` — only empty/failed cells are processed. Set `false` to force re-run.
 - **Row selection:** use `rowIds` for a specific batch or `runAction` (`first_one`, `first_ten`, `first_hundred`) to auto-select. Max 10 columns, 100 rows per call.
 - **Async:** returns immediately. Use `wait_for_run` or `get_run_status` to monitor progress.
-- **Per-column runIds:** each column in a `run_fields` batch gets its own `runId` — monitor each separately.
+- **Per-column runIds:** each column in a `run_columns` batch gets its own `runId` — monitor each separately.
 - **Skipped columns:** columns with unmet autoRunConditions show status "skipped" (not "failed") — this is expected behavior, not an error.
-- **Source columns excluded:** `run_fields` rejects source action columns — use `run_field` for source imports (they must be run individually).
-- **When to use which:** use sequential `run_field` for Rung 1 (need manual inspection of each step), `run_fields` for Rung 3 (automatic dependency ordering + parallel execution).
+- **Source columns excluded:** `run_columns` rejects source action columns — use `run_column` for source imports (they must be run individually).
+- **When to use which:** use sequential `run_column` for Rung 1 (need manual inspection of each step), `run_columns` for Rung 3 (automatic dependency ordering + parallel execution).
 
 ### Batch processing with `list_row_ids`
 For tables with >100 rows, `first_hundred` only covers the first 100. To run the full dataset at Rung 3:
 1. **Collect IDs:** `list_row_ids` with `limit: 500` (max 10000). Supports filters (e.g., `hasNotRun` on a specific column to get only unprocessed rows), sorting, and text search — same filter format as `list_rows`.
 2. **Paginate:** if `hasNextPage` is true, increment `page` to get the next batch of IDs.
-3. **Chunk and run:** split IDs into batches of 100, call `run_fields` with `rowIds` for each batch.
+3. **Chunk and run:** split IDs into batches of 100, call `run_columns` with `rowIds` for each batch.
 4. **Wait between batches:** `wait_for_run` on the returned `runIds` before starting the next batch.
 5. **Filter smart:** use `hasNotRun` or `hasError` filters on the column you're running to avoid re-fetching already-processed rows. This is more efficient than `skipCellsWithData` alone because it avoids sending rows that will just be skipped.
 
@@ -230,9 +230,9 @@ Views control how data is displayed: visible columns, sorting, and filters. Use 
 ## Quick Reference
 
 **Discovery:** `list_organizations`, `list_workspaces`, `list_tables`, `get_table_schema`, `list_views`, `list_rows`, `list_row_ids`, `get_row_details`, `list_actions`, `get_action_schema`, `get_connected_platforms`, `resolve_action_options`, `list_presets`
-**Mutations:** `create_workspace`, `update_workspace`, `delete_workspace`, `clone_workspace`, `create_table`, `update_table`, `delete_table`, `duplicate_table`, `reorder_tables`, `create_column`, `update_column`, `delete_column`, `clone_field`, `create_rows`, `update_row`, `delete_rows`, `create_view`, `update_view`, `delete_view`, `set_view_filters`, `delete_view_filters`, `set_view_sorting`, `delete_view_sorting`, `reorder_columns`, `update_view_columns`, `send_webhook_data`, `create_preset`, `update_preset`, `delete_preset`
+**Mutations:** `create_workspace`, `update_workspace`, `delete_workspace`, `clone_workspace`, `create_table`, `update_table`, `delete_table`, `duplicate_table`, `reorder_tables`, `create_column`, `update_column`, `delete_column`, `clone_column`, `create_rows`, `update_row`, `delete_rows`, `create_view`, `update_view`, `delete_view`, `set_view_filters`, `delete_view_filters`, `set_view_sorting`, `delete_view_sorting`, `reorder_columns`, `update_view_columns`, `send_webhook_data`, `create_preset`, `update_preset`, `delete_preset`
 **Templates:** `list_workspace_templates`, `mark_workspace_as_template`, `unmark_workspace_as_template`, `clone_workspace_template`
-**Execution:** `run_field`, `run_fields`, `get_run_status`, `list_runs`, `cancel_run`, `wait_for_run`
+**Execution:** `run_column`, `run_columns`, `get_run_status`, `list_runs`, `cancel_run`, `wait_for_run`
 **AI helpers:** `preview_formula`
 
 ## Reference Documents

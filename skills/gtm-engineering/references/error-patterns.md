@@ -39,7 +39,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 3. Check upstream columns: is every `{{column_name}}` reference populated for this row?
 
 **Fix:**
-- Config mismatch: `update_column` with corrected config, then `run_field` with `skipCellsWithData: false`
+- Config mismatch: `update_column` with corrected config, then `run_column` with `skipCellsWithData: false`
 - Upstream empty: diagnose the upstream column first (recursive)
 
 ---
@@ -59,7 +59,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
    - "Authentication failed" -- platform connection expired
 
 **Fix:**
-- Config error: `update_column` with corrected config, then `run_field` with `skipCellsWithData: false`
+- Config error: `update_column` with corrected config, then `run_column` with `skipCellsWithData: false`
 - Rate limit: wait 60 seconds, re-run with `runAction: "first_one"`
 - Auth failure: tell user to reconnect the platform in Baseloop Settings > Integrations
 
@@ -105,7 +105,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 - `update_column` with corrected formula prompt
-- `run_field` with `skipCellsWithData: false`
+- `run_column` with `skipCellsWithData: false`
 - Use `preview_formula` to test before updating
 
 ---
@@ -180,7 +180,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 - Slow but progressing: wait. Web search AI columns can take 30-60 seconds per row.
-- Frozen: cancel with `cancel_run`, then re-run with `run_field`
+- Frozen: cancel with `cancel_run`, then re-run with `run_column`
 
 ---
 

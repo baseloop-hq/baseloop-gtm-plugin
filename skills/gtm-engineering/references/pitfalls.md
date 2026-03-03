@@ -22,13 +22,13 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Symptom:** Hundreds of credits burned, garbage data in CRM, API errors discovered only after all rows processed.
 
-**Cause:** Called `run_field` without `runAction` (runs ALL rows), or used `first_hundred` on a table with <100 rows.
+**Cause:** Called `run_column` without `runAction` (runs ALL rows), or used `first_hundred` on a table with <100 rows.
 
 **What happened in practice:** Agent created a column, immediately ran it on all 50 rows (~6 credits each), then created the next column and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
 
-**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_field` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `rowIds` (max 100 per batch). Use `hasNotRun` or `hasError` filters to only target unprocessed rows.
+**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_column` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_columns` with `rowIds` (max 100 per batch). Use `hasNotRun` or `hasError` filters to only target unprocessed rows.
 
-**Prevention:** Every `run_field` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows. For large tables, always use the `list_row_ids` → batch pattern instead of relying on `first_hundred`.
+**Prevention:** Every `run_column` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows. For large tables, always use the `list_row_ids` → batch pattern instead of relying on `first_hundred`.
 
 ---
 
@@ -70,7 +70,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Fix:** After creating the table:
 1. Create a placeholder row: `create_rows` with `[{}]`
-2. Run the source column: `run_field` with `skipCellsWithData: false`
+2. Run the source column: `run_column` with `skipCellsWithData: false`
 3. Verify with `list_rows`
 
 ---
@@ -140,7 +140,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Symptom:** Fixed a column's config but the old (wrong) data persists.
 
-**Cause:** Ran `run_field` with default `skipCellsWithData: true`, which skipped cells that already had data from the previous (wrong) configuration.
+**Cause:** Ran `run_column` with default `skipCellsWithData: true`, which skipped cells that already had data from the previous (wrong) configuration.
 
 **Fix:** After fixing a column config with `update_column`, re-run with `skipCellsWithData: false` to overwrite existing data. But only on that specific column — not upstream columns.
 
@@ -480,7 +480,7 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 
 **Prevention:**
 1. Create the action column first
-2. `run_field` on at least 1 row (Rung 1)
+2. `run_column` on at least 1 row (Rung 1)
 3. `get_row_details` with the action column's `fieldId` — read the complete `fullValue`
 4. Derive the `extractionPath` from the actual JSON structure you see
 5. THEN create the extraction column

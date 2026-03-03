@@ -14,7 +14,7 @@ Import data into Baseloop tables. These are SOURCE-type columns created via `cre
 | `hubspot_contacts_list_import` | HubSpot | Import contacts from a HubSpot static list | Free |
 | `hubspot_companies_list_import` | HubSpot | Import companies from a HubSpot static list | Free |
 
-**Remember:** Source actions require the two-step process — create table with sourceField, create placeholder row, then run_field.
+**Remember:** Source actions require the two-step process — create table with sourceField, create placeholder row, then run_column.
 
 ## Enrichment Actions
 

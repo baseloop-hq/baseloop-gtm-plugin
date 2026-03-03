@@ -51,7 +51,7 @@ These tools create, update, or delete data. Require explicit `organizationId` wh
 | `send_webhook_data` | Low | Test data ingestion |
 | `duplicate_table` | Low | Creates a copy |
 | `clone_workspace` | Low | Creates a copy with all tables |
-| `clone_field` | Low | Creates a copy of a column with all config |
+| `clone_column` | Low | Creates a copy of a column with all config |
 | `reorder_tables` | Low | Table order within a workspace |
 
 ### Medium Risk (Data Loss Possible)
@@ -69,8 +69,8 @@ These tools consume external API credits or trigger LLM inference. Limited to 20
 
 | Tool | Cost | Notes |
 |------|------|-------|
-| `run_field` | High | Triggers action execution (enrichment, AI, CRM sync) |
-| `run_fields` | High | Triggers multiple actions with dependency ordering |
+| `run_column` | High | Triggers action execution (enrichment, AI, CRM sync) |
+| `run_columns` | High | Triggers multiple actions with dependency ordering |
 
 **Cost depends on the action being run:**
 - Enrichment (enrich_company, enrich_contact): ~1 credit/row
