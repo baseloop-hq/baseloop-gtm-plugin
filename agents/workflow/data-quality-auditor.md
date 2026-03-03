@@ -31,6 +31,7 @@ Before starting, read [error-patterns.md](../../skills/gtm-engineering/reference
 2. For each table: `get_table_schema` — understand column structure.
 3. For each table: `list_rows` (limit 10) — get a representative sample.
 4. For rows with errors or nulls: `get_row_details` — inspect full cell values.
+5. For large tables: use `list_row_ids` with `hasError` or `hasNotRun` filters to efficiently count and locate problematic rows without loading full cell data.
 
 ### Step 2: Check data quality
 

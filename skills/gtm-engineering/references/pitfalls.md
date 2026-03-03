@@ -26,9 +26,9 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **What happened in practice:** Agent created a column, immediately ran it on all 50 rows (~6 credits each), then created the next column and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
 
-**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_field` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required).
+**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_field` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `rowIds` (max 100 per batch). Use `hasNotRun` or `hasError` filters to only target unprocessed rows.
 
-**Prevention:** Every `run_field` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows.
+**Prevention:** Every `run_field` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows. For large tables, always use the `list_row_ids` → batch pattern instead of relying on `first_hundred`.
 
 ---
 
