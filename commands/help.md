@@ -26,7 +26,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `list_tables` | See all tables grouped by workspace |
 | `get_table_schema` | See columns, types, and action config for a table |
 | `list_views` | See views (column visibility, sort, filters) |
-| `list_rows` | Browse rows with search and status filtering |
+| `list_rows` | Browse rows with search, advanced filters, and sorting |
 | `get_row_details` | Inspect a single row's full data, AI reasoning, and errors |
 | `list_actions` | See all available enrichment/sync actions |
 | `get_action_schema` | Read an action's full configuration guide |

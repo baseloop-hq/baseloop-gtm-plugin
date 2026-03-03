@@ -26,13 +26,13 @@ Gather evidence without changing anything.
 
 1. `list_tables` — identify the table mentioned in the problem.
 2. `get_table_schema` — find the failing column. Look for columns whose action matches the problem description.
-3. If unclear which column is failing, `list_rows` to see which columns have errors or nulls.
+3. If unclear which column is failing, `list_rows` with `filters` (e.g. `hasError` operator) to find rows with errors.
 
 ### Step 2: Read the error
 
 1. `get_row_details` (without fieldId) — see all cell values for a failing row. Identify which cells show "error" or unexpected nulls.
 2. `get_row_details` (with fieldId) — read the `errorMessage` and `fullValue` for the failing column. The `fullValue` often contains partial execution data, API responses, or AI reasoning.
-3. If a `runId` is available, `get_run_status` — check run-level stats (completed, failed, total).
+3. If a `runId` is available, `get_run_status` — check run-level stats (succeeded, skippedDueToConditions, failed, total) and `failedRowIds`.
 
 ### Step 3: Trace upstream
 
