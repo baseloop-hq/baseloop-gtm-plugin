@@ -2,19 +2,19 @@
 
 Known failure modes when building Baseloop workflows. Each entry: symptom, cause, fix. Sourced from production workflows.
 
-**For runtime error diagnosis** (column failed, unexpected output, data not flowing), see [error-patterns.md](./error-patterns.md).
+**For runtime error diagnosis** (field failed, unexpected output, data not flowing), see [error-patterns.md](./error-patterns.md).
 
 ---
 
-## Referencing action column output instead of extracting fullValue
+## Referencing action field output instead of extracting fullValue
 
 **Symptom:** Downstream action receives `"Found"`, `"Sent"`, or `"Created"` instead of the actual data it needs (e.g., HubSpot object ID). HubSpot Update rejects the recordId. HTTP Request sends wrong body.
 
-**Cause:** Used `{{action_column_name}}` directly. `{{column_name}}` resolves to display output, not `fullValue`. See SKILL.md "Action output vs fullValue" for details and extraction paths.
+**Cause:** Used `{{action_field_name}}` directly. `{{field_name}}` resolves to display output, not `fullValue`. See SKILL.md "Action output vs fullValue" for details and extraction paths.
 
-**Fix:** Create a data extraction column (`extractorFieldId` + `extractionPath`) and reference that instead.
+**Fix:** Create a data extraction field (`extractorFieldId` + `extractionPath`) and reference that instead.
 
-**Prevention:** Before using `{{column_name}}` for any action column, ask: "Does this column's display output contain the actual value I need, or is it just a status string?" If it's a status string (Found, Sent, etc.), you need extraction.
+**Prevention:** Before using `{{field_name}}` for any action field, ask: "Does this field's display output contain the actual value I need, or is it just a status string?" If it's a status string (Found, Sent, etc.), you need extraction.
 
 ---
 
@@ -22,23 +22,23 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Symptom:** Hundreds of credits burned, garbage data in CRM, API errors discovered only after all rows processed.
 
-**Cause:** Called `run_column` without `runAction` (runs ALL rows), or used `first_hundred` on a table with <100 rows.
+**Cause:** Called `run_field` without `runAction` (runs ALL rows), or used `first_hundred` on a table with <100 rows.
 
-**What happened in practice:** Agent created a column, immediately ran it on all 50 rows (~6 credits each), then created the next column and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
+**What happened in practice:** Agent created a field, immediately ran it on all 50 rows (~6 credits each), then created the next field and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
 
-**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_column` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_columns` with `rowIds` (max 100 per batch). Use `hasNotRun` or `hasError` filters to only target unprocessed rows.
+**Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_field` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `rowIds` (max 100 per batch). Use `hasNotRun` or `hasError` filters to only target unprocessed rows.
 
-**Prevention:** Every `run_column` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows. For large tables, always use the `list_row_ids` → batch pattern instead of relying on `first_hundred`.
+**Prevention:** Every `run_field` call must include `runAction`. Watch for `first_hundred` on small datasets — it runs everything if the table has <100 rows. For large tables, always use the `list_row_ids` → batch pattern instead of relying on `first_hundred`.
 
 ---
 
-## Send to Table: pre-creating columns in destination
+## Send to Table: pre-creating fields in destination
 
-**Symptom:** Duplicate columns (e.g., "Company Name" and "Company Name (1)") in the destination table.
+**Symptom:** Duplicate fields (e.g., "Company Name" and "Company Name (1)") in the destination table.
 
-**Cause:** Created columns in the destination table before configuring Send to Table. Send to Table auto-creates columns from fieldMappings keys.
+**Cause:** Created fields in the destination table before configuring Send to Table. Send to Table auto-creates fields from fieldMappings keys.
 
-**Fix:** Always start with an empty destination table created via `create_table` with no columns. The field mappings define the columns.
+**Fix:** Always start with an empty destination table created via `create_table` with no fields. The field mappings define the fields.
 
 ---
 
@@ -46,31 +46,31 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Symptom:** Send to Table field mapping values are empty or null in the destination.
 
-**Cause:** Used `{{column_name}}` syntax in fieldMappings. The template engine (`variableService`) resolves `{{}}` to actual cell values before the action runs, so the action receives the resolved value instead of the column reference.
+**Cause:** Used `{{field_name}}` syntax in fieldMappings. The template engine (`variableService`) resolves `{{}}` to actual cell values before the action runs, so the action receives the resolved value instead of the field reference.
 
-**Fix:** Use plain column field names in `send_row` mode (e.g., `company_name_abc`). In `send_for_each_item` mode, use `column:field_name` for parent row columns. Never wrap in `{{}}`.
+**Fix:** Use plain field names in `send_row` mode (e.g., `company_name_abc`). In `send_for_each_item` mode, use `column:field_name` for parent row fields. Never wrap in `{{}}`.
 
 ---
 
-## Re-running AI columns upstream
+## Re-running AI fields upstream
 
 **Symptom:** Different results than before, orphan rows in downstream tables, data inconsistency.
 
-**Cause:** Re-ran an upstream Custom AI Agent column that already had correct data. AI is non-deterministic — it produces different results each run. Downstream Send to Table then creates new rows (from different AI output) while old rows remain.
+**Cause:** Re-ran an upstream Custom AI Agent field that already had correct data. AI is non-deterministic — it produces different results each run. Downstream Send to Table then creates new rows (from different AI output) while old rows remain.
 
-**Fix:** Only re-run the column whose *configuration* changed. Never re-run upstream columns to fix a downstream issue.
+**Fix:** Only re-run the field whose *configuration* changed. Never re-run upstream fields to fix a downstream issue.
 
 ---
 
 ## Source action not running after create_table
 
-**Symptom:** Table created with source column but contains no data rows.
+**Symptom:** Table created with source field but contains no data rows.
 
-**Cause:** `create_table` with `sourceField` creates the table and source column but does NOT auto-trigger the import.
+**Cause:** `create_table` with `sourceField` creates the table and source field but does NOT auto-trigger the import.
 
 **Fix:** After creating the table:
 1. Create a placeholder row: `create_rows` with `[{}]`
-2. Run the source column: `run_column` with `skipCellsWithData: false`
+2. Run the source field: `run_field` with `skipCellsWithData: false`
 3. Verify with `list_rows`
 
 ---
@@ -89,7 +89,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Symptom:** Send to Table creates no rows or creates rows with wrong data in `send_for_each_item` mode.
 
-**Cause:** `sourceArrayPath` doesn't match the actual JSON structure of the source column's output.
+**Cause:** `sourceArrayPath` doesn't match the actual JSON structure of the source field's output.
 
 **Fix:**
 - For `li_find_people_at_company`: use `sourceArrayPath: "fullValue"` (the root value is the array)
@@ -104,7 +104,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Did not pass the company's HubSpot object ID when creating contacts.
 
-**Fix:** In the Send to Table fieldMappings from companies to contacts, include the company HubSpot ID using `column:` prefix (e.g., `{ "key": "Company HubSpot ID", "value": "column:hs_object_id_xyz" }`). Then in the `hubspot_create_object` column on the contacts table, map this field to HubSpot's association property.
+**Fix:** In the Send to Table fieldMappings from companies to contacts, include the company HubSpot ID using `column:` prefix (e.g., `{ "key": "Company HubSpot ID", "value": "column:hs_object_id_xyz" }`). Then in the `hubspot_create_object` field on the contacts table, map this field to HubSpot's association property.
 
 ---
 
@@ -119,7 +119,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 1. **Resolve company domain** — if `enrich_contact` didn't return `companyWebsite`, add a `custom_ai_agent` with web search (~4 credits) to find the company domain from the company name. Gate on: email found AND companyWebsite is null. Skip if companyWebsite is already populated.
 2. **HubSpot Lookup Company** — `hubspot_lookup_object` for companies, filtered by domain (prefer `companyWebsite` from enrichment, fall back to AI-resolved domain). Gate on: domain is not null.
 3. **HubSpot Create Company** — `hubspot_create_object` for companies with name, domain, industry. Gate on: lookup = `isNotFound`.
-4. **Consolidate Company ID** — use a formula or extraction column to get the company HubSpot ID from whichever source produced it (lookup or create).
+4. **Consolidate Company ID** — use a formula or extraction field to get the company HubSpot ID from whichever source produced it (lookup or create).
 5. **HubSpot Update Contact** — `hubspot_update_object` with `associateWithObject: true`, `associatedObjectType: "companies"`, and `associatedObjectHubspotId` pointing to the consolidated company ID.
 
 **Prevention:** Before designing any job-change or company-enrichment workflow, ask: "Does this workflow create/link the Company object, or just update flat text?" If the answer is flat text, the workflow is incomplete.
@@ -136,23 +136,23 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
-## Running the wrong column after a config fix
+## Running the wrong field after a config fix
 
-**Symptom:** Fixed a column's config but the old (wrong) data persists.
+**Symptom:** Fixed a field's config but the old (wrong) data persists.
 
-**Cause:** Ran `run_column` with default `skipCellsWithData: true`, which skipped cells that already had data from the previous (wrong) configuration.
+**Cause:** Ran `run_field` with default `skipCellsWithData: true`, which skipped cells that already had data from the previous (wrong) configuration.
 
-**Fix:** After fixing a column config with `update_column`, re-run with `skipCellsWithData: false` to overwrite existing data. But only on that specific column — not upstream columns.
+**Fix:** After fixing a field config with `update_field`, re-run with `skipCellsWithData: false` to overwrite existing data. But only on that specific field — not upstream fields.
 
 ---
 
-## Formula column not evaluating correctly
+## Formula field not evaluating correctly
 
 **Symptom:** Formula returns unexpected values or errors.
 
-**Cause:** Formula references column names that don't exist or uses wrong syntax.
+**Cause:** Formula references field names that don't exist or uses wrong syntax.
 
-**Fix:** Always use `preview_formula` to test the formula before creating the column. The preview shows sample evaluations on actual row data. Iterate until the output looks correct, then pass the same prompt to `create_column`.
+**Fix:** Always use `preview_formula` to test the formula before creating the field. The preview shows sample evaluations on actual row data. Iterate until the output looks correct, then pass the same prompt to `create_field`.
 
 ---
 
@@ -162,7 +162,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Source data (HubSpot import) doesn't always include LinkedIn company URLs. Without a LinkedIn slug, the RapidAPI HTTP request can't run.
 
-**Fix:** Add a `custom_ai_agent` column as a "LinkedIn URL Finder" early in the chain. Give it the company name and domain, let it search for the LinkedIn URL. Gate subsequent enrichment on this column being `notNull`. This is a real pattern used in content magnet workflows.
+**Fix:** Add a `custom_ai_agent` field as a "LinkedIn URL Finder" early in the chain. Give it the company name and domain, let it search for the LinkedIn URL. Gate subsequent enrichment on this field being `notNull`. This is a real pattern used in content magnet workflows.
 
 ---
 
@@ -172,7 +172,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** The target group isn't active on LinkedIn. Common with small businesses, non-tech industries (e.g., local services, agriculture, construction), or specific regions with low LinkedIn adoption.
 
-**Fix:** Add a `custom_ai_agent` column with `enableWebSearch: true` and `outputFormat: "jsonSchema"` as a fallback. Gate it on the Find People column being `isNotFound`. The AI searches company websites, team pages, Crunchbase, press releases, and other public sources. Use the same Send to Table `send_for_each_item` pattern to route results to the same destination table as the LinkedIn results. Both paths converge into the same downstream workflow.
+**Fix:** Add a `custom_ai_agent` field with `enableWebSearch: true` and `outputFormat: "jsonSchema"` as a fallback. Gate it on the Find People field being `isNotFound`. The AI searches company websites, team pages, Crunchbase, press releases, and other public sources. Use the same Send to Table `send_for_each_item` pattern to route results to the same destination table as the LinkedIn results. Both paths converge into the same downstream workflow.
 
 **JSON Schema example for the fallback AI:**
 ```json
@@ -207,7 +207,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Workflow runs enrichment on every imported company without checking against existing CRM data.
 
-**Fix:** Maintain a "Master CRM Blocklist" table with closed-won + churned companies. Add a `lookup_single_record` column as the **first gate** before any enrichment. Gate all downstream columns on blocklist lookup being `isNotFound`. This is one of the cheapest checks you can run.
+**Fix:** Maintain a "Master CRM Blocklist" table with closed-won + churned companies. Add a `lookup_single_record` field as the **first gate** before any enrichment. Gate all downstream fields on blocklist lookup being `isNotFound`. This is one of the cheapest checks you can run.
 
 ---
 
@@ -224,8 +224,8 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Fix:** Before creating an autoRunCondition, think: "Do ALL of these need to be true (AND), or does at least one need to be true (OR)?"
 
-- Same column, multiple values (e.g., Country = USA or Canada): **single condition, combinator: "or"**
-- Different columns, all required (e.g., Status = Active AND Score > 80): **single condition, combinator: "and"** (or separate conditions, since they're AND'd)
+- Same field, multiple values (e.g., Country = USA or Canada): **single condition, combinator: "or"**
+- Different fields, all required (e.g., Status = Active AND Score > 80): **single condition, combinator: "and"** (or separate conditions, since they're AND'd)
 - Mixed logic (e.g., (Country = USA OR Country = Canada) AND Status = Active): **two conditions** — one with combinator "or" for countries, one for status (multiple conditions are AND'd)
 
 **Nested combinator groups** are fully supported. You can nest rule groups for complex logic like `(A OR B) AND (C OR D)`:
@@ -255,18 +255,18 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ### Available operators for filters and autoRunConditions
 
-Use the correct operator `name` value (left column) when configuring rules:
+Use the correct operator `name` value (left field) when configuring rules:
 
 **No-value operators** (status checks — don't need a `value` field):
 | Operator | Label | Use for |
 |---|---|---|
-| `notNull` | is not empty | Gate on upstream column being populated |
-| `null` | is empty | Gate on column being empty/missing |
-| `hasError` | has an error | Filter rows where column errored |
-| `hasNoError` | has no error | Filter rows where column succeeded |
+| `notNull` | is not empty | Gate on upstream field being populated |
+| `null` | is empty | Gate on field being empty/missing |
+| `hasError` | has an error | Filter rows where field errored |
+| `hasNoError` | has no error | Filter rows where field succeeded |
 | `isFound` | has results | Gate on lookup returning a match (enrichment, HubSpot lookup) |
 | `isNotFound` | has no results | Gate on lookup returning no match (create-if-not-exists pattern) |
-| `hasNotRun` | has not run | Filter rows where column hasn't executed yet |
+| `hasNotRun` | has not run | Filter rows where field hasn't executed yet |
 | `runConditionNotMet` | run condition not met | Filter rows where autoRunCondition blocked execution |
 
 **Value operators** (require a `value` field):
@@ -289,20 +289,20 @@ Use the correct operator `name` value (left column) when configuring rules:
 | `between` | is between | object `{start, end}` | Absolute date range (ISO date strings) |
 
 **Common autoRunCondition patterns:**
-- Gate enrichment on upstream being populated: `operator: "notNull"`, field = upstream column
-- Gate CRM create on lookup miss: `operator: "isNotFound"`, field = lookup column
-- Gate on qualification result: `operator: "="`, field = AI qualifier column, value = "Qualified"
+- Gate enrichment on upstream being populated: `operator: "notNull"`, field = upstream field
+- Gate CRM create on lookup miss: `operator: "isNotFound"`, field = lookup field
+- Gate on qualification result: `operator: "="`, field = AI qualifier field, value = "Qualified"
 - Gate on multiple alternatives: `combinator: "or"`, rules with `operator: "="` for each valid value
 
 ---
 
 ## Downstream table not auto-processing new rows
 
-**Symptom:** Send to Table creates rows in the destination table, but action columns there don't run.
+**Symptom:** Send to Table creates rows in the destination table, but action fields there don't run.
 
 **Cause:** `autoRunOnNewRow` is `false` on the destination table (the default).
 
-**Fix:** After verifying the workflow works end-to-end, enable `autoRunOnNewRow: true` on tables that receive data via Send to Table. This way, when new rows arrive, all action columns with `autoRunEnabled: true` cascade automatically. Keep `autoRunOnNewRow: false` on source/enrichment tables that you run manually or on a schedule.
+**Fix:** After verifying the workflow works end-to-end, enable `autoRunOnNewRow: true` on tables that receive data via Send to Table. This way, when new rows arrive, all action fields with `autoRunEnabled: true` cascade automatically. Keep `autoRunOnNewRow: false` on source/enrichment tables that you run manually or on a schedule.
 
 ---
 
@@ -312,7 +312,7 @@ Use the correct operator `name` value (left column) when configuring rules:
 
 **Cause:** Workflow only writes HubSpot engagement notes for qualified companies, not for disqualified ones.
 
-**Fix:** Create separate `hubspot_create_engagement` columns for each disqualification reason, each gated on the specific failure condition. For example:
+**Fix:** Create separate `hubspot_create_engagement` fields for each disqualification reason, each gated on the specific failure condition. For example:
 - "NOTE: FTE Disqualified" — gated on staff qualification = "Disqualified"
 - "NOTE: Country Count Disqualified" — gated on country qualification = "Disqualified"
 - "NOTE: LinkedIn Not Found" — gated on LinkedIn URL being `isNull`
@@ -327,7 +327,7 @@ Each note should include the specific data that triggered disqualification (e.g.
 
 **Cause:** Company names in HubSpot often differ from LinkedIn (abbreviations, legal suffixes, typos).
 
-**Fix:** Add verification columns:
+**Fix:** Add verification fields:
 - Formula: domain match check (compare HubSpot domain vs LinkedIn website domain)
 - AI Agent: name match check (compare HubSpot company name vs LinkedIn company name)
 Gate downstream processing on matches, or flag mismatches for manual review.
@@ -340,7 +340,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** Workflow doesn't check when the account was last touched in HubSpot before enriching.
 
-**Fix:** After the `hubspot_lookup_object` column, add a "Contacted Within 30 Days" formula that checks `hs_last_contacted_date`. Gate downstream enrichment columns on this being "false" or empty. This prevents redundant work on warm accounts.
+**Fix:** After the `hubspot_lookup_object` field, add a "Contacted Within 30 Days" formula that checks `hs_last_contacted_date`. Gate downstream enrichment fields on this being "false" or empty. This prevents redundant work on warm accounts.
 
 ---
 
@@ -350,7 +350,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** The LinkedIn company page found by RapidAPI has a different domain than the input (common with regional sites like `.fr` vs `.com`, subsidiaries, or rebrands).
 
-**Fix:** Do two HubSpot lookups — one on the input domain, one on the RapidAPI-discovered domain. Merge results with a formula that picks whichever found a match. Create separate Update/Create/Engagement columns for each lookup path. This is a proven production pattern.
+**Fix:** Do two HubSpot lookups — one on the input domain, one on the RapidAPI-discovered domain. Merge results with a formula that picks whichever found a match. Create separate Update/Create/Engagement fields for each lookup path. This is a proven production pattern.
 
 ---
 
@@ -360,7 +360,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** Workflow routes leads to outreach without checking email quality first.
 
-**Fix:** Add a `baseloop_send_http_request` column calling an email verification API (e.g., MillionVerifier) before routing. Check the response for freemail, quality, and validity. Gate outreach routing on email quality being acceptable. Write a "NOTE: Bad Email" HubSpot engagement note for failed verifications so sales reps know.
+**Fix:** Add a `baseloop_send_http_request` field calling an email verification API (e.g., MillionVerifier) before routing. Check the response for freemail, quality, and validity. Gate outreach routing on email quality being acceptable. Write a "NOTE: Bad Email" HubSpot engagement note for failed verifications so sales reps know.
 
 ---
 
@@ -378,9 +378,9 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Symptom:** Missing CRM data fields despite the record existing in HubSpot. Or engagement data is empty while account data is present.
 
-**Cause:** A single `hubspot_lookup_object` column can only extract a limited set of properties. Different property types (account data vs engagement data) may require separate queries.
+**Cause:** A single `hubspot_lookup_object` field can only extract a limited set of properties. Different property types (account data vs engagement data) may require separate queries.
 
-**Fix:** Use multiple `hubspot_lookup_object` columns on the same table, each pulling different property sets. Example: one lookup for Account Tier + Assigned AE + Company ID, a second lookup for Notes Last Contacted + Last Modified Date. Name them clearly (e.g., "Lookup Object (Engagement)").
+**Fix:** Use multiple `hubspot_lookup_object` fields on the same table, each pulling different property sets. Example: one lookup for Account Tier + Assigned AE + Company ID, a second lookup for Notes Last Contacted + Last Modified Date. Name them clearly (e.g., "Lookup Object (Engagement)").
 
 ---
 
@@ -388,7 +388,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Symptom:** Slack channel flooded with notifications for bounces, OOO auto-replies, and other non-actionable events. Team ignores the channel.
 
-**Cause:** Slack notification column runs on all webhook events without filtering by event type and reply category.
+**Cause:** Slack notification field runs on all webhook events without filtering by event type and reply category.
 
 **Fix:** Gate Slack notifications with multiple conditions: `event_type = EMAIL_REPLY` AND `reply_category != 4` (bounces) AND `reply_category != 6` (OOO). Process OOO replies separately (e.g., with Perplexity AI to extract backup contacts). Only notify Slack for replies that need human attention.
 
@@ -400,13 +400,13 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** Only did a HubSpot contact lookup but didn't chain a company lookup using the associated company ID.
 
-**Fix:** After the contact lookup (by email), add a second `hubspot_lookup_object` column that looks up the company by the `associatedcompanyid` extracted from the first lookup. Gate the second lookup on the first being `isFound`. This gives you company name, domain, and other company-level context for rich Slack notifications.
+**Fix:** After the contact lookup (by email), add a second `hubspot_lookup_object` field that looks up the company by the `associatedcompanyid` extracted from the first lookup. Gate the second lookup on the first being `isFound`. This gives you company name, domain, and other company-level context for rich Slack notifications.
 
 ---
 
-## Hardcoded campaign routing with many columns
+## Hardcoded campaign routing with many fields
 
-**Symptom:** Workflow has 8+ separate outreach enrollment columns with complex autoRunCondition gating for each language × persona combination. Maintenance nightmare when adding new dimensions.
+**Symptom:** Workflow has 8+ separate outreach enrollment fields with complex autoRunCondition gating for each language × persona combination. Maintenance nightmare when adding new dimensions.
 
 **Cause:** Created one enrollment action per campaign instead of computing the campaign dynamically.
 
@@ -416,13 +416,13 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 3. Formula: map Language × Cluster → campaign ID (lookup table in formula logic)
 4. One `baseloop_send_http_request` with `{{campaign_id_formula}}` in the URL path
 
-This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dimensions by adding formulas, not columns.
+This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dimensions by adding formulas, not fields.
 
 ---
 
 ## Shortened or missing company website breaks enrichment chain
 
-**Symptom:** AI agents, BuiltWith, or HTTP requests fail or return data for the wrong company. Website-dependent columns produce garbage.
+**Symptom:** AI agents, BuiltWith, or HTTP requests fail or return data for the wrong company. Website-dependent fields produce garbage.
 
 **Cause:** LinkedIn company profiles often have shortened URLs (bit.ly, linktr.ee, hubs.ly) or no website at all. Downstream actions use this invalid URL and either fail or resolve to the wrong site.
 
@@ -436,7 +436,7 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 
 **Cause:** Outreach platform webhooks include "untracked replies" — system-generated junk like DMARC aggregate reports, Jira auto-responses, mailing list digests, and bounce notifications that look like email replies but aren't.
 
-**Fix:** Add a dedicated "Is Real Reply" AI agent column that runs only on `UNTRACKED_REPLIES` event type. Classify as "Pass" (human-authored, including OOO) vs "Junk" (system-generated). Gate the full reply classification workflow on this returning "Pass".
+**Fix:** Add a dedicated "Is Real Reply" AI agent field that runs only on `UNTRACKED_REPLIES` event type. Classify as "Pass" (human-authored, including OOO) vs "Junk" (system-generated). Gate the full reply classification workflow on this returning "Pass".
 
 ---
 
@@ -446,7 +446,7 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 
 **Cause:** Reply classification happens in Baseloop but the outreach platform doesn't know about it. The platform continues the sequence because its lead category wasn't updated.
 
-**Fix:** After reply classification, add a `baseloop_send_http_request` column that POSTs to the outreach platform API to update the lead's category and pause the sequence. Use a formula to map category names to the API's numeric IDs. Gate on reply classification being complete.
+**Fix:** After reply classification, add a `baseloop_send_http_request` field that POSTs to the outreach platform API to update the lead's category and pause the sequence. Use a formula to map category names to the API's numeric IDs. Gate on reply classification being complete.
 
 ---
 
@@ -472,24 +472,24 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 
 ## Guessing extraction paths without inspecting fullValue
 
-**Risk level:** HIGH — causes silent null values across entire columns, often not caught until downstream actions fail.
+**Risk level:** HIGH — causes silent null values across entire fields, often not caught until downstream actions fail.
 
-**Symptom:** Extraction column is empty despite source action succeeding.
+**Symptom:** Extraction field is empty despite source action succeeding.
 
-**Cause:** Creating extraction columns with assumed JMESPath expressions instead of inspecting the actual action output. Different actions return different JSON structures (e.g., `hubspot_create_object` returns flat `{"id": "..."}` while `hubspot_lookup_object` returns nested `{"results": [...]}`). There is no universal pattern. See SKILL.md "Extraction Column Rule" for the mandatory inspection protocol.
+**Cause:** Creating extraction fields with assumed JMESPath expressions instead of inspecting the actual action output. Different actions return different JSON structures (e.g., `hubspot_create_object` returns flat `{"id": "..."}` while `hubspot_lookup_object` returns nested `{"results": [...]}`). There is no universal pattern. See SKILL.md "Extraction Field Rule" for the mandatory inspection protocol.
 
 **Prevention:**
-1. Create the action column first
-2. `run_column` on at least 1 row (Rung 1)
-3. `get_row_details` with the action column's `fieldId` — read the complete `fullValue`
+1. Create the action field first
+2. `run_field` on at least 1 row (Rung 1)
+3. `get_row_details` with the action field's `fieldId` — read the complete `fullValue`
 4. Derive the `extractionPath` from the actual JSON structure you see
-5. THEN create the extraction column
+5. THEN create the extraction field
 
 **If you already made this mistake:**
 1. `get_row_details` on a successful row to see the real `fullValue`
-2. Delete the wrong extraction column
+2. Delete the wrong extraction field
 3. Recreate with the correct path
-4. Update any downstream columns that referenced the old column name (see "Cascading name changes" below)
+4. Update any downstream fields that referenced the old field name (see "Cascading name changes" below)
 5. Re-run with `skipCellsWithData: false`
 
 ---
@@ -508,58 +508,58 @@ This replaces N enrollment columns with 3 formulas + 1 HTTP request. Add new dim
 - Omit enum fields from automated mappings unless you can guarantee format conversion
 
 **If you already made this mistake:**
-- `update_column` to remove the enum field from fieldMapping
+- `update_field` to remove the enum field from fieldMapping
 - Re-run failed rows with `skipCellsWithData: false`
 
 ---
 
-## Cascading column name changes when recreating extraction columns
+## Cascading field name changes when recreating extraction fields
 
 **Risk level:** MEDIUM — silently breaks downstream formulas and action templates.
 
-**Symptom:** After deleting and recreating an extraction column, downstream formulas return empty.
+**Symptom:** After deleting and recreating an extraction field, downstream formulas return empty.
 
-**Cause:** Deleting and recreating an extraction column generates a new `name` (e.g., `lookup_company_hs_id_zefz` instead of `lookup_company_hs_id_abc1`). Any formula or action template referencing `{{old_name}}` now resolves to null — silently, without erroring.
+**Cause:** Deleting and recreating an extraction field generates a new `name` (e.g., `lookup_company_hs_id_zefz` instead of `lookup_company_hs_id_abc1`). Any formula or action template referencing `{{old_name}}` now resolves to null — silently, without erroring.
 
-**Prevention:** After recreating any column:
-1. `get_table_schema` — note the new column's `name`
-2. Search all downstream columns for references to the old name
-3. `update_column` on each downstream column to replace old name with new name
+**Prevention:** After recreating any field:
+1. `get_table_schema` — note the new field's `name`
+2. Search all downstream fields for references to the old name
+3. `update_field` on each downstream field to replace old name with new name
 
 **If you already made this mistake:**
 - `get_table_schema` to find the new name
-- `update_column` on every downstream column that referenced the old name
-- Re-run affected columns with `skipCellsWithData: false`
+- `update_field` on every downstream field that referenced the old name
+- Re-run affected fields with `skipCellsWithData: false`
 
 ---
 
-## Using boolean/number/select types for output fields or extraction columns
+## Using boolean/number/select types for output fields or extraction fields
 
 **Risk level:** HIGH — causes silent null values and broken autoRunConditions.
 
-**Symptom:** AI agent output fields show null or unexpected values. Extraction columns silently coerce data. Downstream `autoRunCondition` with `=` operator fails because it's comparing against a boolean instead of a string.
+**Symptom:** AI agent output fields show null or unexpected values. Extraction fields silently coerce data. Downstream `autoRunCondition` with `=` operator fails because it's comparing against a boolean instead of a string.
 
-**Cause:** Created an extraction column with a type other than `text` (e.g., `"boolean"`, `"number"`, `"select"`).
+**Cause:** Created an extraction field with a type other than `text` (e.g., `"boolean"`, `"number"`, `"select"`).
 
 **Why this breaks:**
-- Boolean columns coerce AI output. If the AI returns `"Yes"` instead of `true`, the boolean column stores `null`.
-- Number columns reject non-numeric AI output silently.
-- Select columns reject values not in the predefined options list.
+- Boolean fields coerce AI output. If the AI returns `"Yes"` instead of `true`, the boolean field stores `null`.
+- Number fields reject non-numeric AI output silently.
+- Select fields reject values not in the predefined options list.
 - autoRunConditions using `=` or `contains` behave differently on booleans vs text strings.
-- Text columns accept ANY value the AI or API returns, making them the only safe default.
+- Text fields accept ANY value the AI or API returns, making them the only safe default.
 
-**Fix:** Delete the wrong-type column, recreate with `type: "text"`. Update any downstream references to the new column name.
+**Fix:** Delete the wrong-type field, recreate with `type: "text"`. Update any downstream references to the new field name.
 
-**Prevention:** Every output field and every extraction column must use `type: "text"`. No exceptions, regardless of whether the data "looks like" a boolean, number, or enum.
+**Prevention:** Every output field and every extraction field must use `type: "text"`. No exceptions, regardless of whether the data "looks like" a boolean, number, or enum.
 
 ---
 
 ## Attempting to modify system fields
 
-**Symptom:** `update_column` returns an error: "System fields (Created At, Updated At, Created By) are read-only and cannot be modified."
+**Symptom:** `update_field` returns an error: "System fields (Created At, Updated At, Created By) are read-only and cannot be modified."
 
 **Cause:** Tried to update or reconfigure a system-generated field. Every table has three read-only system fields: Created At, Updated At, and Created By.
 
-**Fix:** These fields cannot be modified via `update_column`. If you need custom timestamp or user tracking, create a separate column (e.g., a formula that references the system field value).
+**Fix:** These fields cannot be modified via `update_field`. If you need custom timestamp or user tracking, create a separate field (e.g., a formula that references the system field value).
 
-**Prevention:** Before calling `update_column`, check `get_table_schema` — system fields have `isSystem: true`. Skip them in any batch update logic.
+**Prevention:** Before calling `update_field`, check `get_table_schema` — system fields have `isSystem: true`. Skip them in any batch update logic.

@@ -11,7 +11,7 @@ These tools only read data. Call them freely for exploration and validation.
 | `list_organizations` | See available orgs |
 | `list_workspaces` | See workspaces |
 | `list_tables` | See all tables |
-| `get_table_schema` | Read column definitions |
+| `get_table_schema` | Read field definitions |
 | `list_views` | See table views |
 | `list_rows` | Browse rows with search, filters, and sorting |
 | `list_row_ids` | Lightweight row ID pagination for batch operations |
@@ -22,7 +22,7 @@ These tools only read data. Call them freely for exploration and validation.
 | `resolve_action_options` | Load dropdown options |
 | `get_run_status` | Check run progress |
 | `list_runs` | See run history |
-| `preview_formula` | Test a formula (no column created) |
+| `preview_formula` | Test a formula (no field created) |
 | `list_presets` | List saved action presets/templates |
 
 ## Mutation Tools (Modify Data)
@@ -36,8 +36,8 @@ These tools create, update, or delete data. Require explicit `organizationId` wh
 | `update_workspace` | Low | Rename only |
 | `create_table` | Low | Can be deleted |
 | `update_table` | Low | Rename, move, toggle auto-run |
-| `create_column` | Low | Can be deleted |
-| `update_column` | Low | Config changes only |
+| `create_field` | Low | Can be deleted |
+| `update_field` | Low | Config changes only |
 | `create_rows` | Low | Can be deleted |
 | `update_row` | Low | Cell values only |
 | `create_view` | Low | Can be deleted |
@@ -46,18 +46,18 @@ These tools create, update, or delete data. Require explicit `organizationId` wh
 | `delete_view_filters` | Low | Filters only |
 | `set_view_sorting` | Low | Can be removed |
 | `delete_view_sorting` | Low | Sorting only |
-| `reorder_columns` | Low | Column order in a view |
-| `update_view_columns` | Low | Show/hide/freeze/resize columns |
+| `reorder_fields` | Low | Field order in a view |
+| `update_view_fields` | Low | Show/hide/freeze/resize fields |
 | `send_webhook_data` | Low | Test data ingestion |
 | `duplicate_table` | Low | Creates a copy |
 | `clone_workspace` | Low | Creates a copy with all tables |
-| `clone_column` | Low | Creates a copy of a column with all config |
+| `clone_field` | Low | Creates a copy of a field with all config |
 | `reorder_tables` | Low | Table order within a workspace |
 
 ### Medium Risk (Data Loss Possible)
 | Tool | Risk | Notes |
 |------|------|-------|
-| `delete_column` | Medium | Column data lost permanently |
+| `delete_field` | Medium | Field data lost permanently |
 | `delete_rows` | Medium | Row data lost permanently |
 | `delete_view` | Medium | View config lost |
 | `delete_table` | Medium | Soft delete; data preserved but hidden |
@@ -69,8 +69,8 @@ These tools consume external API credits or trigger LLM inference. Limited to 20
 
 | Tool | Cost | Notes |
 |------|------|-------|
-| `run_column` | High | Triggers action execution (enrichment, AI, CRM sync) |
-| `run_columns` | High | Triggers multiple actions with dependency ordering |
+| `run_field` | High | Triggers action execution (enrichment, AI, CRM sync) |
+| `run_fields` | High | Triggers multiple actions with dependency ordering |
 
 **Cost depends on the action being run:**
 - Enrichment (enrich_company, enrich_contact): ~1 credit/row

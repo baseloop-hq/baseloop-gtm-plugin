@@ -24,7 +24,7 @@ Before starting, read [pitfalls.md](../skills/gtm-engineering/references/pitfall
 
 1. `list_workspaces` — find the target workspace.
 2. `list_tables` — get all tables in the workspace.
-3. For each table: `get_table_schema` — get all columns, their actions, types, and autoRunConditions.
+3. For each table: `get_table_schema` — get all fields, their actions, types, and autoRunConditions.
 4. For tables with data: `list_rows` (limit 5) — spot-check for errors, nulls, or unexpected values.
 
 Build a mental map of the workflow: source tables → enrichment tables → routing tables → CRM sync tables.
@@ -33,60 +33,60 @@ Build a mental map of the workflow: source tables → enrichment tables → rout
 
 ## Phase 2: Audit
 
-Check every table and column against the following checklist. For each finding, record the severity and specific column.
+Check every table and field against the following checklist. For each finding, record the severity and specific field.
 
 ### Critical (credit waste or data corruption)
 
 **C1 — Missing autoRunCondition on expensive actions**
-For each column with an action in: `enrich_company`, `enrich_contact`, `li_find_people_at_company`, `custom_ai_agent`, `perplexity_ai_agent`, `builtwith_lookup`.
-- Does it have an `autoRunCondition`? If not → **Critical**: "Column [name] runs [action] on every row without gating. Add autoRunCondition on upstream prerequisites."
+For each field with an action in: `enrich_company`, `enrich_contact`, `li_find_people_at_company`, `custom_ai_agent`, `perplexity_ai_agent`, `builtwith_lookup`.
+- Does it have an `autoRunCondition`? If not → **Critical**: "Field [name] runs [action] on every row without gating. Add autoRunCondition on upstream prerequisites."
 
 **C2 — Referencing action output instead of extracting fullValue**
-For each column whose input config contains `{{column_name}}` where `column_name` is an action column (not a formula, not an input, not an extraction):
-- The downstream column is likely receiving display text ("Found", "Sent", "Created") instead of actual data → **Critical**: "Column [name] references action column [ref] directly. Create an extraction column for the needed value."
+For each field whose input config contains `{{field_name}}` where `field_name` is an action field (not a formula, not an input, not an extraction):
+- The downstream field is likely receiving display text ("Found", "Sent", "Created") instead of actual data → **Critical**: "Field [name] references action field [ref] directly. Create an extraction field for the needed value."
 
-**C3 — Non-text types on extraction or AI output columns**
-For each column with `extractorFieldId` or action `custom_ai_agent`/`perplexity_ai_agent`:
-- Is the column type something other than `text`? → **Critical**: "Column [name] uses type [type] for extraction/AI output. Must be `text` to avoid silent coercion."
+**C3 — Non-text types on extraction or AI output fields**
+For each field with `extractorFieldId` or action `custom_ai_agent`/`perplexity_ai_agent`:
+- Is the field type something other than `text`? → **Critical**: "Field [name] uses type [type] for extraction/AI output. Must be `text` to avoid silent coercion."
 
 **C4 — CRM create without lookup-before-create**
-For each `hubspot_create_object` or `hubspot_create_engagement` column:
-- Is there a corresponding `hubspot_lookup_object` column on the same table gating it with `isNotFound`? If not → **Critical**: "Column [name] creates CRM records without checking for duplicates first."
+For each `hubspot_create_object` or `hubspot_create_engagement` field:
+- Is there a corresponding `hubspot_lookup_object` field on the same table gating it with `isNotFound`? If not → **Critical**: "Field [name] creates CRM records without checking for duplicates first."
 
-**C5 — Send to Table destination has pre-created columns**
-For each `send_to_table` column, check the destination table:
-- Were columns manually created before the Send to Table was configured? Look for duplicate column names or columns with no action → **Critical**: "Destination table [name] may have pre-created columns that will conflict with Send to Table auto-creation."
+**C5 — Send to Table destination has pre-created fields**
+For each `send_to_table` field, check the destination table:
+- Were fields manually created before the Send to Table was configured? Look for duplicate field names or fields with no action → **Critical**: "Destination table [name] may have pre-created fields that will conflict with Send to Table auto-creation."
 
 ### Warning (likely bugs or inefficiencies)
 
 **W1 — Missing blocklist check**
-Does the workflow have enrichment columns but no `lookup_single_record` against a blocklist table before them? → **Warning**: "No blocklist check before enrichment. Credits may be wasted on existing customers or churned accounts."
+Does the workflow have enrichment fields but no `lookup_single_record` against a blocklist table before them? → **Warning**: "No blocklist check before enrichment. Credits may be wasted on existing customers or churned accounts."
 
 **W2 — No email verification before outreach routing**
 Does the workflow route to outreach (Reply, Lemlist, Instantly) without an email verification step? → **Warning**: "No email verification before outreach. Expect high bounce rates."
 
 **W3 — Missing engagement notes for disqualification**
-Does the workflow create HubSpot engagement notes only for qualified leads? Check if there are engagement columns gated on disqualification conditions → **Warning**: "No engagement notes for disqualified leads. CRM will lack context on why accounts were skipped."
+Does the workflow create HubSpot engagement notes only for qualified leads? Check if there are engagement fields gated on disqualification conditions → **Warning**: "No engagement notes for disqualified leads. CRM will lack context on why accounts were skipped."
 
 **W4 — autoRunOnNewRow not enabled on destination tables**
 For tables that receive data via Send to Table:
-- Is `autoRunOnNewRow` enabled? If not → **Warning**: "Table [name] receives rows from Send to Table but autoRunOnNewRow is off. Action columns won't cascade automatically."
+- Is `autoRunOnNewRow` enabled? If not → **Warning**: "Table [name] receives rows from Send to Table but autoRunOnNewRow is off. Action fields won't cascade automatically."
 
 **W5 — Source table not triggered after create_table**
-For tables with a source column (HubSpot import, LinkedIn import):
-- Does the table have data rows? If 0 rows → **Warning**: "Table [name] has a source column but no data. The source import may not have been triggered after creation."
+For tables with a source field (HubSpot import, LinkedIn import):
+- Does the table have data rows? If 0 rows → **Warning**: "Table [name] has a source field but no data. The source import may not have been triggered after creation."
 
 **W6 — Company intelligence not propagated to contact tables**
-For contact-level tables that have AI email/outreach columns:
-- Is there a `lookup_single_record` back to the companies table? If not → **Warning**: "Table [name] has AI outreach columns but no lookup to company intelligence. Emails will be generic."
+For contact-level tables that have AI email/outreach fields:
+- Is there a `lookup_single_record` back to the companies table? If not → **Warning**: "Table [name] has AI outreach fields but no lookup to company intelligence. Emails will be generic."
 
 ### Info (best practices)
 
 **I1 — Scaling Ladder compliance**
-Check `list_runs` for recent runs. Were there runs with `runAction: null` (all rows) on expensive actions? → **Info**: "Column [name] was run on all rows at once. Consider using the Scaling Ladder (first_one → first_ten → full)."
+Check `list_runs` for recent runs. Were there runs with `runAction: null` (all rows) on expensive actions? → **Info**: "Field [name] was run on all rows at once. Consider using the Scaling Ladder (first_one → first_ten → full)."
 
 **I2 — Multiple HubSpot lookups for different property sets**
-For CRM-syncing workflows, is there only one `hubspot_lookup_object` column? → **Info**: "Single HubSpot lookup may miss properties. Consider separate lookups for account data vs engagement data."
+For CRM-syncing workflows, is there only one `hubspot_lookup_object` field? → **Info**: "Single HubSpot lookup may miss properties. Consider separate lookups for account data vs engagement data."
 
 **I3 — Missing table source tag**
 For workflows cloned from templates, does each table have a "Table Source" field or formula? → **Info**: "No table source identifier. Downstream systems can't distinguish which campaign batch records came from."
@@ -101,11 +101,11 @@ Present findings grouped by severity:
 ## Workflow Audit: [workspace name]
 
 **Tables audited:** [count]
-**Columns inspected:** [count]
+**Fields inspected:** [count]
 
 ### Critical ([count])
-- **C1** [table > column]: [description]
-- **C2** [table > column]: [description]
+- **C1** [table > field]: [description]
+- **C2** [table > field]: [description]
 ...
 
 ### Warning ([count])
@@ -113,7 +113,7 @@ Present findings grouped by severity:
 ...
 
 ### Info ([count])
-- **I1** [table > column]: [description]
+- **I1** [table > field]: [description]
 ...
 
 ### Summary

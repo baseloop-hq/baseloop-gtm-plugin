@@ -1,6 +1,6 @@
 ---
 name: workflow-cost-optimizer
-description: "Analyzes a Baseloop workflow's credit consumption and suggests optimizations to reduce cost. Use when the user asks about reducing costs, optimizing spend, or after a /review finds expensive ungated columns."
+description: "Analyzes a Baseloop workflow's credit consumption and suggests optimizations to reduce cost. Use when the user asks about reducing costs, optimizing spend, or after a /review finds expensive ungated fields."
 model: inherit
 ---
 
@@ -28,13 +28,13 @@ Before starting, read [cost-estimation.md](../../skills/gtm-engineering/referenc
 ### Step 1: Map the workflow
 
 1. `list_tables` — find all tables in the target workspace.
-2. For each table: `get_table_schema` — identify every column's action, type, and autoRunCondition.
-3. Classify each column as **free** or **paid** using the cost table from cost-estimation.md.
+2. For each table: `get_table_schema` — identify every field's action, type, and autoRunCondition.
+3. Classify each field as **free** or **paid** using the cost table from cost-estimation.md.
 4. `list_row_ids` (limit 1) — get the accurate total row count per table without loading cell data.
 
 ### Step 2: Calculate current cost
 
-For each paid action column:
+For each paid action field:
 - Identify the per-row credit cost.
 - Multiply by the number of rows that would execute (consider autoRunConditions that filter rows).
 - Sum across all tables to get the total workflow cost.
@@ -54,7 +54,7 @@ Check for these patterns (ordered by typical savings):
 - **Unnecessary Find People** — Is `li_find_people_at_company` running on companies that already have contacts in CRM?
 
 **Low savings:**
-- **Column ordering** — Are free checks (formulas, lookups) positioned before paid actions in the chain?
+- **Field ordering** — Are free checks (formulas, lookups) positioned before paid actions in the chain?
 - **Duplicate enrichment across tables** — Is the same company being enriched in multiple tables?
 
 ### Step 4: Report
@@ -65,7 +65,7 @@ Present findings:
 ## Cost Analysis: [workspace name]
 
 ### Current Cost Estimate
-| Table | Rows | Paid Columns | Cost/Row | Total |
+| Table | Rows | Paid Fields | Cost/Row | Total |
 |-------|------|-------------|----------|-------|
 | ...   | ...  | ...         | ...      | ...   |
 **Total: ~[X] credits**
@@ -89,6 +89,6 @@ Present findings:
 ## Key Rules
 
 - **Read-only** — never create, update, or delete anything. Only inspect and recommend.
-- **Be specific** — name the exact columns and tables, not generic advice.
+- **Be specific** — name the exact fields and tables, not generic advice.
 - **Show the math** — every savings estimate must include the calculation.
 - **Don't sacrifice quality** — if removing a gate would cause data quality issues, say so.

@@ -4,7 +4,7 @@ Actions organized by workflow stage. Use `get_action_schema` to get full configu
 
 ## Source Actions
 
-Import data into Baseloop tables. These are SOURCE-type columns created via `create_table` with `sourceField`.
+Import data into Baseloop tables. These are SOURCE-type fields created via `create_table` with `sourceField`.
 
 | Action Key | Provider | Purpose | Cost |
 |---|---|---|---|
@@ -14,11 +14,11 @@ Import data into Baseloop tables. These are SOURCE-type columns created via `cre
 | `hubspot_contacts_list_import` | HubSpot | Import contacts from a HubSpot static list | Free |
 | `hubspot_companies_list_import` | HubSpot | Import companies from a HubSpot static list | Free |
 
-**Remember:** Source actions require the two-step process — create table with sourceField, create placeholder row, then run_column.
+**Remember:** Source actions require the two-step process — create table with sourceField, create placeholder row, then run_field.
 
 ## Enrichment Actions
 
-Add data to existing rows. These are action columns added with `create_column`.
+Add data to existing rows. These are action fields added with `create_field`.
 
 | Action Key | Provider | Purpose | Cost |
 |---|---|---|---|
@@ -91,25 +91,25 @@ Move data between tables or to external systems.
 ### Send to Table — Key Configuration
 
 **Two modes:**
-- `send_row` — each source row becomes one destination row. Field mapping values are plain column field names.
-- `send_for_each_item` — expand an array column into multiple destination rows. Requires `sourceConfig` with `sourceColumnField` and `sourceArrayPath`.
+- `send_row` — each source row becomes one destination row. Field mapping values are plain field names.
+- `send_for_each_item` — expand an array field into multiple destination rows. Requires `sourceConfig` with `sourceFieldField` and `sourceArrayPath`.
 
 **Critical rules:**
-- Destination table must be empty (no pre-created columns)
-- Field mapping values use plain column `name` fields (from get_table_schema), NOT `{{field_name}}`
+- Destination table must be empty (no pre-created fields)
+- Field mapping values use plain field `name` fields (from get_table_schema), NOT `{{field_name}}`
 - In `send_for_each_item`, use `column:field_name` to include parent row data
 - Deduplication is automatic via origin metadata
 
 ### Send HTTP Request
-Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE) with dynamic URL, body, headers, and query params. Values can reference columns via `{{field_name}}`. Supports rate limiting and timeouts.
+Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE) with dynamic URL, body, headers, and query params. Values can reference fields via `{{field_name}}`. Supports rate limiting and timeouts.
 
-**Power user pattern — custom API enrichment**: Many teams use `baseloop_send_http_request` to hit third-party APIs (e.g., RapidAPI LinkedIn endpoints) for enrichment not covered by built-in actions. The response is stored as JSON, then AI agents or data extraction columns pull specific fields out. This is the basis of the "standard enrichment stack" pattern:
+**Power user pattern — custom API enrichment**: Many teams use `baseloop_send_http_request` to hit third-party APIs (e.g., RapidAPI LinkedIn endpoints) for enrichment not covered by built-in actions. The response is stored as JSON, then AI agents or data extraction fields pull specific fields out. This is the basis of the "standard enrichment stack" pattern:
 1. Formula: extract LinkedIn slug from URL
 2. HTTP Request: call RapidAPI with slug → get staff count, HQ, offices, description
 3. HTTP Request: call employee distribution API
 4. AI agents: extract structured data from JSON responses
 
-**Advanced pattern — dynamic campaign routing via HTTP**: For standard outreach enrollment, use the built-in outreach actions (see [Outreach Actions](#outreach-actions) below). However, when you need **dynamic campaign routing computed by formulas** (e.g., Language × Job Title Cluster → campaign ID in a single HTTP request), use `baseloop_send_http_request` to POST leads directly to the outreach platform API with a formula-computed campaign ID in the URL path. URL: `https://api.outreach-platform.com/campaigns/{{campaign_id_formula}}/leads`. Body: `{"lead_list": [{"first_name": "{{firstname}}", "email": "{{email}}"}]}`. This replaces N separate enrollment columns with 3 formulas + 1 HTTP request.
+**Advanced pattern — dynamic campaign routing via HTTP**: For standard outreach enrollment, use the built-in outreach actions (see [Outreach Actions](#outreach-actions) below). However, when you need **dynamic campaign routing computed by formulas** (e.g., Language × Job Title Cluster → campaign ID in a single HTTP request), use `baseloop_send_http_request` to POST leads directly to the outreach platform API with a formula-computed campaign ID in the URL path. URL: `https://api.outreach-platform.com/campaigns/{{campaign_id_formula}}/leads`. Body: `{"lead_list": [{"first_name": "{{firstname}}", "email": "{{email}}"}]}`. This replaces N separate enrollment fields with 3 formulas + 1 HTTP request.
 
 **Power user pattern — Slack Block Kit notifications**: Use `baseloop_send_http_request` to POST to Slack webhook URLs with rich Block Kit JSON formatting. Include section blocks with fields (name, email, LinkedIn, company, campaign, HubSpot URL) and a reply text section. Set `Content-Type: application/json` header. Gate with autoRunCondition to filter which events trigger notifications (e.g., exclude bounces and OOO from outreach reply alerts).
 
@@ -119,14 +119,14 @@ Look up data across Baseloop tables.
 
 | Action Key | Provider | Purpose | Cost |
 |---|---|---|---|
-| `lookup_single_record` | Baseloop | Find one row in another table by matching column values | Free |
+| `lookup_single_record` | Baseloop | Find one row in another table by matching field values | Free |
 | `lookup_multiple_records` | Baseloop | Find multiple rows in another table | Free |
 
 ### Lookup Single Record — Key Patterns
 
 **Lookup back to parent**: When contacts are created via Send to Table from a companies table, use `lookup_single_record` on the contacts table to pull company-level data back (AE assignment, HubSpot ID, qualification status, trigger event summaries). This is essential for CRM sync — you need the company HubSpot ID to create associated contacts.
 
-**Blocklist check**: Use `lookup_single_record` against a "Master CRM Blocklist" table (closed-won + churned accounts) as the first gate before enrichment. Gate downstream columns on blocklist lookup being `isNotFound`.
+**Blocklist check**: Use `lookup_single_record` against a "Master CRM Blocklist" table (closed-won + churned accounts) as the first gate before enrichment. Gate downstream fields on blocklist lookup being `isNotFound`.
 
 **Reverse lookup (ad attribution check)**: Given a list of target accounts, use `lookup_single_record` against a high-volume engagement table (e.g., ad analytics data) to check: "is this account already engaging with our ads?" The lookup result acts as an intent signal.
 
@@ -149,14 +149,14 @@ Create, update, and lookup records in CRMs. Always follow the **lookup before cr
 | `hubspot_get_engagements` | HubSpot | Retrieve engagements for a contact | Free |
 
 ### HubSpot Lookup → Extract → Update/Create Pattern
-1. Add `hubspot_lookup_object` column — search by email or domain (include `hs_object_id` in propertiesConfig)
-2. Run the lookup on 1 row, then `get_row_details` with its `fieldId` to inspect `fullValue`. Add a **data extraction column** (type: `"text"`) for `hs_object_id` with `extractionPath` derived from the actual response structure. Add extraction columns for any other properties you need downstream — always type `"text"`.
-3. Add `hubspot_update_object` column — gate on lookup `isFound`, use **extraction column** in `recordId` (NOT the lookup column directly)
-4. Add `hubspot_create_object` column — gate on lookup `isNotFound`
-5. Pass the company HubSpot ID (from extraction column or previous create) so contacts get associated
+1. Add `hubspot_lookup_object` field — search by email or domain (include `hs_object_id` in propertiesConfig)
+2. Run the lookup on 1 row, then `get_row_details` with its `fieldId` to inspect `fullValue`. Add a **data extraction field** (type: `"text"`) for `hs_object_id` with `extractionPath` derived from the actual response structure. Add extraction fields for any other properties you need downstream — always type `"text"`.
+3. Add `hubspot_update_object` field — gate on lookup `isFound`, use **extraction field** in `recordId` (NOT the lookup field directly)
+4. Add `hubspot_create_object` field — gate on lookup `isNotFound`
+5. Pass the company HubSpot ID (from extraction field or previous create) so contacts get associated
 
 ### HubSpot Engagement Notes as Audit Trail
-Create separate `hubspot_create_engagement` columns for each workflow outcome:
+Create separate `hubspot_create_engagement` fields for each workflow outcome:
 - **ICP Qualified** — full summary with enrichment data
 - **FTE Disqualified** — note with staff count
 - **Country Count Disqualified** — note with country distribution
@@ -199,19 +199,19 @@ Use with autoRunCondition to send alerts when specific conditions are met (e.g.,
 
 ## Webhook Ingestion
 
-Not an action column, but a column type. Webhook columns receive data POSTed from external systems. The webhook URL is generated when the column is created.
+Not an action field, but a field type. Webhook fields receive data POSTed from external systems. The webhook URL is generated when the field is created.
 
 **Key patterns:**
 - **Ad platform engagement**: Ad analytics platforms push LinkedIn ad engagement data (company name, LinkedIn URL, engagement level). High volume in production.
 - **Phone enrichment providers**: Push new phone numbers with contact record IDs. Pair with `hubspot_update_object` to sync to CRM automatically.
-- **Call/dialer platforms**: Dialer platforms push call data (outcome, disposition, transcript, email, phone number, direction). Use a formula to classify disposition as Interested/Not Interested, then two `baseloop_send_http_request` columns POST to the outreach platform API (e.g., Lemlist `/leads/interested/` and `/leads/not_interested/` endpoints) to feed call outcomes back. Gate each HTTP request on the formula result. This closes the cold call → email outreach feedback loop.
+- **Call/dialer platforms**: Dialer platforms push call data (outcome, disposition, transcript, email, phone number, direction). Use a formula to classify disposition as Interested/Not Interested, then two `baseloop_send_http_request` fields POST to the outreach platform API (e.g., Lemlist `/leads/interested/` and `/leads/not_interested/` endpoints) to feed call outcomes back. Gate each HTTP request on the formula result. This closes the cold call → email outreach feedback loop.
 - **Follower/intent events**: Follower tracking tools push company follower events. Triggers enrichment workflow via `autoRunOnNewRow: true`.
 - **LinkedIn connection exports**: Bulk import of LinkedIn connections for network analysis.
 - **Outreach platform events**: Email outreach platforms push all email events (sent, reply, bounce, OOO) with 16+ fields (event_type, reply_category, campaign_name, lead_email, reply text, timestamps). High volume in production. Branch processing by event_type and reply_category via autoRunConditions.
 
-Always pair webhook columns with `autoRunOnNewRow: true` on the table so processing starts automatically when data arrives.
+Always pair webhook fields with `autoRunOnNewRow: true` on the table so processing starts automatically when data arrives.
 
-**Testing webhooks:** Use `send_webhook_data` to send sample JSON data to a webhook column for testing. Pass the webhook column's fieldId and a JSON payload. This lets you verify the webhook-sourced table processes data correctly before pointing external systems at it.
+**Testing webhooks:** Use `send_webhook_data` to send sample JSON data to a webhook field for testing. Pass the webhook field's fieldId and a JSON payload. This lets you verify the webhook-sourced table processes data correctly before pointing external systems at it.
 
 ## Email Verification via HTTP Request
 
@@ -239,7 +239,7 @@ Use `builtwith_find_technology_stack` to detect what CRM a company uses, then ch
 
 ## Formulas
 
-Not an action, but a column type. Formulas are **free** and evaluate JavaScript expressions across row data. Use `preview_formula` to iterate on the formula before creating the column. Common uses:
+Not an action, but a field type. Formulas are **free** and evaluate JavaScript expressions across row data. Use `preview_formula` to iterate on the formula before creating the field. Common uses:
 - Concatenate fields (`firstName + " " + lastName`)
 - Conditional logic (`industry === "SaaS" ? "Yes" : "No"`)
 - Extract domains from URLs
@@ -266,12 +266,12 @@ Not an action, but a column type. Formulas are **free** and evaluate JavaScript 
 - **Website URL merge with link shortener detection**: Prioritize AI-found website when original contains bit.ly or linktr domains. Ensures clean domains downstream.
 - **Competitor signal merge**: Check if either employee-profile or job-posting competitor fields contain known competitor keywords. Combines two independent detection signals into one status.
 
-## Data Extraction Columns
+## Data Extraction Fields
 
-Not an action, but a column type. **Required whenever you need to reference a specific field from an action column's structured result.** See SKILL.md "Action output vs fullValue" for why this is needed.
+Not an action, but a field type. **Required whenever you need to reference a specific field from an action field's structured result.** See SKILL.md "Action output vs fullValue" for why this is needed.
 
-Created with `create_column` using `type: "text"`, `extractorFieldId` (the source action column's ID), and `extractionPath` (JMESPath expression). **Always use `type: "text"`** for extraction columns — never mirror the origin field's type.
+Created with `create_field` using `type: "text"`, `extractorFieldId` (the source action field's ID), and `extractionPath` (JMESPath expression). **Always use `type: "text"`** for extraction fields — never mirror the origin field's type.
 
 **Extraction paths:** Run the action on 1 row first, then `get_row_details` with its `fieldId` to see the actual `fullValue` structure. Derive your `extractionPath` from the real response — do not use hardcoded paths. Every action type has its own response shape, and even actions within the same integration (e.g., HubSpot Create vs HubSpot Lookup) return different JSON structures.
 
-**When to create extraction columns:** Any time you need a specific field from an action's structured output. Always inspect `fullValue` first to derive the correct `extractionPath` — see SKILL.md "Extraction Column Rule."
+**When to create extraction fields:** Any time you need a specific field from an action's structured output. Always inspect `fullValue` first to derive the correct `extractionPath` — see SKILL.md "Extraction Field Rule."

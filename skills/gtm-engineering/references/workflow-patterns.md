@@ -1,8 +1,8 @@
 # Workflow Patterns
 
-Production-proven workflow recipes from real Baseloop power users. Each pattern shows the architecture (tables + column chains), key decisions, and autoRunCondition gating. Use `get_action_schema` for full configuration details on each action.
+Production-proven workflow recipes from real Baseloop power users. Each pattern shows the architecture (tables + field chains), key decisions, and autoRunCondition gating. Use `get_action_schema` for full configuration details on each action.
 
-**Note:** Patterns below that include extraction columns assume you follow the Extraction Column Rule from SKILL.md: run the source action on 1 row, inspect `fullValue` with `get_row_details`, then create extraction columns with verified paths. Never use example paths below without confirming them against actual action output.
+**Note:** Patterns below that include extraction fields assume you follow the Extraction Field Rule from SKILL.md: run the source action on 1 row, inspect `fullValue` with `get_row_details`, then create extraction fields with verified paths. Never use example paths below without confirming them against actual action output.
 
 ## Table of Contents
 
@@ -40,13 +40,13 @@ HubSpot Import → Enrich & Qualify → Qualified Companies → All Leads
 ```
 
 **Table 1: HubSpot Import** (source)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Source | `hubspot_companies_list_import` | — | Import from HubSpot static list |
 | 2 | Send to Enrichment | `send_to_table` | always | Route to enrichment table |
 
-**Table 2: Enrich & Qualify** (~50 columns)
-| # | Column | Action | autoRunCondition | Purpose |
+**Table 2: Enrich & Qualify** (~50 fields)
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | LinkedIn Slug | formula | — | Extract slug from LinkedIn URL |
 | 2 | RapidAPI | `baseloop_send_http_request` | slug `notNull` | LinkedIn company data (staff, HQ, offices, description) |
@@ -64,7 +64,7 @@ HubSpot Import → Enrich & Qualify → Qualified Companies → All Leads
 | 14 | Send to Qualified | `send_to_table` | ICP Check = "Qualified" | Route qualified companies |
 
 **Table 3: Qualified Companies** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Research: Trigger Events | `custom_ai_agent` | always | Office expansions, funding (web search) |
 | 2 | Research: Hiring Intel | `custom_ai_agent` | always | Hiring patterns, remote/local |
@@ -78,7 +78,7 @@ HubSpot Import → Enrich & Qualify → Qualified Companies → All Leads
 Each search targets different roles/seniority based on the company segment. All results flow to the same leads table.
 
 **Table 4: All Leads** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Lookup Parent Company | `lookup_single_record` | always | Pull company data (AE, HubSpot ID, trigger events) |
 | 2 | HubSpot Lookup | `hubspot_lookup_object` | always | Check if contact exists in HubSpot |
@@ -103,7 +103,7 @@ Each search targets different roles/seniority based on the company segment. All 
 - **Lookup back to parent**: Leads table uses `lookup_single_record` to pull company data (AE assignment, HubSpot ID, trigger events) from the qualified companies table.
 - **Triple campaign routing**: Leads sorted into 3 outreach channels based on available contact info.
 - **HubSpot audit trail**: Engagement notes created at every stage — qualified, disqualified (with reason), research findings.
-- **`autoRunOnNewRow: true`** on downstream tables: When Send to Table creates rows, all columns cascade automatically.
+- **`autoRunOnNewRow: true`** on downstream tables: When Send to Table creates rows, all fields cascade automatically.
 
 ---
 
@@ -119,14 +119,14 @@ Each search targets different roles/seniority based on the company segment. All 
 ```
 
 **Table 1: ALL LEADS** (source: webhook from content platform)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | — | Input | webhook/import | — | Content type, contact info, email verification results |
 
 Tracks content attribution: `content_type` (report, webinar) and `content_name` (specific asset). Also receives email verification data (`mv_freemail`, `mv_quality`, `mv_result`).
 
-**Table 2: Account Qualification** (`autoRunOnNewRow: true`, ~60 columns)
-| # | Column | Action | autoRunCondition | Purpose |
+**Table 2: Account Qualification** (`autoRunOnNewRow: true`, ~60 fields)
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | LinkedIn URL Finder | `custom_ai_agent` | LI URL missing | Find company LinkedIn URL when missing |
 | 2 | LinkedIn Slug | formula | — | Extract slug from found URL |
@@ -162,7 +162,7 @@ Qualified Accounts (webhook) → Qualified Contacts
 ```
 
 **Table 1: Qualified Accounts** (source: webhook)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Webhook | webhook | — | External system pushes company data |
 | 2 | Blocklist Lookup | `lookup_single_record` | always | Check against blocklist |
@@ -196,7 +196,7 @@ Qualified Accounts (webhook) → Qualified Contacts
                                    └→ 2. Lead Finder → 3. All Leads
 ```
 
-**Tables 0a + 0b: Enrichment** (two source tables, same column structure)
+**Tables 0a + 0b: Enrichment** (two source tables, same field structure)
 Both run the standard enrichment stack independently, then **dual Send to Table** routes to two downstream tables simultaneously.
 
 **Table 1: Trigger Events** (`autoRunOnNewRow: true`)
@@ -210,7 +210,7 @@ Both run the standard enrichment stack independently, then **dual Send to Table*
 
 ### Key Decisions
 - **Parallel entry points**: Same workflow processes companies from different sources. Each gets its own enrichment table so sources can run on different schedules.
-- **Dual routing**: One enrichment table routes to BOTH trigger events AND lead finder simultaneously. Two Send to Table columns on the same table.
+- **Dual routing**: One enrichment table routes to BOTH trigger events AND lead finder simultaneously. Two Send to Table fields on the same table.
 - **Match verification**: AI agents compare HubSpot company names against LinkedIn names and verify domain matches. Catches data quality issues early.
 
 ---
@@ -226,7 +226,7 @@ Company Enrichment → Find People → All Leads
 ```
 
 **Table 1: Company Enrichment** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | — | Input | import/webhook | — | Pre-computed scores (account_tier, combined_score, growth_score) |
 | 1 | HubSpot Lookup | `hubspot_lookup_object` | always | Check if company exists |
@@ -285,13 +285,13 @@ HubSpot Import (New Batch)   ──┘         ↑ lookup_single_record FROM:
 ```
 
 **Source Tables** (multiple HubSpot import tables, `autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Source | `hubspot_companies_list_import` | — | Import from specific HubSpot list |
 | 2 | Send to Blocklist | `send_to_table` | always | Route to master blocklist |
 
 **Master CRM Blocklist** (destination)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | — | Input | receives from Send to Table | — | domain, name, owner, industry, LinkedIn URL |
 | 1 | External Sync | `baseloop_send_http_request` | always | Optional: sync blocklist to external systems |
@@ -299,7 +299,7 @@ HubSpot Import (New Batch)   ──┘         ↑ lookup_single_record FROM:
 ### Key Decisions
 - **Multi-source feeding**: Each HubSpot deal stage (closed-won, churned, etc.) gets its own import table, all feeding the same master blocklist. New exclusion criteria = new import table.
 - **Cross-workspace reference**: The blocklist lives in its own workspace. Other workspaces reference it via `lookup_single_record` by domain. The blocklist is never modified by consuming workflows.
-- **Cheapest gate**: `lookup_single_record` costs zero credits and runs before any enrichment. Gate all downstream columns on blocklist lookup being `isNotFound`.
+- **Cheapest gate**: `lookup_single_record` costs zero credits and runs before any enrichment. Gate all downstream fields on blocklist lookup being `isNotFound`.
 
 ---
 
@@ -320,7 +320,7 @@ B. Leads (State of IT Report)  ──┘         │
 ```
 
 **Content-Specific Source Tables** (one per asset)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Source | `hubspot_contacts_list_import` | — | Import contacts who downloaded this asset |
 | 2 | Lookup Company | `hubspot_lookup_object` | always | Get company domain + additional domains |
@@ -333,7 +333,7 @@ B. Leads (State of IT Report)  ──┘         │
 | 9 | NOTE: Bad Email | `hubspot_create_engagement` | mv_quality = "bad" | CRM note for bad emails |
 
 **Table 3: Enrich Qualified Leads** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Lookup Contact | `hubspot_lookup_object` | always | Get current CRM data |
 | 2 | Lookup Company | `hubspot_lookup_object` | always | Get company domain, LinkedIn URL |
@@ -368,13 +368,13 @@ Target Account Check → lookup_single_record against Ad Engagement Source (reve
 ```
 
 **Ad Engagement Source** (webhook, high volume)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Webhook | webhook | — | Receives: Company Name, LinkedIn URL, Engagement Level |
 | 2 | Send to Table | `send_to_table` | always | Route engaged companies to enrichment |
 
 **Target Account Check** (reverse lookup table)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | — | Input | import/manual | — | Target companies with ad metrics (impressions, clicks, conversions) |
 | 1 | Lookup Ad Engagement | `lookup_single_record` | always | Check if company appears in ad engagement data |
@@ -398,14 +398,14 @@ Phone Provider (webhook) → HubSpot Update (push new numbers)
 ```
 
 **Call Data Table**
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | — | Input | import | — | Call data: user, disposition, duration, prospect, transcript, recording |
 | 1 | Record ID | formula | — | Extract HubSpot Record ID from dialer link URL |
 | 2 | Lookup Object | `hubspot_lookup_object` | always | Pull CRM context: last contacted, create date, LinkedIn URL, campaigns |
 
 **New Phone Numbers Table** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Webhook | webhook | — | Receives: phone number, email, name, data provider, record ID |
 | 2 | Update Object | `hubspot_update_object` | always | Push new phone number to HubSpot contact |
@@ -430,7 +430,7 @@ Companies (1854 rows, webhook) ←→ People (2718 rows, webhook)
 ```
 
 **Companies Table**
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Webhook | webhook | — | Company data from LinkedIn export |
 | 2 | Lookup People | `lookup_multiple_records` | always | Find connections at this company |
@@ -439,7 +439,7 @@ Companies (1854 rows, webhook) ←→ People (2718 rows, webhook)
 | 5 | HubSpot Lookup (engagement) | `hubspot_lookup_object` | always | Pull Notes Last Contacted separately |
 
 **People Table**
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Webhook | webhook | — | Contact data from LinkedIn export |
 | 2 | Lookup Companies | `lookup_multiple_records` | always | Find which target companies this person connects to |
@@ -456,7 +456,7 @@ Companies (1854 rows, webhook) ←→ People (2718 rows, webhook)
 ### Template Cloning for Campaign Batches
 Build a workflow workspace once (with the full enrichment + qualification + lead finding + CRM sync chain), then clone it for each new campaign or data batch. Each clone gets:
 - Its own data (separate from other batches)
-- The same column structure and autoRunConditions
+- The same field structure and autoRunConditions
 - A "Table Source" field to track which batch rows came from
 
 Example: "One-off | Enrichment from HubSpot" (template, 0 rows) → "One-off | Enrichment from HubSpot - Feb 14th" (active clone with data).
@@ -481,9 +481,9 @@ These flow through Send to Table so outreach can reference which asset the lead 
 
 ### Webhook as Universal Data Ingestion
 Every external system integration uses webhooks: ad analytics platforms (engagement data), follower tracking tools (intent events), phone providers (new numbers), dialer platforms (call data), LinkedIn exports. The pattern is always:
-1. Webhook column receives the data
+1. Webhook field receives the data
 2. `autoRunOnNewRow: true` triggers processing
-3. Action columns cascade automatically
+3. Action fields cascade automatically
 
 This is the preferred pattern over polling or manual imports for any real-time data source.
 
@@ -495,7 +495,7 @@ Instead of one monolithic contacts import, create separate tables per country ×
 - All tables share identical schema — templatizable
 
 ### Dynamic URL Construction via Formula
-When routing to an external API that has multiple endpoints (e.g., different outreach campaign IDs), compute the endpoint path via formulas instead of creating N separate HTTP request columns. The formula result becomes part of the URL: `https://api.example.com/campaigns/{{formula_computed_id}}/leads`. One action column handles all routing permutations.
+When routing to an external API that has multiple endpoints (e.g., different outreach campaign IDs), compute the endpoint path via formulas instead of creating N separate HTTP request fields. The formula result becomes part of the URL: `https://api.example.com/campaigns/{{formula_computed_id}}/leads`. One action field handles all routing permutations.
 
 ### People-Finding Strategy: LinkedIn vs AI Web Search
 Choose the right people-finding approach based on the target audience. **Do not default to building both** — ask about the audience first.
@@ -516,7 +516,7 @@ Choose the right people-finding approach based on the target audience. **Do not 
 
 **Option C: Both with fallback** (LinkedIn first, AI web search for misses)
 - Best for: mixed audiences where some companies are LinkedIn-active and others aren't
-- How: `li_find_people_at_company` runs first, then `custom_ai_agent` gated on Find People column being `isNotFound`
+- How: `li_find_people_at_company` runs first, then `custom_ai_agent` gated on Find People field being `isNotFound`
 - Both paths feed the **same destination table** via Send to Table `send_for_each_item`, so downstream workflow (enrichment, CRM sync, outreach) is identical regardless of how the contact was found
 - Cost: 2 credits/contact for LinkedIn hits + 5-8 credits/company for LinkedIn misses
 
@@ -530,7 +530,7 @@ When processing outreach replies via webhook, filter Slack notifications to excl
 - Exclude bounces (reply_category = 4)
 - Exclude OOO auto-replies (reply_category = 6)
 - Only notify for meaningful replies that need human review
-Use separate action columns for OOO mining (gated on category = 6) vs Slack notifications (gated on category != 4 AND != 6).
+Use separate action fields for OOO mining (gated on category = 6) vs Slack notifications (gated on category != 4 AND != 6).
 
 ---
 
@@ -556,7 +556,7 @@ Outreach Platform (webhook: all events)
 ```
 
 **Outreach Replies Table** (webhook, high volume)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Webhook | webhook | — | Receives ALL outreach events (16+ fields) |
 | 2 | SM - Lead Category ID | formula | — | Map category name → numeric ID |
@@ -598,7 +598,7 @@ Input: HubSpot Company Record ID
 ```
 
 **HS Enroll Table** (2,074 rows)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | company-object-search | `hubspot_lookup_object` | always | Verify company exists in HubSpot |
 | 2 | contact-object-search | `hubspot_lookup_object` | always | Find contact by associated company ID, extract email + title |
@@ -626,11 +626,11 @@ Input: HubSpot Company Record ID
 | IT | Executive/General Management | {campaign_H} |
 
 ### Key Decisions
-- **Formula chain replaces N routing columns**: 3 formulas + 1 HTTP request replaces what would be 8 separate outreach enrollment columns with complex gating. Massively simpler.
+- **Formula chain replaces N routing fields**: 3 formulas + 1 HTTP request replaces what would be 8 separate outreach enrollment fields with complex gating. Massively simpler.
 - **Dynamic URL path**: The campaign ID is computed by formulas and placed directly in the API URL path: `https://api.outreach-platform.com/campaigns/{{category_mapping_code}}/leads`. The HTTP request body stays the same for all campaigns.
 - **Language inferred from email domain**: `.it` → Italian, everything else → English. Simple heuristic for multi-language campaigns targeting Italy + Luxembourg.
 - **Contact lookup by associated company ID**: The table starts with company Record IDs, then finds the contact at that company. This is the reverse of the typical flow (usually starts with contacts).
-- **Extensible dimensions**: Add a third dimension (e.g., company size) by adding one more formula to the chain. The mapping formula grows but the HTTP request column stays the same.
+- **Extensible dimensions**: Add a third dimension (e.g., company size) by adding one more formula to the chain. The mapping formula grows but the HTTP request field stays the same.
 
 ---
 
@@ -659,14 +659,14 @@ Input: HubSpot Company Record ID
 ```
 
 **Table 1: Companies Dedup** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Company Website Finder | `custom_ai_agent` | website null OR contains bit.ly/linktr/hubs.ly | Resolve shortened URLs, find missing websites |
 | 2 | Merged Company Website | formula | — | Prioritize found website over LinkedIn-provided one |
 | 3 | Send to Table | `send_to_table` | always | Route to qualification |
 
 **Table 2: Companies Qualification** (`autoRunOnNewRow: true`)
-| # | Column | Action | autoRunCondition | Purpose |
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Company Status | `custom_ai_agent` | always | Validate website is live, get basic info |
 | 2 | Company HQ Region | `custom_ai_agent` | always | Classify HQ region |
@@ -679,8 +679,8 @@ Input: HubSpot Company Record ID
 | 9 | Service | `send_to_table` | business model = "Service" | Route to FIT Service |
 | 10 | RevOps Agency | `send_to_table` | company type = "Agency" | Route to Partners |
 
-**Table 3: Companies Master List** (61 columns)
-| # | Column | Action | autoRunCondition | Purpose |
+**Table 3: Companies Master List** (61 fields)
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | ❌ Exclusion | `lookup_multiple_records` | always | Check against HubSpot exclusion list |
 | 2 | Lookup Object | `hubspot_lookup_object` | always | Get CRM lifecycle stage, campaign status |
@@ -729,8 +729,8 @@ HubSpot Contact Import
     └→ Unemployed
 ```
 
-**Check Job Changes Table** (44 columns)
-| # | Column | Action | autoRunCondition | Purpose |
+**Check Job Changes Table** (44 fields)
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | HubSpot Contacts | `hubspot_contacts_list_import` | — | Import contacts with company name, email, LinkedIn URL |
 | 2 | Enriched Status > 1mo | formula | — | Check if last enriched date is current month |
@@ -756,7 +756,7 @@ HubSpot Contact Import
 - **Email re-enrichment at new company**: If someone changed jobs, their old email is likely invalid. Run waterfall email enrichment to get their new work email.
 - **Company object creation is mandatory**: Never update a contact's company as flat text. The workflow must create the Company object in HubSpot and associate the contact with it. This preserves HubSpot's relationship graph, reporting, deal pipelines, and ABM features.
 - **Domain resolution fallback**: `enrich_contact` may return null for `companyWebsite`. When this happens, an AI agent with web search resolves the domain before the HubSpot company lookup. This costs ~4 credits per row but only runs when needed.
-- **Consolidated company ID**: The contact update needs a single company HubSpot ID regardless of whether the company was found via lookup or newly created. A formula or extraction column merges both sources.
+- **Consolidated company ID**: The contact update needs a single company HubSpot ID regardless of whether the company was found via lookup or newly created. A formula or extraction field merges both sources.
 
 ---
 
@@ -786,8 +786,8 @@ Companies Master List (intelligence, CRM detection, competitor status)
     → Outreach enrollment (Smartlead/Lemlist/Instantly)
 ```
 
-**Contacts/Outbound Table** (50-70 columns)
-| # | Column | Action | autoRunCondition | Purpose |
+**Contacts/Outbound Table** (50-70 fields)
+| # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
 | 1 | Lookup Company | `lookup_single_record` | always | Pull: Intelligence, Target Personas, GTM Motion, CRM Detection, Competitor Status, HubSpot ID, Funding Stage |
 | 2 | Language | `custom_ai_agent` | always | Classify language from LinkedIn languages + location fallback |
@@ -805,7 +805,7 @@ Companies Master List (intelligence, CRM detection, competitor status)
 
 ### Email AI Agent Configuration
 
-Each email AI column uses a detailed system prompt with:
+Each email AI field uses a detailed system prompt with:
 - **Name cleaning**: Strip emojis, titles (Prof., Dr.), prefixes. Use first name only.
 - **Opener construction**: Reference the prospect's role + company intelligence. Never generic.
 - **Conditional SDR line**: If SDR/BDR lookup found a rep, include "{{rep_name}} on my team already works with companies like yours." If not, omit entirely.
@@ -831,7 +831,7 @@ This gives you **precision control over the value prop** (deterministic, testabl
 
 ### Key Decisions
 - **Company intelligence is the fuel**: The quality of AI-generated emails depends entirely on the intelligence gathered at the company level (ICP research, GTM motion, competitor status, funding). Do this once on the Companies Master List and propagate via lookup.
-- **One AI column per email**: Don't try to generate all 5 emails in one AI call. Separate columns let you re-run individual emails, use different models per email, and gate each on the previous (sequential dependency).
+- **One AI field per email**: Don't try to generate all 5 emails in one AI call. Separate fields let you re-run individual emails, use different models per email, and gate each on the previous (sequential dependency).
 - **Formulas for conditional text, AI for personalization**: Never ask the AI to handle conditional value propositions — it's non-deterministic. Use formulas for the parts that must be precise (CRM mention, pricing tier), AI for the parts that should vary (opener, question, angle).
 - **Language classification drives everything**: Language determines greeting, tone, and which campaign to enroll in. Classify once, use everywhere.
 - **SDR/BDR team awareness**: Cross-table lookup against a team table personalizes emails with rep names. This small touch dramatically increases reply rates.
@@ -852,7 +852,7 @@ Three-way result (Match / No Match / Bad Email) gates which email to use. Pair w
 ### Dialer → Outreach Platform Feedback Loop
 When a dialer platform pushes call outcomes via webhook:
 1. Formula classifies disposition as Interested / Not Interested
-2. Two `baseloop_send_http_request` columns POST to the outreach platform API — one for interested, one for not interested — each gated on the formula result
+2. Two `baseloop_send_http_request` fields POST to the outreach platform API — one for interested, one for not interested — each gated on the formula result
 3. This closes the loop: cold call outcomes automatically update the email sequence platform
 
 ### Real Reply Detection for Untracked Replies
