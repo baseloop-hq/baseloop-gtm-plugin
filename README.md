@@ -37,6 +37,14 @@ claude mcp add --transport http --header "x-api-key: $BASELOOP_API_KEY" baseloop
 
 Find your API key in Baseloop under Settings > API Keys.
 
+## Development Setup
+
+After cloning, activate the git hooks so marketplace.json stays in sync with plugin.json on every commit:
+
+```bash
+git config --local include.path ../.gitconfig
+```
+
 ## What's Included
 
 ### Skill: GTM Engineering

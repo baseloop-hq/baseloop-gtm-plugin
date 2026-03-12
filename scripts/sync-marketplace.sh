@@ -1,39 +1,23 @@
 #!/usr/bin/env bash
 #
-# Syncs .claude-plugin/marketplace.json from individual plugin.json files.
-# Source of truth: plugins/*/.claude-plugin/plugin.json
+# Syncs .claude-plugin/marketplace.json version + description from plugin.json.
+# Single-plugin repo layout: both files live in .claude-plugin/
 #
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PLUGIN_JSON="$ROOT_DIR/.claude-plugin/plugin.json"
 MARKETPLACE="$ROOT_DIR/.claude-plugin/marketplace.json"
 
-# Read marketplace shell (owner, metadata) — everything except "plugins"
-marketplace_base=$(jq 'del(.plugins)' "$MARKETPLACE")
+if [ ! -f "$PLUGIN_JSON" ]; then
+  echo "sync-marketplace: plugin.json not found, skipping" >&2
+  exit 0
+fi
 
-# Build plugins array from each plugin's plugin.json
-plugins="[]"
-for plugin_dir in "$ROOT_DIR"/plugins/*/; do
-  plugin_json="$plugin_dir/.claude-plugin/plugin.json"
-  [ -f "$plugin_json" ] || continue
+# Update the first (only) plugin entry with version + description from plugin.json
+jq --slurpfile src "$PLUGIN_JSON" '
+  .plugins[0].version = $src[0].version |
+  .plugins[0].description = $src[0].description
+' "$MARKETPLACE" > "$MARKETPLACE.tmp" && mv "$MARKETPLACE.tmp" "$MARKETPLACE"
 
-  dir_name=$(basename "$plugin_dir")
-
-  # Map plugin.json fields → marketplace entry
-  entry=$(jq --arg source "./plugins/$dir_name" '{
-    name: .name,
-    description: .description,
-    version: .version,
-    author: .author,
-    homepage: (.homepage // .author.url // null),
-    tags: .keywords,
-    source: $source
-  }' "$plugin_json")
-
-  plugins=$(echo "$plugins" | jq --argjson entry "$entry" '. + [$entry]')
-done
-
-# Merge base + plugins and write
-echo "$marketplace_base" | jq --argjson plugins "$plugins" '. + {plugins: $plugins}' > "$MARKETPLACE"
-
-echo "marketplace.json synced with $(echo "$plugins" | jq length) plugin(s)"
+echo "marketplace.json synced to v$(jq -r '.plugins[0].version' "$MARKETPLACE")"
