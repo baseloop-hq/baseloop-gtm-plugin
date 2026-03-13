@@ -563,3 +563,41 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 **Fix:** These fields cannot be modified via `update_field`. If you need custom timestamp or user tracking, create a separate field (e.g., a formula that references the system field value).
 
 **Prevention:** Before calling `update_field`, check `get_table_schema` — system fields have `isSystem: true`. Skip them in any batch update logic.
+
+---
+
+## Copying from a table with Input source creates plain fields on destination
+
+**Symptom:** User asks to "copy data from Table A to Table B." Table A receives its data via Send to Table (Input source) and has extraction fields. The AI creates Send to Table from A → B but creates plain text fields on Table B instead of replicating the Input + extraction field structure. Table B ends up with empty or disconnected fields.
+
+**Cause:** The AI sees Table A's extraction fields and tries to recreate them on Table B, but since Table B has no Input source, it falls back to creating plain primitive fields. Plain fields have no `extractorFieldId` or `extractionPath`, so they can't extract data from the incoming Send to Table payload.
+
+**Fix (structure replication — copy Table A's schema to Table B):**
+1. `get_table_schema(tableA)` — read the Input field and all extraction fields with their `receivesDataFrom.extractionPath` values
+2. Create Table B as an empty table
+3. Create an Input field on Table B: `create_field` with `type: "input"`
+4. For each extraction field on Table A, create a matching field on Table B: `create_field` with `type: "text"`, `extractorFieldId` = Table B's new Input field ID, `extractionPath` = same path from Table A's schema
+
+**Fix (new pipeline — set up Send to Table from A → B where you don't know the payload structure):**
+1. Create Table B as an empty table
+2. Create an Input field on Table B: `create_field` with `type: "input"`
+3. Create Send to Table on Table A → Table B with `fieldMappings` referencing Table A's field names
+4. Run Send to Table on 1 row so data arrives in Table B's Input
+5. `get_row_details` on the Table B row with the Input field's `fieldId` to see the `fullValue` structure
+6. Create extraction fields on Table B that extract from Table B's Input field using paths derived from the actual `fullValue`
+
+**Prevention:** When `get_table_schema` shows a source table has an Input field with extraction fields, always replicate the same pattern on the destination: Input field first, then extraction fields from it. Never create plain fields to hold data that should come from an Input source.
+
+**Important — this only works for Input sources.** If the source table uses a different source type (HubSpot import, LinkedIn import, webhook, etc.), you cannot replicate that source via `create_field` — source actions can only be created via `create_table` with `sourceField`. Tell the user the table structure can't be copied and they need to create a new table from scratch with the same source configuration.
+
+---
+
+## Modifying an existing table without confirming with the user
+
+**Symptom:** User asks to build a workflow or add fields. The AI finds a table in the workspace with a similar name or schema (e.g., "Companies", "Contacts") and starts adding fields or modifying it. The table belongs to a different workflow or contains production data the user didn't intend to modify.
+
+**Cause:** The AI assumes an existing table is the right target because it looks relevant — similar name, matching entity type, or compatible fields. It skips confirmation and starts building.
+
+**Fix:** Always ask the user which table to work in before creating or modifying fields. If the user's request is ambiguous (e.g., "enrich my companies"), list the tables in the workspace and ask which one they mean. Never assume a table is the correct target just because it has a similar name or schema.
+
+**Prevention:** When `list_tables` or `get_table_schema` returns existing tables that look like a match, confirm with the user before modifying. The only exception is when the user explicitly names the table or there is only one table in the workspace and the request clearly applies to it.

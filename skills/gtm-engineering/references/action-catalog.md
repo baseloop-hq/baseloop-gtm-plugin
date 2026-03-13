@@ -275,3 +275,9 @@ Created with `create_field` using `type: "text"`, `extractorFieldId` (the source
 **Extraction paths:** Run the action on 1 row first, then `get_row_details` with its `fieldId` to see the actual `fullValue` structure. Derive your `extractionPath` from the real response — do not use hardcoded paths. Every action type has its own response shape, and even actions within the same integration (e.g., HubSpot Create vs HubSpot Lookup) return different JSON structures.
 
 **When to create extraction fields:** Any time you need a specific field from an action's structured output. Always inspect `fullValue` first to derive the correct `extractionPath` — see SKILL.md "Extraction Field Rule."
+
+## Input Fields
+
+Not an action, but a field type. Marks a table as a data receiver. Created with `create_field` using `type: "input"`. Stores incoming JSON payloads from Send to Table or other routing actions. Positioned frozen at the start of the table.
+
+**When to create Input fields:** When replicating a table structure that has an Input source. For example, if Table A receives data via Send to Table and has Input + extraction fields, and you need to copy that same structure to Table B — create an Input field on Table B first, then create extraction fields that reference it.
