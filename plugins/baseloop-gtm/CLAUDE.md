@@ -7,11 +7,12 @@
   - `workflow-patterns.md` — Common end-to-end workflow recipes
   - `pitfalls.md` — Known failure modes and how to avoid them
   - `error-patterns.md` — Error signatures mapped to root causes and fixes
-- `commands/plan.md` — Workflow design workflow (read-only)
-- `commands/build.md` — Workflow execution workflow (with inline diagnosis)
-- `commands/review.md` — Proactive workflow audit (read-only)
-- `commands/diagnose.md` — 3-phase debugging workflow (investigate → diagnose → fix)
-- `commands/lfg.md` — Autonomous plan→build→diagnose chain
+- `skills/plan/SKILL.md` — Workflow design (prompt-enforced read-only)
+- `skills/build/SKILL.md` — Workflow execution (with inline diagnosis)
+- `skills/review/SKILL.md` — Proactive workflow audit (prompt-enforced read-only)
+- `skills/diagnose/SKILL.md` — 3-phase debugging (investigate → diagnose → fix)
+- `skills/lfg/SKILL.md` — Autonomous plan→build→diagnose chain
+- `skills/help/SKILL.md` — Capabilities overview and quick start examples
 - `agents/workflow/` — Specialized agents (read-only auditors)
   - `workflow-cost-optimizer.md` — Credit consumption analysis and savings recommendations
   - `crm-integrity-checker.md` — HubSpot sync integrity audit (duplicates, associations, enums)
@@ -23,20 +24,19 @@ When modifying:
 1. Bump version in `.claude-plugin/plugin.json` — the pre-commit hook syncs `marketplace.json` automatically. **Never change `metadata.version`** in marketplace.json — it is always `1.0.0`.
 2. Keep SKILL.md under 500 lines — move detail to `references/`
 3. Verify frontmatter fields match the plugin spec
-4. Test commands by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`, `/baseloop-gtm:review`
+4. Test skills by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`, `/baseloop-gtm:review`
 
 ## MCP Server
 
-The Baseloop MCP server is NOT bundled with this plugin. Users must configure
-it separately using one of:
-- OAuth: `claude mcp add --transport http baseloop-gtm https://api-v2.baseloop.io/v1/mcp`
-- API key: `claude mcp add --transport http --header "x-api-key: $BASELOOP_API_KEY" baseloop-gtm https://api-v2.baseloop.io/v1/mcp`
+The Baseloop MCP server is bundled with this plugin via the `mcpServers` entry
+in `plugin.json` (key: `baseloop`). Users authenticate through the plugin's
+connector flow (OAuth).
 
-**Important:** The server MUST be registered with the name `baseloop-gtm`. All command
-`allowed-tools` lists use the `mcp__baseloop-gtm__` prefix, so a different server name
-will cause all commands to fail.
-
-The skill and commands assume the MCP server is already connected.
+**Tool naming:** MCP tool prefixes are runtime-generated (UUID-based in Cowork,
+name-based in CLI) and cannot be hardcoded. Skills reference MCP tools by
+their short names (e.g., `list_tables`, `create_field`) in prompt body text.
+Read-only vs. mutation boundaries are enforced through prompt instructions,
+not tool permissions.
 
 ## Content Philosophy
 
