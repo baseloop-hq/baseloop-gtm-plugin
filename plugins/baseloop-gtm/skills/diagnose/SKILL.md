@@ -1,9 +1,7 @@
 ---
 name: baseloop-gtm:diagnose
-description: This command should be used when a Baseloop workflow field has errors, produces unexpected output, or data is not flowing between tables. It investigates the root cause, applies a fix, and verifies the resolution.
+description: This skill should be used when a Baseloop workflow field has errors, produces unexpected output, or data is not flowing between tables. It investigates the root cause, applies a fix, and verifies the resolution.
 argument-hint: "[table name, field name, or problem description]"
-disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_workspaces, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__list_row_ids, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__create_workspace, mcp__baseloop-gtm__update_workspace, mcp__baseloop-gtm__delete_workspace, mcp__baseloop-gtm__clone_workspace, mcp__baseloop-gtm__create_table, mcp__baseloop-gtm__update_table, mcp__baseloop-gtm__delete_table, mcp__baseloop-gtm__duplicate_table, mcp__baseloop-gtm__create_field, mcp__baseloop-gtm__update_field, mcp__baseloop-gtm__delete_field, mcp__baseloop-gtm__create_rows, mcp__baseloop-gtm__update_row, mcp__baseloop-gtm__delete_rows, mcp__baseloop-gtm__create_view, mcp__baseloop-gtm__update_view, mcp__baseloop-gtm__delete_view, mcp__baseloop-gtm__set_view_filters, mcp__baseloop-gtm__delete_view_filters, mcp__baseloop-gtm__reorder_fields, mcp__baseloop-gtm__update_view_fields, mcp__baseloop-gtm__send_webhook_data, mcp__baseloop-gtm__run_field, mcp__baseloop-gtm__run_fields, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__list_runs, mcp__baseloop-gtm__cancel_run, mcp__baseloop-gtm__wait_for_run, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__clone_field, mcp__baseloop-gtm__reorder_tables, mcp__baseloop-gtm__list_presets, mcp__baseloop-gtm__create_preset, mcp__baseloop-gtm__update_preset, mcp__baseloop-gtm__delete_preset, mcp__baseloop-gtm__list_workspace_templates, mcp__baseloop-gtm__mark_workspace_as_template, mcp__baseloop-gtm__unmark_workspace_as_template, mcp__baseloop-gtm__clone_workspace_template
 ---
 
 # Diagnose a Workflow Error
@@ -14,7 +12,7 @@ allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizat
 
 If the problem description above is empty, ask: "Which table or field is having issues? Describe what you expected vs. what happened."
 
-Before starting, read [error-patterns.md](../skills/gtm-engineering/references/error-patterns.md) and [pitfalls.md](../skills/gtm-engineering/references/pitfalls.md) to load known error signatures.
+Before starting, read [error-patterns.md](../gtm-engineering/references/error-patterns.md) and [pitfalls.md](../gtm-engineering/references/pitfalls.md) to load known error signatures.
 
 ---
 

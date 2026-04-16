@@ -1,9 +1,7 @@
 ---
 name: baseloop-gtm:plan
-description: This command should be used when the user wants to design a Baseloop data workflow from a goal description. It analyzes requirements, surveys available tools, and produces a step-by-step workflow architecture without creating anything.
+description: This skill should be used when the user wants to design a Baseloop data workflow from a goal description. It analyzes requirements, surveys available tools, and produces a step-by-step workflow architecture without creating anything.
 argument-hint: "[workflow goal, e.g. 'Import HubSpot companies, qualify B2B, find founders, sync contacts back']"
-disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_workspaces, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__get_table_schema, mcp__baseloop-gtm__list_views, mcp__baseloop-gtm__list_rows, mcp__baseloop-gtm__list_row_ids, mcp__baseloop-gtm__get_row_details, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_action_schema, mcp__baseloop-gtm__get_connected_platforms, mcp__baseloop-gtm__resolve_action_options, mcp__baseloop-gtm__get_run_status, mcp__baseloop-gtm__list_runs, mcp__baseloop-gtm__preview_formula, mcp__baseloop-gtm__list_presets
 ---
 
 # Design a GTM Workflow
@@ -43,7 +41,7 @@ For each table, define the field chain in order:
   - **LinkedIn-heavy** (tech, enterprise, B2B): `li_find_people_at_company` only
   - **Non-LinkedIn** (small businesses, non-tech, low-LinkedIn regions): `custom_ai_agent` with web search + JSON Schema only
   - **Mixed/uncertain**: both, with AI web search gated on LinkedIn `isNotFound`
-  - See workflow-patterns.md "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
+  - See [workflow-patterns.md](../gtm-engineering/references/workflow-patterns.md) "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
 - **Qualification**: What filtering/scoring is needed? (custom_ai_agent, formula, perplexity)
 - **Routing**: Does data flow to other tables? (send_to_table with mode and field mappings)
 - **Sync**: Does data go to a CRM or outreach tool? (hubspot_create_object, outreach actions)
@@ -99,11 +97,11 @@ Define how the workflow will be validated before running on the full dataset:
 2. **Rung 2 scope** — 10 rows through the full chain. What to verify at scale (error rate, data quality, CRM dedup).
 3. **Test cost** — estimated credits for Rung 1 (1 row × full chain) + Rung 2 (10 rows × full chain).
 4. **Full-scale cost** — estimated credits for all rows. This number will be reported to the user before Rung 3.
-5. **Rung 3 batch strategy** — for tables with >100 rows, plan to use `list_row_ids` (with `hasNotRun` filter) to paginate row IDs, then batch through `run_fields` with `custom_range` (100 rows per batch).
+5. **Rung 3 batch strategy** — for tables with >100 rows, plan to use `list_row_ids` (with `hasNotRun` filter) to paginate row IDs, then batch through `run_fields` with `rowIds` (100 rows per batch).
 
 ## Phase 4: Confirm and Handoff
 
-**Do NOT create any tables or fields.** This command is plan-only.
+**Do NOT create any tables or fields.** This skill is plan-only.
 
 Present three options to the user:
 

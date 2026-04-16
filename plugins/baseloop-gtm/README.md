@@ -6,7 +6,6 @@ Build automated GTM data workflows with Claude Code. This plugin teaches Claude 
 
 - A [Baseloop](https://baseloop.com) account with an active workspace
 - [Claude Code](https://claude.ai/claude-code) installed
-- Baseloop MCP server connected (see Setup below)
 
 ## Setup
 
@@ -17,32 +16,14 @@ Build automated GTM data workflows with Claude Code. This plugin teaches Claude 
 /plugin install baseloop-gtm@baseloop-gtm-plugin
 ```
 
-### Connect the MCP server
-
-The plugin requires a connection to your Baseloop MCP server. Choose one:
-
-**OAuth (recommended):**
-```bash
-claude mcp add --transport http baseloop-gtm https://api-v2.baseloop.io/v1/mcp
-```
-
-**API key:**
-```bash
-claude mcp add --transport http --header "x-api-key: $BASELOOP_API_KEY" baseloop-gtm https://api-v2.baseloop.io/v1/mcp
-```
-
-> **Note:** Using an environment variable (`$BASELOOP_API_KEY`) avoids persisting the key in your shell history. Set it with `export BASELOOP_API_KEY=<your-key>` first.
-
-> **Important:** The server must be registered with the name `baseloop-gtm` (the last argument before the URL). The plugin's commands depend on this exact name.
-
-Find your API key in Baseloop under Settings > API Keys.
+The Baseloop MCP server is bundled with the plugin. After installing, connect via the plugin's OAuth flow when prompted.
 
 ## Development Setup
 
 After cloning, activate the git hooks so marketplace.json stays in sync with plugin.json on every commit:
 
 ```bash
-git config --local include.path ../.gitconfig
+git config --local include.path .gitconfig
 ```
 
 ## What's Included
@@ -50,14 +31,24 @@ git config --local include.path ../.gitconfig
 ### Skill: GTM Engineering
 Auto-loads when you work with Baseloop workflows. Provides the mental model, build protocol, and critical rules for designing data flows.
 
-### Commands
+### Skills
 
-| Command | Description |
+| Skill | Description |
 |---|---|
-| `/baseloop-gtm:plan` | Design a workflow from a goal. Surveys your tables and integrations, then produces an architecture plan. Read-only — creates nothing. |
+| `/baseloop-gtm:plan` | Design a workflow from a goal. Surveys your tables and integrations, then produces an architecture plan. Read-only. |
 | `/baseloop-gtm:build` | Build a workflow step by step. Creates tables and fields, verifies each step before proceeding. Handles inline error diagnosis. |
 | `/baseloop-gtm:diagnose` | Debug a failing field or workflow. Investigates the error, identifies root cause, applies a fix, and verifies the resolution. |
+| `/baseloop-gtm:review` | Audit an existing workflow for known pitfalls, missing safeguards, and credit-wasting patterns. Read-only. |
 | `/baseloop-gtm:lfg` | Autonomous end-to-end: plan, build, health check, diagnose, and deliver a working workflow with minimal intervention. |
+| `/baseloop-gtm:help` | Show available capabilities, tool categories, and example workflows. |
+
+### Agents
+
+| Agent | Description |
+|---|---|
+| Workflow Cost Optimizer | Credit consumption analysis and savings recommendations |
+| Data Quality Auditor | Row data inspection for nulls, extraction paths, and type coercion |
+| CRM Integrity Checker | HubSpot sync integrity audit for duplicates, associations, and enums |
 
 ## Examples
 

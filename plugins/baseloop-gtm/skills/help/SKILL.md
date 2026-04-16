@@ -2,8 +2,6 @@
 name: baseloop-gtm:help
 description: Show available Baseloop MCP capabilities, tool categories, and example workflows. Use when the user asks what the agent can do.
 argument-hint: "[optional: specific topic like 'actions', 'tables', 'views']"
-disable-model-invocation: true
-allowed-tools: Bash(echo *), Read, Glob, Grep, mcp__baseloop-gtm__list_organizations, mcp__baseloop-gtm__list_tables, mcp__baseloop-gtm__list_actions, mcp__baseloop-gtm__get_connected_platforms
 ---
 
 # Baseloop MCP Capabilities
@@ -23,6 +21,9 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 ### Data Exploration (read-only)
 | Tool | Purpose |
 |------|---------|
+| `get_current_user` | Get the current user's identity and organization |
+| `list_organizations` | See all organizations the user belongs to |
+| `list_workspaces` | See all workspaces with table counts |
 | `list_tables` | See all tables grouped by workspace |
 | `get_table_schema` | See fields, types, and action config for a table |
 | `list_views` | See views (field visibility, sort, filters) |
@@ -78,6 +79,8 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `delete_view` | Remove a view |
 | `set_view_filters` | Add filter rules to a view |
 | `delete_view_filters` | Remove all filters from a view |
+| `set_view_sorting` | Set sorting rules on a view |
+| `delete_view_sorting` | Remove all sorting from a view |
 | `reorder_fields` | Reorder fields in a view |
 | `update_view_fields` | Show/hide/freeze/resize fields in a view |
 
@@ -111,9 +114,9 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 
 ---
 
-## Workflow Commands
+## Workflow Skills
 
-| Command | Purpose |
+| Skill | Purpose |
 |---------|---------|
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |

@@ -11,8 +11,8 @@
   "plugins": [
     {
       "name": "baseloop-gtm",
-      "description": "GTM workflow engineering for Baseloop. 1 skill, 5 commands, 3 agents for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
-      "version": "0.5.9",
+      "description": "GTM workflow engineering for Baseloop. 7 skills and 3 agents for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
+      "version": "0.6.0",
       "author": {
         "name": "Baseloop",
         "url": "https://baseloop.io"
