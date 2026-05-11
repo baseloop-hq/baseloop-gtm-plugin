@@ -6,6 +6,17 @@ argument-hint: "[workflow goal, e.g. 'Import HubSpot companies, qualify B2B, fin
 
 # Design a GTM Workflow
 
+<!-- INTERACTION-METHOD-START -->
+
+## Interaction Method
+
+When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+
+Ask one question at a time. Prefer a concise single-select choice when natural options exist.
+
+<!-- INTERACTION-METHOD-END -->
+
+
 ## Goal
 
 <workflow_goal>$ARGUMENTS</workflow_goal>
@@ -14,21 +25,41 @@ If the goal above is empty, ask: "What workflow do you want to build? Describe t
 
 Do not proceed until you have a clear goal.
 
+## Phase 0: Load Applicable Learnings
+
+If `docs/solutions/` exists in the current working directory, scan it for entries that match the goal. Match logic:
+
+1. Read every `*.md` file's YAML frontmatter (skip files with `superseded_by:` set).
+2. A learning is applicable when **both** conditions hold:
+   - At least one `modules` value overlaps with modules likely involved in this goal (e.g. goal mentions HubSpot → match entries whose `modules` includes `hubspot`).
+   - The `problem_type` is plausibly relevant to "design a new workflow" (most types qualify; `scaling` is usually not).
+3. For each applicable learning, read the body section "General pattern" and let it shape design decisions.
+
+Surface them to the user as a short bullet list at the top of the design output:
+
+> Loaded 2 applicable learnings from `docs/solutions/`:
+> - 2026-04-25-resolve-domain-before-hubspot-lookup — Resolve company domain before HubSpot lookup
+> - 2026-04-12-hubspot-enum-mismatch — Convert lifecyclestage enum before HubSpot update
+
+If no learnings match or `docs/solutions/` doesn't exist, skip silently.
+
 ## Phase 1: Survey the Environment
 
-Before designing anything, gather context by calling these MCP tools:
+Before designing anything, read [platform-discovery.md](./references/platform-discovery.md), then gather context by calling these MCP tools:
 
 1. **`list_tables`** — See what tables already exist. The user may have existing data to build on.
-2. **`get_connected_platforms`** — See which integrations are connected (HubSpot, Slack, LinkedIn, etc.). This determines which actions are available.
-3. **`list_actions`** — Get the full action catalog. Note which have `hasDetailedGuide: true`.
+2. **`get_connected_platforms`** — See which integrations are connected (HubSpot, Salesforce, Slack, LinkedIn, etc.).
+3. **`list_actions`** — Load the current backend action list and inspect `provider`, `creationMethod`, `requiresConnection`, `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide`.
 
 If relevant tables already exist, also call `get_table_schema` on each to understand current fields, data types, and what's already been built.
 
-If the user mentions specific actions or integrations, call `get_action_schema` to read the `aiDescription` for those actions now — you'll need this context for the design.
+If the user mentions specific actions or integrations, call `get_action_schema` to read the live schema and `aiDescription` for those actions now — you'll need this context for the design. Use `resolve_action_options` for any dropdowns or dynamic fields that affect the plan, and use `get_table_schema` before naming field references.
 
 ## Phase 2: Design the Architecture
 
 Based on the goal and available tools, design the workflow:
+
+Use runtime metadata to choose actions: prefer connected providers, non-deprecated stable actions, and `creditCostHint: "free"` when equivalent actions solve the same problem. If the best action requires a missing connection, call it out as a setup prerequisite instead of silently swapping in a weaker workflow.
 
 ### 1. Identify entity types
 What data entities are involved? Companies, contacts, deals? Each gets its own table.
@@ -41,8 +72,8 @@ For each table, define the field chain in order:
   - **LinkedIn-heavy** (tech, enterprise, B2B): `li_find_people_at_company` only
   - **Non-LinkedIn** (small businesses, non-tech, low-LinkedIn regions): `custom_ai_agent` with web search + JSON Schema only
   - **Mixed/uncertain**: both, with AI web search gated on LinkedIn `isNotFound`
-  - See [workflow-patterns.md](../gtm-engineering/references/workflow-patterns.md) "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
-- **Qualification**: What filtering/scoring is needed? (custom_ai_agent, formula, perplexity)
+  - See [workflow-patterns.md](./references/workflow-patterns.md) "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
+- **Qualification**: What filtering/scoring is needed? (formula, `custom_ai_agent`, or another current AI/web-research action from `list_actions`)
 - **Routing**: Does data flow to other tables? (send_to_table with mode and field mappings)
 - **Sync**: Does data go to a CRM or outreach tool? (hubspot_create_object, outreach actions)
 

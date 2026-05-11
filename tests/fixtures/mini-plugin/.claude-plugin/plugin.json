@@ -1,0 +1,20 @@
+{
+  "name": "mini-plugin",
+  "version": "1.0.0",
+  "description": "Tiny fixture plugin for converter tests.",
+  "license": "MIT",
+  "mcpServers": {
+    "baseloop": {
+      "type": "http",
+      "url": "https://api.example.com/mcp"
+    },
+    "secret-server": {
+      "command": "node",
+      "args": ["bin/server.js"],
+      "env": {
+        "MY_API_KEY": "redacted-in-test",
+        "PUBLIC_NAME": "ok-to-show"
+      }
+    }
+  }
+}

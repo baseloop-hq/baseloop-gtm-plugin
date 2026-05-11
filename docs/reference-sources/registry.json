@@ -1,0 +1,6 @@
+{
+  "pitfalls.md": ["review", "diagnose", "engineering", "build"],
+  "error-patterns.md": ["diagnose", "build", "review", "engineering"],
+  "workflow-patterns.md": ["plan", "engineering"],
+  "platform-discovery.md": ["plan", "build", "review", "diagnose", "engineering"]
+}

@@ -6,6 +6,17 @@ argument-hint: "[workflow goal, e.g. 'Import HubSpot companies, qualify B2B SaaS
 
 # LFG — Autonomous Workflow Engineering
 
+<!-- INTERACTION-METHOD-START -->
+
+## Interaction Method
+
+When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+
+Ask one question at a time. Prefer a concise single-select choice when natural options exist.
+
+<!-- INTERACTION-METHOD-END -->
+
+
 Build an entire GTM workflow end-to-end: plan the architecture, create all tables and fields, test each step, diagnose and fix errors, and deliver a working workflow.
 
 ## Goal
@@ -73,6 +84,8 @@ Present the completed workflow and **ask for user approval before full-scale exe
 [Row count remaining] rows at ~[cost] credits each = ~[total] credits.
 Approve to run on the full dataset, or adjust the plan first.
 ```
+
+If "Errors Resolved" lists any non-trivial findings (config gotchas, upstream-data discoveries, platform quirks), suggest the user run `/baseloop-gtm:save-learning` to capture each as a learning. The end-to-end run is exactly when those rules are freshest.
 
 **Do NOT run the full dataset without user approval.** LFG is autonomous through Rung 1 and Rung 2, but pauses at Rung 3.
 

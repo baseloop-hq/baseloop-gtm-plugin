@@ -1,12 +1,14 @@
 {
   "name": "baseloop-gtm",
   "version": "0.6.0",
-  "description": "GTM workflow engineering for Baseloop. 7 skills and 3 agents for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
+  "description": "GTM workflow engineering for Baseloop. 10 skills, 3 agents, and 1 MCP server for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
   "author": {
     "name": "Baseloop",
     "url": "https://baseloop.io"
   },
   "homepage": "https://baseloop.io",
+  "repository": "https://github.com/baseloop-hq/baseloop-gtm-plugin",
+  "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "gtm",
     "data-pipeline",

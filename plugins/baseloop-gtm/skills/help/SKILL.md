@@ -6,6 +6,17 @@ argument-hint: "[optional: specific topic like 'actions', 'tables', 'views']"
 
 # Baseloop MCP Capabilities
 
+<!-- INTERACTION-METHOD-START -->
+
+## Interaction Method
+
+When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+
+Ask one question at a time. Prefer a concise single-select choice when natural options exist.
+
+<!-- INTERACTION-METHOD-END -->
+
+
 Show the user what the Baseloop agent can do.
 
 ## Topic
@@ -30,7 +41,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 | `list_rows` | Browse rows with search, advanced filters, and sorting |
 | `list_row_ids` | Get row IDs with pagination for batch operations (lightweight, no cell data) |
 | `get_row_details` | Inspect a single row's full data, AI reasoning, and errors |
-| `list_actions` | See all available enrichment/sync actions |
+| `list_actions` | See the current backend action list and metadata |
 | `get_action_schema` | Read an action's full configuration guide |
 | `get_connected_platforms` | Check which integrations are connected |
 | `resolve_action_options` | Load dynamic dropdowns (HubSpot properties, campaign IDs) |
@@ -118,11 +129,15 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 
 | Skill | Purpose |
 |---------|---------|
+| `/baseloop-gtm:setup` | Diagnose plugin environment — MCP auth, connected platforms, workspace access (Claude Code only) |
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
 | `/baseloop-gtm:review` | Audit an existing workflow for pitfalls and missing safeguards |
 | `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
 | `/baseloop-gtm:diagnose` | Investigate and fix a failing field |
+| `/baseloop-gtm:engineering` | Mental model, design principles, and critical rules behind every workflow |
+| `/baseloop-gtm:save-learning` | Capture a workflow learning to `docs/solutions/` for future reuse |
+| `/baseloop-gtm:update` | Check installed plugin version against upstream (Claude Code only) |
 | `/baseloop-gtm:help` | This help page |
 
 ---
@@ -142,7 +157,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 → `/baseloop-gtm:diagnose enrichment field errors`
 
 **"What actions are available?"**
-→ Call `list_actions` to see all enrichment, CRM, and AI actions
+→ Call `list_actions` to see the current enrichment, CRM, and AI action metadata
 
 **"What integrations do I have?"**
 → Call `get_connected_platforms` to see connected services
