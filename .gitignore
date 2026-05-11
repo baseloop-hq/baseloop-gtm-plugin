@@ -1,0 +1,30 @@
+# OS / editor
+.DS_Store
+*.log
+*.zip
+
+# Tooling
+node_modules/
+bun-debug.log*
+
+# Package output (zip for local Claude Desktop testing)
+dist/
+
+# Local converter outputs (used during dev / testing of multi-target install)
+.codex/
+.gemini/
+.cursor/
+
+# Test scratch
+tests/.tmp/
+tests/fixtures/.tmp/
+
+# Worktrees + private context
+.worktrees/
+.context/
+
+# Authoring artifacts that don't ship with the plugin
+docs/plans/
+
+# Local user-runtime config (when introduced)
+.baseloop-gtm/*.local.yaml

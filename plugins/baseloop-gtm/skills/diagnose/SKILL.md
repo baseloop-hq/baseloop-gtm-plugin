@@ -6,13 +6,40 @@ argument-hint: "[table name, field name, or problem description]"
 
 # Diagnose a Workflow Error
 
+<!-- INTERACTION-METHOD-START -->
+
+## Interaction Method
+
+When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+
+Ask one question at a time. Prefer a concise single-select choice when natural options exist.
+
+<!-- INTERACTION-METHOD-END -->
+
+
 ## Problem
 
 <problem_description>$ARGUMENTS</problem_description>
 
 If the problem description above is empty, ask: "Which table or field is having issues? Describe what you expected vs. what happened."
 
-Before starting, read [error-patterns.md](../gtm-engineering/references/error-patterns.md) and [pitfalls.md](../gtm-engineering/references/pitfalls.md) to load known error signatures.
+Before starting, read [error-patterns.md](./references/error-patterns.md), [pitfalls.md](./references/pitfalls.md), and [platform-discovery.md](./references/platform-discovery.md) to load known error signatures and current runtime-discovery rules.
+
+## Phase 0: Load Applicable Learnings
+
+If `docs/solutions/` exists in the current working directory, scan it for entries that match this symptom. Match logic:
+
+1. Read every `*.md` file's YAML frontmatter (skip files with `superseded_by:` set).
+2. A learning is applicable when its `tags` overlap with the symptom keywords OR its `modules` overlap with the affected modules.
+3. For each applicable learning, read the body sections "Root cause" and "Fix" — a prior solved instance often points at the answer in seconds.
+
+Surface them to the user as a short bullet list before Phase 1:
+
+> Loaded 2 applicable learnings from `docs/solutions/`:
+> - 2026-04-25-resolve-domain-before-hubspot-lookup — Resolve company domain before HubSpot lookup
+> - 2026-04-12-hubspot-enum-mismatch — Convert lifecyclestage enum before HubSpot update
+
+If no learnings match or `docs/solutions/` doesn't exist, skip silently.
 
 ---
 
@@ -25,6 +52,8 @@ Gather evidence without changing anything.
 1. `list_tables` — identify the table mentioned in the problem.
 2. `get_table_schema` — find the failing field. Look for fields whose action matches the problem description.
 3. If unclear which field is failing, `list_rows` with `filters` (e.g. `hasError` operator) to find rows with errors. For large tables, use `list_row_ids` with `hasError` filter to efficiently get just the IDs of failing rows without loading cell data.
+4. For action fields, call `get_connected_platforms` and `list_actions` to verify the provider is connected and the action is current. Inspect `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide`.
+5. Call `get_action_schema` for the failing action before changing config. Use `resolve_action_options` for dynamic dropdowns, CRM properties, Salesforce API names, campaign IDs, Send to Table array paths, and enum values. Use `get_table_schema` again immediately before writing field references.
 
 ### Step 2: Read the error
 
@@ -109,5 +138,7 @@ Present the resolution:
 - Check downstream tables for cascading issues
 - Run `/baseloop-gtm:diagnose` on any other failing fields
 ```
+
+If the fix took non-trivial investigation — multiple hypotheses, an upstream-data trace, or a config gotcha that's not obvious from the action's docs — suggest the user run `/baseloop-gtm:save-learning` to capture the rule. The next session hitting the same symptom reads the doc instead of re-deriving the answer. Skip the suggestion for trivial fixes (typo in field name, single-line config correction).
 
 If the fix resolved one field but revealed issues in downstream fields, offer to diagnose those next.

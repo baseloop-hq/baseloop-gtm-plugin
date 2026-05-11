@@ -1,0 +1,221 @@
+#!/usr/bin/env bun
+/**
+ * Sync shared reference files from `docs/reference-sources/` into each
+ * consuming skill's `references/` folder. Also injects the canonical
+ * Interaction Method block between `<!-- INTERACTION-METHOD-START -->` and
+ * `<!-- INTERACTION-METHOD-END -->` markers in every SKILL.md.
+ *
+ * Flags:
+ *   --check   Exit non-zero if any consumer copy drifts from its source,
+ *             or if any SKILL.md's Interaction Method block drifts. Prints
+ *             a diff-friendly message naming the offending file. Used by CI.
+ *
+ * Default:   Write the current canonical content into every consumer copy
+ *            and into every SKILL.md between its interaction-method markers.
+ */
+import { promises as fs } from "fs"
+import path from "path"
+
+const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
+const REF_SOURCES_DIR = path.join(REPO_ROOT, "docs", "reference-sources")
+const SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "skills")
+const CODEX_SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills")
+const REGISTRY_PATH = path.join(REF_SOURCES_DIR, "registry.json")
+const INTERACTION_METHOD_PATH = path.join(REF_SOURCES_DIR, "interaction-method.md")
+const INTERACTION_START = "<!-- INTERACTION-METHOD-START -->"
+const INTERACTION_END = "<!-- INTERACTION-METHOD-END -->"
+const CODEX_EXCLUDED_SKILLS = new Set(["setup", "update"])
+
+type Registry = Record<string, string[]>
+
+type DriftReport = {
+  file: string
+  reason: string
+}
+
+const checkOnly = process.argv.includes("--check")
+const drifts: DriftReport[] = []
+
+function syncHeader(sourceRelPath: string): string {
+  return `<!-- SYNC SOURCE: ${sourceRelPath}. Run \`bun run references:sync\` to refresh. Do not edit directly. -->\n\n`
+}
+
+function stripSyncHeader(content: string): string {
+  const marker = "<!-- SYNC SOURCE:"
+  if (!content.startsWith(marker)) return content
+  const endOfLine = content.indexOf("\n")
+  if (endOfLine === -1) return ""
+  const rest = content.slice(endOfLine + 1)
+  return rest.startsWith("\n") ? rest.slice(1) : rest
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function codexMirrorContent(skill: string, relativeFile: string, content: string): string {
+  if (relativeFile !== "SKILL.md") return content
+  const namespacedName = `baseloop-gtm:${skill}`
+  return content.replace(
+    new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)${escapeRegExp(namespacedName)}(\\s*$)`, "m"),
+    `$1${skill}$2`,
+  )
+}
+
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await fs.access(p)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function listRelativeFiles(root: string, dir: string = root): Promise<string[]> {
+  if (!(await pathExists(root))) return []
+  const out: string[] = []
+  const entries = await fs.readdir(dir, { withFileTypes: true })
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      out.push(...await listRelativeFiles(root, fullPath))
+    } else if (entry.isFile()) {
+      out.push(path.relative(root, fullPath))
+    }
+  }
+  return out.sort()
+}
+
+async function syncSharedReferences(): Promise<void> {
+  const registryRaw = await fs.readFile(REGISTRY_PATH, "utf8")
+  const registry: Registry = JSON.parse(registryRaw)
+
+  for (const [fileName, consumers] of Object.entries(registry)) {
+    const sourcePath = path.join(REF_SOURCES_DIR, fileName)
+    const sourceRelPath = path.relative(REPO_ROOT, sourcePath)
+    const body = await fs.readFile(sourcePath, "utf8")
+    const expected = syncHeader(sourceRelPath) + body
+
+    for (const skill of consumers) {
+      const targetDir = path.join(SKILLS_DIR, skill, "references")
+      const targetPath = path.join(targetDir, fileName)
+
+      if (checkOnly) {
+        if (!(await pathExists(targetPath))) {
+          drifts.push({ file: path.relative(REPO_ROOT, targetPath), reason: "missing" })
+          continue
+        }
+        const actual = await fs.readFile(targetPath, "utf8")
+        if (actual !== expected) {
+          drifts.push({ file: path.relative(REPO_ROOT, targetPath), reason: "drift" })
+        }
+      } else {
+        await fs.mkdir(targetDir, { recursive: true })
+        await fs.writeFile(targetPath, expected)
+      }
+    }
+  }
+}
+
+async function syncInteractionMethodBlocks(): Promise<void> {
+  if (!(await pathExists(INTERACTION_METHOD_PATH))) return
+  const blockBody = (await fs.readFile(INTERACTION_METHOD_PATH, "utf8")).trim()
+
+  const skillEntries = await fs.readdir(SKILLS_DIR, { withFileTypes: true })
+  for (const entry of skillEntries) {
+    if (!entry.isDirectory()) continue
+    const skillPath = path.join(SKILLS_DIR, entry.name, "SKILL.md")
+    if (!(await pathExists(skillPath))) continue
+
+    const current = await fs.readFile(skillPath, "utf8")
+    const startIdx = current.indexOf(INTERACTION_START)
+    const endIdx = current.indexOf(INTERACTION_END)
+    if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) continue
+
+    const before = current.slice(0, startIdx + INTERACTION_START.length)
+    const after = current.slice(endIdx)
+    const expected = `${before}\n\n${blockBody}\n\n${after}`
+
+    if (checkOnly) {
+      if (current !== expected) {
+        drifts.push({
+          file: path.relative(REPO_ROOT, skillPath),
+          reason: "interaction-method drift",
+        })
+      }
+    } else {
+      if (current !== expected) {
+        await fs.writeFile(skillPath, expected)
+      }
+    }
+  }
+}
+
+async function syncCodexSkillMirror(): Promise<void> {
+  const skillEntries = (await fs.readdir(SKILLS_DIR, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory() && !CODEX_EXCLUDED_SKILLS.has(entry.name))
+    .map((entry) => entry.name)
+    .sort()
+
+  if (checkOnly) {
+    const codexEntries = (await fs.readdir(CODEX_SKILLS_DIR, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort()
+    if (JSON.stringify(codexEntries) !== JSON.stringify(skillEntries)) {
+      drifts.push({ file: path.relative(REPO_ROOT, CODEX_SKILLS_DIR), reason: "codex skill mirror directory drift" })
+      return
+    }
+
+    for (const skill of skillEntries) {
+      const sourceDir = path.join(SKILLS_DIR, skill)
+      const mirrorDir = path.join(CODEX_SKILLS_DIR, skill)
+      const sourceFiles = await listRelativeFiles(sourceDir)
+      const mirrorFiles = await listRelativeFiles(mirrorDir)
+      if (JSON.stringify(mirrorFiles) !== JSON.stringify(sourceFiles)) {
+        drifts.push({ file: path.relative(REPO_ROOT, mirrorDir), reason: "codex skill mirror file-list drift" })
+        continue
+      }
+      for (const relativeFile of sourceFiles) {
+        const source = codexMirrorContent(
+          skill,
+          relativeFile,
+          await fs.readFile(path.join(sourceDir, relativeFile), "utf8"),
+        )
+        const mirror = await fs.readFile(path.join(mirrorDir, relativeFile), "utf8")
+        if (mirror !== source) {
+          drifts.push({ file: path.relative(REPO_ROOT, path.join(mirrorDir, relativeFile)), reason: "codex skill mirror content drift" })
+        }
+      }
+    }
+    return
+  }
+
+  await fs.rm(CODEX_SKILLS_DIR, { recursive: true, force: true })
+  await fs.mkdir(CODEX_SKILLS_DIR, { recursive: true })
+  for (const skill of skillEntries) {
+    const sourceDir = path.join(SKILLS_DIR, skill)
+    const mirrorDir = path.join(CODEX_SKILLS_DIR, skill)
+    await fs.cp(sourceDir, mirrorDir, { recursive: true })
+    const skillPath = path.join(mirrorDir, "SKILL.md")
+    const content = await fs.readFile(skillPath, "utf8")
+    await fs.writeFile(skillPath, codexMirrorContent(skill, "SKILL.md", content))
+  }
+}
+
+await syncSharedReferences()
+await syncInteractionMethodBlocks()
+await syncCodexSkillMirror()
+
+if (checkOnly && drifts.length > 0) {
+  console.error("Reference drift detected:")
+  for (const d of drifts) {
+    console.error(`  - ${d.file} (${d.reason})`)
+  }
+  console.error("\nRun `bun run references:sync` to fix.")
+  process.exit(1)
+}
+
+if (!checkOnly) {
+  console.log("References synced.")
+}

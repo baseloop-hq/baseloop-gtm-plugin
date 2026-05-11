@@ -2,17 +2,16 @@
   "name": "baseloop",
   "owner": {
     "name": "Baseloop",
-    "email": "support@baseloop.com"
+    "email": "support@baseloop.io"
   },
   "metadata": {
     "description": "Baseloop plugins for Claude",
-    "version": "1.0.0"
+    "version": "0.6.0"
   },
   "plugins": [
     {
       "name": "baseloop-gtm",
-      "description": "GTM workflow engineering for Baseloop. 7 skills and 3 agents for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
-      "version": "0.6.0",
+      "description": "Build automated GTM data workflows in Baseloop with 10 skills and 3 read-only audit agents — sourcing, enrichment, qualification, CRM sync, and autonomous end-to-end runs.",
       "author": {
         "name": "Baseloop",
         "url": "https://baseloop.io"

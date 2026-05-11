@@ -6,6 +6,17 @@ argument-hint: "[workspace name or table name to audit]"
 
 # Review — Proactive Workflow Audit
 
+<!-- INTERACTION-METHOD-START -->
+
+## Interaction Method
+
+When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+
+Ask one question at a time. Prefer a concise single-select choice when natural options exist.
+
+<!-- INTERACTION-METHOD-END -->
+
+
 Inspect an existing workflow for known pitfalls, missing safeguards, and credit-wasting patterns. This skill is **read-only** — it never creates, updates, or deletes anything.
 
 ## Target
@@ -14,7 +25,23 @@ Inspect an existing workflow for known pitfalls, missing safeguards, and credit-
 
 If the target above is empty, ask: "Which workspace or table should I audit? I'll check it for known pitfalls and missing safeguards."
 
-Before starting, read [pitfalls.md](../gtm-engineering/references/pitfalls.md) and [error-patterns.md](../gtm-engineering/references/error-patterns.md) to load the full checklist.
+Before starting, read [pitfalls.md](./references/pitfalls.md), [error-patterns.md](./references/error-patterns.md), and [platform-discovery.md](./references/platform-discovery.md) to load the full checklist and current runtime-discovery rules.
+
+## Phase 0: Load Applicable Learnings
+
+If `docs/solutions/` exists in the current working directory, scan it for entries that extend the audit. Match logic:
+
+1. Read every `*.md` file's YAML frontmatter (skip files with `superseded_by:` set).
+2. A learning is applicable when at least one `modules` value overlaps with the audit target's modules (e.g. workflow touches HubSpot → match entries whose `modules` includes `hubspot`).
+3. For each applicable learning, read the body section "General pattern" and use it to extend the audit checks below — e.g. a learning about HubSpot enum mismatch becomes an additional Critical or Warning check for that workflow.
+
+Surface them to the user as a short bullet list before the audit report:
+
+> Loaded 2 applicable learnings from `docs/solutions/`:
+> - 2026-04-25-resolve-domain-before-hubspot-lookup — Resolve company domain before HubSpot lookup
+> - 2026-04-12-hubspot-enum-mismatch — Convert lifecyclestage enum before HubSpot update
+
+If no learnings match or `docs/solutions/` doesn't exist, skip silently.
 
 ---
 
@@ -22,8 +49,11 @@ Before starting, read [pitfalls.md](../gtm-engineering/references/pitfalls.md) a
 
 1. `list_workspaces` — find the target workspace.
 2. `list_tables` — get all tables in the workspace.
-3. For each table: `get_table_schema` — get all fields, their actions, types, and autoRunConditions.
-4. For tables with data: `list_rows` (limit 5) — spot-check for errors, nulls, or unexpected values.
+3. `get_connected_platforms` — load org-specific provider connection state.
+4. `list_actions` — load current action metadata, including `connectionStatus`, `creditCostHint`, lifecycle flags, and detailed-guide availability.
+5. For each table: `get_table_schema` — get all fields, their actions, types, and autoRunConditions.
+6. For action fields whose schema or guide matters to the audit, call `get_action_schema`. Use `resolve_action_options` when validating CRM properties, campaign IDs, enum values, Send to Table paths, or other dynamic options.
+7. For tables with data: `list_rows` (limit 5) — spot-check for errors, nulls, or unexpected values.
 
 Build a mental map of the workflow: source tables → enrichment tables → routing tables → CRM sync tables.
 
@@ -35,25 +65,29 @@ Check every table and field against the following checklist. For each finding, r
 
 ### Critical (credit waste or data corruption)
 
-**C1 — Missing autoRunCondition on expensive actions**
-For each field with an action in: `enrich_company`, `enrich_contact`, `li_find_people_at_company`, `custom_ai_agent`, `perplexity_ai_agent`, `builtwith_lookup`.
+**C1 — Missing autoRunCondition on paid or variable-credit actions**
+For each field whose current `list_actions` metadata has `creditCostHint` other than `free`, or whose `get_action_schema` guide indicates credit usage.
 - Does it have an `autoRunCondition`? If not → **Critical**: "Field [name] runs [action] on every row without gating. Add autoRunCondition on upstream prerequisites."
+
+**C1b — Disconnected, legacy, or deprecated action**
+For each action field, compare the stored action key against `list_actions`.
+- Is the provider disconnected, the action missing, or the metadata marked with `deprecationNotice`? → **Critical** if the field cannot run, otherwise **Warning** with the required reconnection or migration step.
 
 **C2 — Referencing action output instead of extracting fullValue**
 For each field whose input config contains `{{field_name}}` where `field_name` is an action field (not a formula, not an input, not an extraction):
 - The downstream field is likely receiving display text ("Found", "Sent", "Created") instead of actual data → **Critical**: "Field [name] references action field [ref] directly. Create an extraction field for the needed value."
 
 **C3 — Non-text types on extraction or AI output fields**
-For each field with `extractorFieldId` or action `custom_ai_agent`/`perplexity_ai_agent`:
+For each field with `extractorFieldId`, or whose current action guide indicates AI/LLM output:
 - Is the field type something other than `text`? → **Critical**: "Field [name] uses type [type] for extraction/AI output. Must be `text` to avoid silent coercion."
 
 **C4 — CRM create without lookup-before-create**
-For each `hubspot_create_object` or `hubspot_create_engagement` field:
-- Is there a corresponding `hubspot_lookup_object` field on the same table gating it with `isNotFound`? If not → **Critical**: "Field [name] creates CRM records without checking for duplicates first."
+For each CRM record-creation action returned by current `list_actions`/`get_action_schema` metadata:
+- Is there a corresponding CRM lookup field on the same table gating creation with `isNotFound`? If not → **Critical**: "Field [name] creates CRM records without checking for duplicates first."
 
 **C5 — Send to Table destination has pre-created fields**
 For each `send_to_table` field, check the destination table:
-- Were fields manually created before the Send to Table was configured? Look for duplicate field names or fields with no action → **Critical**: "Destination table [name] may have pre-created fields that will conflict with Send to Table auto-creation."
+- Read the current `send_to_table` guide via `get_action_schema`. If it still owns destination field creation, check whether fields were manually created before routing was configured. Look for duplicate field names or fields with no action → **Critical**: "Destination table [name] may have pre-created fields that conflict with Send to Table behavior."
 
 ### Warning (likely bugs or inefficiencies)
 
