@@ -118,7 +118,7 @@ Approximate credit cost per row flowing through the full workflow. Note which ac
 Flag any concerns: missing integrations, data quality requirements, rate limits, non-deterministic steps.
 
 Standard risk items to check:
-- **Company domain availability:** If the workflow enriches contacts and the enrichment may return null for `companyWebsite`, the plan must include an AI domain resolution step (custom_ai_agent with web search, ~4 credits per row) before HubSpot company lookup. Flag this cost in the estimate.
+- **Company domain availability:** If the workflow enriches contacts and the enrichment may return null for `companyWebsite`, the plan must include a gated AI domain resolution step (custom_ai_agent with web search) before HubSpot company lookup. Flag this as a paid or variable-credit step in the estimate.
 
 ### Testing Strategy
 

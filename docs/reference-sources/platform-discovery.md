@@ -12,9 +12,10 @@ Before choosing or configuring provider-specific workflow steps:
 4. Prefer actions whose provider is connected, whose `connectionStatus` is connected or not required, and whose metadata does not include `deprecationNotice`.
 5. Prefer stable actions over `isBeta` actions unless the user explicitly asks for beta behavior or no stable equivalent exists.
 6. When equivalent actions can solve the same problem, prefer `creditCostHint: "free"` before paid or variable credit hints.
-7. Call `get_action_schema` before configuring any action field or source field. Use the live config schema, `aiDescription`, `allowedScheduleUnits`, and returned table-aware defaults.
-8. Call `resolve_action_options` for dropdowns, enum fields, CRM properties, campaign IDs, Salesforce API names, Send to Table array paths, and any dynamic option set.
-9. Call `get_table_schema` before writing field references. Action input templates must use explicit `{{field_name}}` tokens from the live schema, while Send to Table mappings use plain field names.
+7. When multiple actions still tie, break ties deterministically. For tied finalists, call `get_action_schema` as needed, then prefer the action whose `capabilities` most exactly match the needed capability, then the action whose schema can be satisfied from fields already present on the table, then actions with `hasDetailedGuide: true`. If multiple actions still tie, ask the user to choose between the tied action display names with cost, connection, and lifecycle notes; do not pick by `list_actions` order.
+8. Call `get_action_schema` before configuring any action field or source field. Use the live config schema, `aiDescription`, `allowedScheduleUnits`, and returned table-aware defaults.
+9. Call `resolve_action_options` for dropdowns, enum fields, CRM properties, campaign IDs, Salesforce API names, Send to Table array paths, and any dynamic option set.
+10. Call `get_table_schema` before writing field references. Action input templates must use explicit `{{field_name}}` tokens from the live schema, while Send to Table mappings use plain field names.
 
 ## Metadata Semantics
 
@@ -39,7 +40,7 @@ Capability examples:
 - Need a CRM lookup: filter `list_actions` for `capabilities` containing `crm.lookup`, then choose among connected providers such as HubSpot, Salesforce, or future CRM actions.
 - Need a CRM write: use `crm.create`, `crm.update`, or `crm.activity` instead of hardcoding one provider's action key.
 - Need outreach enrollment: use `outreach.enroll`, then pick the connected provider and live campaign schema.
-- Need AI research: use `ai.web_research` and compare `creditCostHint`, schema requirements, and `aiDescription`.
+- Need AI research: use `ai.web_research`; compare lifecycle status, `creditCostHint`, capability fit, schema requirements, `hasDetailedGuide`, and `aiDescription`; if still tied, ask instead of choosing by list order.
 - Need notification: use `notification.send`, then configure the returned action schema and dynamic destination options.
 
 ## Build Rule
