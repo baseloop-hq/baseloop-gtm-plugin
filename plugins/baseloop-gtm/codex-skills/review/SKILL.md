@@ -95,7 +95,7 @@ For each `send_to_table` field, check the destination table:
 Does the workflow have enrichment fields but no `lookup_single_record` against a blocklist table before them? → **Warning**: "No blocklist check before enrichment. Credits may be wasted on existing customers or churned accounts."
 
 **W2 — No email verification before outreach routing**
-Does the workflow route to outreach (Reply, Lemlist, Instantly) without an email verification step? → **Warning**: "No email verification before outreach. Expect high bounce rates."
+Does the workflow route to an outreach platform without an email verification step? → **Warning**: "No email verification before outreach. Expect high bounce rates."
 
 **W3 — Missing engagement notes for disqualification**
 Does the workflow create HubSpot engagement notes only for qualified leads? Check if there are engagement fields gated on disqualification conditions → **Warning**: "No engagement notes for disqualified leads. CRM will lack context on why accounts were skipped."

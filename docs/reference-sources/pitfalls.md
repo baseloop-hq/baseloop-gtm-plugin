@@ -1,6 +1,6 @@
 # Common Pitfalls
 
-Known failure modes when building Baseloop workflows. Each entry: symptom, cause, fix. Sourced from production workflows.
+Known failure modes when building Baseloop workflows. Each entry: symptom, cause, fix.
 
 **For runtime error diagnosis** (field failed, unexpected output, data not flowing), see [error-patterns.md](./error-patterns.md).
 
@@ -24,7 +24,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Called `run_field` without `runAction` (runs ALL rows), or used `first_hundred` on a table with <100 rows.
 
-**What happened in practice:** Agent created a field, immediately ran it on all 50 rows (~6 credits each), then created the next field and ran that on all 50 rows too (~8 credits each). By the time a HubSpot API error was discovered at the final step, 540+ credits were spent and 71 contacts had been created in the CRM — including duplicates and invalid entries.
+**Example failure mode:** Agent created a field, immediately ran it on the full table, then created the next field and ran that on the full table too. By the time a HubSpot API error was discovered at the final step, hundreds of credits had been spent and many CRM records had been created, including duplicates and invalid entries.
 
 **Fix:** Follow the Scaling Ladder (see SKILL.md). Never call `run_field` without `runAction`. Always: `first_one` → `first_ten` → full scale (user approval required). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `rowIds` (max 100 per batch). Use `hasNotRun` or `hasError` filters to only target unprocessed rows.
 
@@ -160,11 +160,11 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ## Missing LinkedIn URL blocks entire enrichment chain
 
-**Symptom:** RapidAPI enrichment fails or returns empty — the entire qualification chain stalls.
+**Symptom:** External LinkedIn enrichment fails or returns empty — the entire qualification chain stalls.
 
-**Cause:** Source data (HubSpot import) doesn't always include LinkedIn company URLs. Without a LinkedIn slug, the RapidAPI HTTP request can't run.
+**Cause:** Source data (HubSpot import) doesn't always include LinkedIn company URLs. Without a LinkedIn slug, the external enrichment request can't run.
 
-**Fix:** Add a `custom_ai_agent` field as a "LinkedIn URL Finder" early in the chain. Give it the company name and domain, let it search for the LinkedIn URL. Gate subsequent enrichment on this field being `notNull`. This is a real pattern used in content magnet workflows.
+**Fix:** Add a `custom_ai_agent` field as a "LinkedIn URL Finder" early in the chain. Give it the company name and domain, let it search for the LinkedIn URL. Gate subsequent enrichment on this field being `notNull`.
 
 ---
 
@@ -346,13 +346,13 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 ---
 
-## Domain mismatch between input and RapidAPI
+## Domain mismatch between input and enrichment result
 
 **Symptom:** HubSpot lookup finds no match even though the company exists in CRM. Or enrichment data is for a subsidiary instead of the parent company.
 
-**Cause:** The LinkedIn company page found by RapidAPI has a different domain than the input (common with regional sites like `.fr` vs `.com`, subsidiaries, or rebrands).
+**Cause:** The enriched company profile has a different domain than the input (common with regional sites like `.fr` vs `.com`, subsidiaries, or rebrands).
 
-**Fix:** Do two HubSpot lookups — one on the input domain, one on the RapidAPI-discovered domain. Merge results with a formula that picks whichever found a match. Create separate Update/Create/Engagement fields for each lookup path. This is a proven production pattern.
+**Fix:** Do two HubSpot lookups — one on the input domain, one on the enrichment-discovered domain. Merge results with a formula that picks whichever found a match. Create separate Update/Create/Engagement fields for each lookup path.
 
 ---
 
@@ -362,7 +362,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** Workflow routes leads to outreach without checking email quality first.
 
-**Fix:** Add a `baseloop_send_http_request` field calling an email verification API (e.g., MillionVerifier) before routing. Check the response for freemail, quality, and validity. Gate outreach routing on email quality being acceptable. Write a "NOTE: Bad Email" HubSpot engagement note for failed verifications so sales reps know.
+**Fix:** Add a `baseloop_send_http_request` field calling an email verification API before routing. Check the response for freemail, quality, and validity. Gate outreach routing on email quality being acceptable. Write a "NOTE: Bad Email" HubSpot engagement note for failed verifications so sales reps know.
 
 ---
 
@@ -372,7 +372,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** Cloned a template workspace but didn't update the "Table Source" or campaign tag fields.
 
-**Fix:** Always include a "Table Source" field (either a formula returning a literal string, or an Input field) that identifies the batch. Examples: "TAM List (Data Provider)", "LinkedIn Followers", "Industry Report Q1 2026". Update this field in each workspace clone before running the workflow.
+**Fix:** Always include a "Table Source" field (either a formula returning a literal string, or an Input field) that identifies the batch. Examples: "Target Account Batch", "LinkedIn Followers", "Content Campaign Q1". Update this field in each workspace clone before running the workflow.
 
 ---
 
@@ -382,7 +382,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 **Cause:** A single `hubspot_lookup_object` field can only extract a limited set of properties. Different property types (account data vs engagement data) may require separate queries.
 
-**Fix:** Use multiple `hubspot_lookup_object` fields on the same table, each pulling different property sets. Example: one lookup for Account Tier + Assigned AE + Company ID, a second lookup for Notes Last Contacted + Last Modified Date. Name them clearly (e.g., "Lookup Object (Engagement)").
+**Fix:** Use multiple `hubspot_lookup_object` fields on the same table, each pulling different property sets. Example: one lookup for account metadata and company ID, a second lookup for engagement metadata such as notes and last contacted date. Name them clearly (e.g., "Lookup Object (Engagement)").
 
 ---
 
@@ -466,9 +466,9 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 
 **Symptom:** AI email agents on the Outbound table have no ICP context. Emails are generic because the AI doesn't know what the prospect's company does.
 
-**Cause:** Company research (Target Personas, Core Intelligence, Prospecting Signals) was done on the Companies Master List but not pulled into the contacts table.
+**Cause:** Company research was done on the Companies Master List but not pulled into the contacts table.
 
-**Fix:** On every contact-level table (Outbound, CRM Enrichment, Inbound), add a `lookup_single_record` back to the Companies Master List. Pull all intelligence fields (Core Intelligence, Target Companies, Target Personas, Prospecting Signals, Go-to-market Motion, Using CRM, Hiring Roles, Traffic, etc.). Feed these fields into the AI email prompt so it can write informed, personalized emails.
+**Fix:** On every contact-level table (Outbound, CRM Enrichment, Inbound), add a `lookup_single_record` back to the Companies Master List. Pull the company intelligence fields needed for personalization, such as overview, market, personas, signals, GTM motion, CRM usage, hiring, and traffic. Feed these fields into the AI email prompt so it can write informed, personalized emails.
 
 ---
 
@@ -502,7 +502,7 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 
 **Symptom:** `INVALID_OPTION` error on HubSpot create/update. Error message lists allowed values in SCREAMING_SNAKE_CASE.
 
-**Cause:** Mapping a field like `industry` or `lifecyclestage` with human-readable values ("Computer Software", "IT Services and IT Consulting") instead of HubSpot's internal enum format (SCREAMING_SNAKE_CASE). This happens when sourcing data from external enrichment (LinkedIn, Apollo, etc.) — their format will NOT match HubSpot's enum format.
+**Cause:** Mapping a field like `industry` or `lifecyclestage` with human-readable values ("Computer Software", "IT Services and IT Consulting") instead of HubSpot's internal enum format (SCREAMING_SNAKE_CASE). This happens when sourcing data from external enrichment providers — their format will NOT match HubSpot's enum format.
 
 **Prevention:**
 - Use `resolve_action_options` to check valid enum values before mapping

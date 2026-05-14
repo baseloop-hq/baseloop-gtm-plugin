@@ -130,7 +130,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Fix:**
 - Upstream empty: fix upstream fields first
 - Prompt issue: `update_field` with improved prompt (add few-shot examples, tighten constraints)
-- Model issue: `update_field` to switch model (e.g., GPT-4o to Claude Sonnet for nuance)
+- Model issue: `update_field` to switch to a model better matched to the task complexity
 - Web search noise: `update_field` to disable `enableWebSearch` if not needed
 - Re-run with `skipCellsWithData: false` after any fix
 
