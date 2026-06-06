@@ -187,4 +187,19 @@ describe("skill contract", () => {
       }
     }
   })
+
+  test("plan and build use outcome-focused credit guidance", async () => {
+    const planText = await readSkillWithReferences("plan")
+    expect(planText).toContain("best expected business outcome per credit")
+    expect(planText).toContain("Outcome rationale")
+    expect(planText).toContain("Core")
+    expect(planText).toContain("High confidence")
+    expect(planText).not.toContain('prefer `creditCostHint: "free"`')
+
+    const buildText = await readSkillWithReferences("build")
+    expect(buildText).toContain("Preserve the plan's value tier")
+    expect(buildText).toContain("Avoid substituting a lower-cost action")
+    expect(buildText).toContain("cost and expected outcome")
+    expect(buildText).not.toContain('prefer `creditCostHint: "free"`')
+  })
 })

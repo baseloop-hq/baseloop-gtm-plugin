@@ -11,7 +11,7 @@ Before choosing or configuring provider-specific workflow steps:
 3. Filter candidate actions by `capabilities` when the workflow needs a semantic job such as CRM lookup, source import, outreach enrollment, AI web research, or notification send.
 4. Prefer actions whose provider is connected, whose `connectionStatus` is connected or not required, and whose metadata does not include `deprecationNotice`.
 5. Prefer stable actions over `isBeta` actions unless the user explicitly asks for beta behavior or no stable equivalent exists.
-6. When equivalent actions can solve the same problem, prefer `creditCostHint: "free"` before paid or variable credit hints.
+6. Optimize for business outcome per credit, not for the lowest-cost path. Treat `creditCostHint` as context for the workflow tradeoff, not as an automatic tie-breaker. Do not replace enrichment, AI research, validation, QA, or fallback steps with cheaper alternatives when that would materially reduce workflow quality or user value.
 7. When multiple actions still tie, break ties deterministically. For tied finalists, call `get_action_schema` as needed, then prefer the action whose `capabilities` most exactly match the needed capability, then the action whose schema can be satisfied from fields already present on the table, then actions with `hasDetailedGuide: true`. If multiple actions still tie, ask the user to choose between the tied action display names with cost, connection, and lifecycle notes; do not pick by `list_actions` order.
 8. Call `get_action_schema` before configuring any action field or source field. Use the live config schema, `aiDescription`, `allowedScheduleUnits`, and returned table-aware defaults.
 9. Call `resolve_action_options` for dropdowns, enum fields, CRM properties, campaign IDs, Salesforce API names, Send to Table array paths, and any dynamic option set.
@@ -28,7 +28,7 @@ Use backend action metadata as hints for planning and safeguards:
 - `creationMethod`: whether the action is a source/table-creation action or a field action.
 - `hasDetailedGuide`: whether `get_action_schema` includes richer `aiDescription` guidance. Read it before designing or building that action.
 - `isBeta`, `isNew`, `deprecationNotice`: lifecycle signals. Prefer non-deprecated stable actions.
-- `creditCostHint`: coarse credit guidance such as `free`, `paid`, or `variable`. Treat it as a planning hint, then confirm with rung testing before scale.
+- `creditCostHint`: coarse credit guidance such as `free`, `paid`, or `variable`. Treat it as a planning and ROI hint, then confirm with rung testing before scale.
 - `allowedScheduleUnits`: valid schedule units for source actions. Never invent schedule units.
 
 ## Planning Rule

@@ -158,6 +158,20 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
+## Formula used for open-ended semantic classification
+
+**Symptom:** A formula becomes large, brittle, or slow because it embeds long lists of countries, cities, industries, job titles, or synonyms. Classification misses obvious cases or requires constant maintenance.
+
+**Cause:** Treated "formulas are free" as "formulas should classify everything." Formulas are best for compact deterministic logic, not ambiguous or high-cardinality natural-language values.
+
+**Example failure mode:** A source column contains a mix of countries and cities. The agent creates a formula with many country and city names inside it to classify each value. This is inefficient and fragile because geography lists are large, overlapping, multilingual, and incomplete.
+
+**Fix:** Use a `custom_ai_agent` field for the classification and constrain the output. For mixed location values, ask the AI agent to return labels such as `country`, `city`, `region`, or `unknown`, plus a normalized value when confident. Gate it on the source field being `notNull`, test with `first_one` and `first_ten`, then use downstream formulas only for deterministic gates based on the AI output.
+
+**Prevention:** Before creating a formula, ask: "Is this compact deterministic logic, or am I embedding a long real-world lookup table?" If it is a long lookup table or needs judgment, create a gated AI classification field instead.
+
+---
+
 ## Missing LinkedIn URL blocks entire enrichment chain
 
 **Symptom:** External LinkedIn enrichment fails or returns empty — the entire qualification chain stalls.

@@ -59,7 +59,14 @@ If the user mentions specific actions or integrations, call `get_action_schema` 
 
 Based on the goal and available tools, design the workflow:
 
-Use runtime metadata to choose actions: prefer connected providers, non-deprecated stable actions, and `creditCostHint: "free"` when equivalent actions solve the same problem. If the best action requires a missing connection, call it out as a setup prerequisite instead of silently swapping in a weaker workflow.
+Use runtime metadata to choose actions: prefer connected providers and non-deprecated stable actions. Treat `creditCostHint` as context for the cost/value tradeoff, not as the deciding factor. If the best action requires a missing connection, call it out as a setup prerequisite instead of silently swapping in a weaker workflow.
+
+Default to the workflow with the best expected business outcome per credit, not the lowest-cost path. Higher-confidence steps are appropriate when they materially improve coverage, confidence, CRM integrity, deduplication, contact quality, deliverability, or downstream conversion. Do not remove enrichment, validation, fallback, or QA solely to lower the estimate.
+
+When it would help the user choose between materially different cost-quality paths, briefly present tiers and mark **Recommended** as the default:
+- **Core** — simpler path; explain the expected quality, coverage, or confidence tradeoff.
+- **Recommended** — best outcome per credit; include the steps that materially improve the workflow.
+- **High confidence** — extra enrichment, fallback research, QA, or validation for higher coverage and lower operational risk.
 
 ### 1. Identify entity types
 What data entities are involved? Companies, contacts, deals? Each gets its own table.
@@ -73,7 +80,7 @@ For each table, define the field chain in order:
   - **Non-LinkedIn** (small businesses, non-tech, low-LinkedIn regions): `custom_ai_agent` with web search + JSON Schema only
   - **Mixed/uncertain**: both, with AI web search gated on LinkedIn `isNotFound`
   - See [workflow-patterns.md](./references/workflow-patterns.md) "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
-- **Qualification**: What filtering/scoring is needed? (formula, `custom_ai_agent`, or another current AI/web-research action from `list_actions`)
+- **Qualification**: What filtering/scoring is needed? (formula, `custom_ai_agent`, or another current AI/web-research action from `list_actions`). Use formulas only for compact deterministic logic; use `custom_ai_agent` for semantic or high-cardinality classification such as deciding whether a mixed location value is a country or a city.
 - **Routing**: Does data flow to other tables? (send_to_table with mode and field mappings)
 - **Sync**: Does data go to a CRM or outreach tool? (hubspot_create_object, outreach actions)
 
@@ -113,12 +120,15 @@ Show the table-to-table flow:
 
 Approximate credit cost per row flowing through the full workflow. Note which actions are free vs. paid.
 
+Include an **Outcome rationale** explaining how the recommended steps improve coverage, confidence, reliability, or downstream results. If a simpler option exists, state the expected tradeoff.
+
 ### Risks and Considerations
 
 Flag any concerns: missing integrations, data quality requirements, rate limits, non-deterministic steps.
 
 Standard risk items to check:
-- **Company domain availability:** If the workflow enriches contacts and the enrichment may return null for `companyWebsite`, the plan must include a gated AI domain resolution step (custom_ai_agent with web search) before HubSpot company lookup. Flag this as a paid or variable-credit step in the estimate.
+- **Company domain availability:** If the workflow enriches contacts and the enrichment may return null for `companyWebsite`, the plan must include a gated AI domain resolution step (custom_ai_agent with web search) before HubSpot company lookup. Flag this as a variable-cost step in the estimate.
+- **Oversized classification formulas:** If a proposed formula would embed a long list of countries, cities, industries, titles, or synonyms, replace it with a tightly gated `custom_ai_agent` classification step and reserve formulas for downstream deterministic gates.
 
 ### Testing Strategy
 
