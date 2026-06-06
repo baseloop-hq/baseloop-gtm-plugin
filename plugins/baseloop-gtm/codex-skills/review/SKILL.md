@@ -112,6 +112,10 @@ For tables with a source field (HubSpot import, LinkedIn import):
 For contact-level tables that have AI email/outreach fields:
 - Is there a `lookup_single_record` back to the companies table? If not → **Warning**: "Table [name] has AI outreach fields but no lookup to company intelligence. Emails will be generic."
 
+**W7 — Oversized formula used for semantic classification**
+For formula fields that classify free-text values:
+- Does the config/prompt embed long enumerations, geography lists, industry lists, job-title dictionaries, or synonym maps? Does the source column contain ambiguous values such as mixed countries and cities? If yes → **Warning**: "Field [name] uses a formula for open-ended semantic classification. Replace with a tightly gated `custom_ai_agent` field and use formulas only for downstream deterministic gates."
+
 ### Info (best practices)
 
 **I1 — Scaling Ladder compliance**

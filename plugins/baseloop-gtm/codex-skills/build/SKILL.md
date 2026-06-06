@@ -53,7 +53,9 @@ Before building, verify:
 
 For each table in the plan, follow this sequence.
 
-Do not configure actions from plugin examples alone. The backend response is authoritative: use `list_actions` before selecting action keys, `get_action_schema` before configuring source/action fields, `get_table_schema` before writing field references, and `resolve_action_options` for dynamic options. Avoid disconnected, legacy, or deprecated actions unless the user explicitly accepts the setup or migration tradeoff. Prefer stable actions and `creditCostHint: "free"` alternatives when behavior is equivalent.
+Do not configure actions from plugin examples alone. The backend response is authoritative: use `list_actions` before selecting action keys, `get_action_schema` before configuring source/action fields, `get_table_schema` before writing field references, and `resolve_action_options` for dynamic options. Avoid disconnected, legacy, or deprecated actions unless the user explicitly accepts the setup or migration tradeoff. Prefer stable actions and use `creditCostHint` as context for the cost/value tradeoff, not as the deciding factor.
+
+Preserve the plan's value tier. If the plan includes Core, Recommended, and High confidence options, build the selected tier; when no tier is selected, build **Recommended**. Avoid substituting a lower-cost action, removing a fallback, skipping QA, or collapsing enrichment steps when that would materially reduce coverage, confidence, CRM integrity, deduplication, contact quality, deliverability, or downstream conversion. If a lower-cost implementation is possible but weaker, call out the quality tradeoff before changing the plan.
 
 ### Step 1: Create the table
 
@@ -91,6 +93,8 @@ For each field:
 3. **Resolve dynamic options** — `resolve_action_options` for HubSpot/Salesforce properties, campaign IDs, list IDs, Send to Table array paths, and any other dropdowns. Pass `tableId`/`viewId` when options depend on table fields.
 4. **Create the field** — `create_field` with full configuration including `autoRunCondition`. Set `autoRunEnabled: false` for now — test with explicit runs first.
 
+For credit-consuming fields, keep the field when it supports the selected plan tier's expected outcome. Add the narrowest practical `autoRunCondition` so work runs on rows where the step can improve the result, but do not gate it so aggressively that it undermines the promised workflow quality.
+
 Action input field references must be explicit `{{field_name}}` tokens using field `name` values from `get_table_schema`; Baseloop no longer auto-wraps bare field names. Send to Table fieldMappings are the exception: they intentionally use plain field names.
 
 For Send to Table fields:
@@ -127,7 +131,7 @@ When the full workflow is built and verified:
 
 1. **Summarize the architecture** — list all tables and their field chains.
 2. **Show verification results** — sample output from each step.
-3. **Note the cost** — approximate credits used in testing, projected cost per row at scale.
+3. **Note the cost and outcome** — approximate credits used in testing, projected cost per row at scale, and the quality, coverage, or confidence gained by the higher-confidence steps that ran.
 4. **Handoff options:**
    - **Scale up (Rung 3):** run on full dataset — state row count and estimated credit cost, wait for user approval.
    - **Diagnose:** if any fields still have issues, run `/baseloop-gtm:diagnose`.

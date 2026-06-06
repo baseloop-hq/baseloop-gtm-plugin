@@ -41,7 +41,7 @@ Only after Rung 1 passes with zero errors:
 ## Rung 3 (full scale — requires user approval)
 
 1. Report Rung 2 results — sample output, error count, credits used so far.
-2. State the cost — row count remaining and estimated credit cost for the full run.
+2. State the cost and expected outcome — row count remaining, estimated credit cost for the full run, and the observed quality, coverage, confidence, or CRM-safety benefit from the higher-confidence steps.
 3. Ask for approval before running on the full dataset.
 4. Only after explicit approval:
    - **≤100 rows:** `run_fields` with `runAction: "first_hundred"` covers everything.

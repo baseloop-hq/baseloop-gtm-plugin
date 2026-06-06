@@ -1,6 +1,6 @@
 # Cost Estimation
 
-Estimate credit exposure before running workflows at scale. Runtime action metadata is the starting point; rung testing is the confirmation step.
+Estimate credit exposure before running workflows at scale, and explain the expected workflow quality or coverage benefits. Runtime action metadata is the starting point; rung testing is the confirmation step.
 
 ## Runtime Cost Source
 
@@ -15,13 +15,13 @@ Treat `creditCostHint` as a planning hint, not a billable guarantee. If the acti
 ## Estimation Protocol
 
 1. Call `list_actions` and annotate each planned action with `creditCostHint`.
-2. Gate paid or variable-credit actions behind free filters, lookups, blocklists, and required upstream values.
-3. Call `get_action_schema` for every paid or variable-credit action and read its `aiDescription`.
+2. Gate credit-consuming actions behind free filters, lookups, blocklists, and required upstream values when the gate preserves the promised workflow quality.
+3. Call `get_action_schema` for every credit-consuming action and read its `aiDescription`.
 4. Estimate Rung 1 from the planned single-row path.
 5. Run Rung 1 and inspect actual outputs, fan-out counts, skipped rows, and any provider-specific behavior.
 6. Run Rung 2 on 10 rows and calculate observed credits per successful row when usage data is available.
 7. Estimate Rung 3 from observed pass rates and fan-out counts, not only from the original row count.
-8. Report the Rung 3 estimate to the user and wait for explicit approval before full-scale execution.
+8. Report the Rung 3 estimate, including expected quality or coverage gains from higher-confidence steps, and wait for explicit approval before full-scale execution.
 
 ## Cost Shapes
 
@@ -56,11 +56,13 @@ Rung 3 estimate: 1,000 companies
 
 Avoid static action credit lists in the plugin. If a user needs current costs, rely on backend metadata, action guides, and observed rung behavior.
 
-## Cost Optimization Tips
+## Outcome-Per-Credit Guidance
 
-1. Filter cheap before expensive: formulas, lookups, and blocklists should run before paid or variable-credit actions.
-2. Prefer connected native actions when they solve the job cleanly, but prefer `creditCostHint: "free"` alternatives when behavior is equivalent.
-3. Avoid redundant web search. Enable it only when the task requires current web evidence.
-4. Do company-level intelligence once, then propagate it to contact tables with `lookup_single_record`.
-5. Never re-run upstream AI fields just to fix downstream configuration. Re-run only the field whose configuration changed.
-6. Use `skipCellsWithData: true` when preserving existing good outputs, and explicitly set `skipCellsWithData: false` only when replacing known bad data.
+1. Optimize for workflow outcome per credit, not simply the lowest-cost path.
+2. Filter cheap before expensive when the cheap filter is reliable: formulas, lookups, and blocklists should run before credit-consuming actions.
+3. Prefer connected native actions when they solve the job cleanly. Use `creditCostHint` to explain cost/value tradeoffs, and avoid weakening the workflow just because a lower-credit alternative exists.
+4. Keep enrichment, AI research, validation, fallback, or QA steps when they materially improve coverage, confidence, CRM integrity, deduplication, contact quality, deliverability, or downstream conversion.
+5. Avoid redundant web search. Enable it when the task requires current web evidence, missing data recovery, or confidence that deterministic sources cannot provide.
+6. Do company-level intelligence once, then propagate it to contact tables with `lookup_single_record`.
+7. Never re-run upstream AI fields just to fix downstream configuration. Re-run only the field whose configuration changed.
+8. Use `skipCellsWithData: true` when preserving existing good outputs, and explicitly set `skipCellsWithData: false` only when replacing known bad data.
