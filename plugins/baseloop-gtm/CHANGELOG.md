@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.8.1...baseloop-gtm-v0.8.2) (2026-06-09)
+
+
+### Miscellaneous Chores
+
+* **baseloop-gtm:** Synchronize baseloop-gtm versions
+
 ## [0.8.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.8.0...baseloop-gtm-v0.8.1) (2026-06-09)
 
 

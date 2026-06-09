@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.8.1...cli-v0.8.2) (2026-06-09)
+
+
+### Bug Fixes
+
+* upload GTM release assets without checkout ([#22](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/22)) ([3529145](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/3529145bb6cba400769568499452f35afafa5cd7))
+
 ## [0.8.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.8.0...cli-v0.8.1) (2026-06-09)
 
 
