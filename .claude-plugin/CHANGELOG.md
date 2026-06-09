@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/marketplace-v0.8.0...marketplace-v0.8.1) (2026-06-09)
+
+
+### Miscellaneous Chores
+
+* **marketplace:** Synchronize baseloop-gtm versions
+
 ## [0.8.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/marketplace-v0.7.0...marketplace-v0.8.0) (2026-05-11)
 
 

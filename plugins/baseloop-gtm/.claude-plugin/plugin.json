@@ -1,6 +1,6 @@
 {
   "name": "baseloop-gtm",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "GTM workflow engineering for Baseloop. 10 skills, 3 agents, and 1 MCP server for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
   "author": {
     "name": "Baseloop",
