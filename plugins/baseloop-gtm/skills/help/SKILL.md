@@ -1,10 +1,10 @@
 ---
 name: baseloop-gtm:help
-description: Show available Baseloop MCP capabilities, tool categories, and example workflows. Use when the user asks what the agent can do.
+description: Show available Baseloop capabilities, CLI/MCP transport behavior, tool categories, and example workflows. Use when the user asks what the agent can do.
 argument-hint: "[optional: specific topic like 'actions', 'tables', 'views']"
 ---
 
-# Baseloop MCP Capabilities
+# Baseloop GTM Capabilities
 
 <!-- INTERACTION-METHOD-START -->
 
@@ -24,6 +24,10 @@ Show the user what the Baseloop agent can do.
 <help_topic>$ARGUMENTS</help_topic>
 
 If a specific topic is provided above, focus on that area. Otherwise, show the full overview.
+
+## Start Here
+
+Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow skill and selects one Baseloop transport for the session. Read [transport.md](./references/transport.md) when you need the CLI/MCP invocation contract. If a help topic requires live Baseloop data and no `BASELOOP_TRANSPORT` is already selected, select a transport before calling live tools.
 
 ---
 
@@ -129,13 +133,13 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 
 | Skill | Purpose |
 |---------|---------|
-| `/baseloop-gtm:setup` | Diagnose plugin environment — MCP auth, connected platforms, workspace access (Claude Code only) |
+| `/baseloop-gtm` | Root router — choose workflow and transport |
+| `/baseloop-gtm:setup` | Diagnose CLI/MCP readiness, connected platforms, and workspace access |
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
 | `/baseloop-gtm:review` | Audit an existing workflow for pitfalls and missing safeguards |
 | `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
 | `/baseloop-gtm:diagnose` | Investigate and fix a failing field |
-| `/baseloop-gtm:engineering` | Mental model, design principles, and critical rules behind every workflow |
 | `/baseloop-gtm:save-learning` | Capture a workflow learning to `docs/solutions/` for future reuse |
 | `/baseloop-gtm:update` | Check installed plugin version against upstream (Claude Code only) |
 | `/baseloop-gtm:help` | This help page |
@@ -145,25 +149,25 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 ## Quick Start Examples
 
 **"Import my HubSpot companies and enrich them"**
-→ `/baseloop-gtm:lfg Import HubSpot companies, enrich with company data`
+→ `/baseloop-gtm Import HubSpot companies, enrich with company data`
 
 **"Find decision makers at my target companies"**
-→ `/baseloop-gtm:plan Find contacts at companies, enrich, sync to HubSpot`
+→ `/baseloop-gtm Find contacts at companies, enrich, sync to HubSpot`
 
 **"Check my workflow for issues before I scale up"**
-→ `/baseloop-gtm:review ICP Pipeline workspace`
+→ `/baseloop-gtm review ICP Pipeline workspace`
 
 **"My enrichment field is failing"**
-→ `/baseloop-gtm:diagnose enrichment field errors`
+→ `/baseloop-gtm diagnose enrichment field errors`
 
 **"What actions are available?"**
-→ Call `list_actions` to see the current enrichment, CRM, and AI action metadata
+→ Use the selected transport to call `list_actions` and see the current enrichment, CRM, and AI action metadata. If no transport is selected yet, select one first.
 
 **"What integrations do I have?"**
-→ Call `get_connected_platforms` to see connected services
+→ Use the selected transport to call `get_connected_platforms` and see connected services. If no transport is selected yet, select one first.
 
 ---
 
 ## Dynamic Context
 
-Call `list_tables` and `get_connected_platforms` to see the user's current environment, then tailor suggestions based on what tables exist and which integrations are connected.
+Use the selected transport to call `list_tables` and `get_connected_platforms`, then tailor suggestions based on what tables exist and which integrations are connected. If no transport is selected yet, select one first.

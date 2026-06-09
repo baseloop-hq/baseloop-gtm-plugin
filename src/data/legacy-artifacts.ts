@@ -1,15 +1,16 @@
 /**
  * Registry of skill directories that existed in past versions of the plugin and
  * should be removed when a user upgrades to a version that has renamed or
- * removed them. Entries are keyed by the version that introduced the rename.
+ * removed them. Entries are keyed by the minimum manifest version whose code
+ * knows the directories are stale. Release-please owns future version bumps, so
+ * do not key new cleanup entries to a guessed future release number.
  *
  * Strict scope: only renames or removals that would otherwise leave orphan
  * files in user installs. General-purpose legacy cleanup is out of scope.
  *
  * To add an entry:
- *  1. Bump the plugin version that ships the rename.
- *  2. Add `<version>: ["old-skill-dir-name", ...]`.
- *  3. The update skill (and converter installs once Phase 4 lands) will sweep
+ *  1. Add the stale directory under the current manifest version.
+ *  2. The update skill (and converter installs once Phase 4 lands) will sweep
  *     listed directories from user installs when the user upgrades to that
  *     version or later.
  *
@@ -17,10 +18,11 @@
  * place to delete user content.
  */
 export const STALE_SKILL_DIRS_BY_VERSION: Record<string, string[]> = {
-  // 0.x → 1.0 cutover: skills/gtm-engineering/ → skills/engineering/.
-  // Users upgrading from 0.x leave the old directory in their plugin cache;
-  // sweeping it on update prevents stale loads.
-  "1.0.0": ["gtm-engineering"],
+  // Root entrypoint lineage:
+  // skills/gtm-engineering/ -> skills/engineering/ -> skills/baseloop-gtm/.
+  // Users upgrading across either rename can leave old directories in their
+  // plugin cache; sweeping them prevents stale loads.
+  "0.8.0": ["gtm-engineering", "engineering"],
 }
 
 /**

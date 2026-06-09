@@ -1,6 +1,6 @@
 # Agents — Persona Catalog
 
-Three specialized read-only auditors. All run against a user-specified workspace or table; none mutate data.
+Two specialized read-only auditors. All run against a user-specified workspace or table; none mutate data.
 
 ## Selection tiers
 
@@ -9,7 +9,6 @@ Three specialized read-only auditors. All run against a user-specified workspace
 | Agent | Focus | Selected when |
 |---|---|---|
 | [`data-quality-auditor`](./data-quality-auditor.agent.md) | Row-level data integrity: null values, invalid domains, duplicate companies, broken extraction paths, type coercion, data mismatch between sources | Any review that covers a table with data rows. Run before scaling from Rung 2 to Rung 3. |
-| [`workflow-cost-optimizer`](./workflow-cost-optimizer.agent.md) | Credit consumption: expensive ungated actions, redundant lookups, missing exclude-before-enrich gates | Any review of a multi-field workflow, especially before Rung 3 or after user reports high credit usage. |
 
 ### Conditional — run when the workflow touches CRM sync
 
@@ -25,4 +24,4 @@ Three specialized read-only auditors. All run against a user-specified workspace
 
 ## Not listed here
 
-We intentionally don't ship a catalog of 50 personas. Three covers our domain (data quality, cost, CRM integrity). Additional agents should solve a distinct audit concern that isn't adequately covered by one of the three above, not a narrower slice of the same concern.
+We intentionally don't ship a catalog of 50 personas. These two cover the direct-audit surfaces users invoke most often: data quality and CRM integrity. Cost optimization stays embedded in the workflow skills and shared references where planning, review, and scale-up decisions happen.

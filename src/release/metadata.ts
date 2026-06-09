@@ -48,15 +48,14 @@ export async function getBaseloopGtmCounts(pluginDir: string = PLUGIN_DIR): Prom
 }
 
 export function buildBaseloopGtmDescription(counts: PluginCounts): string {
-  const mcpClause = counts.mcpServers === 1 ? "1 MCP server" : `${counts.mcpServers} MCP servers`
   return (
-    `GTM workflow engineering for Baseloop. ${counts.skills} skills, ${counts.agents} agents, and ${mcpClause} for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.`
+    `GTM workflow engineering for Baseloop. ${counts.skills} skills, ${counts.agents} agents, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.`
   )
 }
 
 export function buildBaseloopGtmMarketplaceDescription(counts: PluginCounts): string {
   return (
-    `Build automated GTM data workflows in Baseloop with ${counts.skills} skills and ${counts.agents} read-only audit agents — sourcing, enrichment, qualification, CRM sync, and autonomous end-to-end runs.`
+    `Build automated GTM data workflows in Baseloop with ${counts.skills} skills, ${counts.agents} read-only audit agents, CLI-ready instructions, and MCP compatibility.`
   )
 }
 

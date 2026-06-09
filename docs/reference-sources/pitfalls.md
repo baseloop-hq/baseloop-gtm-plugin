@@ -78,11 +78,11 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ## Missing autoRunCondition gating
 
-**Symptom:** Expensive actions (AI, enrichment) run on rows that should have been filtered, wasting credits.
+**Symptom:** Enrichment, people-finding, or AI actions run on rows that should have been filtered, producing low-value work or bad downstream data.
 
-**Cause:** Did not set `autoRunCondition` to gate on upstream results.
+**Cause:** Did not set `autoRunCondition` to gate on reliable upstream prerequisites, or treated every row as eligible even after CRM/blocklist/dedupe signals narrowed the audience.
 
-**Fix:** Always gate expensive actions on their prerequisites being non-null or meeting a condition. Example: gate `custom_ai_agent` on `enrich_company` being `notNull`. Gate `hubspot_create_object` on `hubspot_lookup_object` being `isNotFound`.
+**Fix:** Gate credit-consuming actions when a reliable prerequisite exists and the gate preserves the workflow's selected quality tier. Example: gate `custom_ai_agent` on `enrich_company` being `notNull` when the prompt depends on enriched company data. Gate `hubspot_create_object` on `hubspot_lookup_object` being `isNotFound`. Do not add gates that suppress rows the workflow explicitly needs for coverage, confidence, CRM integrity, contact quality, deliverability, or downstream conversion.
 
 ---
 
@@ -219,11 +219,11 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ## No blocklist check before enrichment
 
-**Symptom:** Credits wasted enriching companies that are already customers or churned accounts.
+**Symptom:** Companies that are already customers or churned accounts repeat low-value enrichment.
 
 **Cause:** Workflow runs enrichment on every imported company without checking against existing CRM data.
 
-**Fix:** Maintain a "Master CRM Blocklist" table with closed-won + churned companies. Add a `lookup_single_record` field as the **first gate** before any enrichment. Gate all downstream fields on blocklist lookup being `isNotFound`. This is one of the cheapest checks you can run.
+**Fix:** Maintain a "Master CRM Blocklist" table with closed-won + churned companies. Add a `lookup_single_record` field early in the workflow before enrichment when the matching key is available. Gate downstream fields on blocklist lookup being `isNotFound` so the workflow avoids low-value enrichment while preserving the selected audience.
 
 ---
 
@@ -352,7 +352,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 ## Enriching recently contacted accounts
 
-**Symptom:** Credits wasted enriching and reaching out to accounts that sales reps already contacted last week.
+**Symptom:** Recently contacted accounts repeat enrichment or outreach instead of following the appropriate recency path.
 
 **Cause:** Workflow doesn't check when the account was last touched in HubSpot before enriching.
 

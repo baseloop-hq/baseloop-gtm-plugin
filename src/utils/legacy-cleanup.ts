@@ -9,7 +9,7 @@ export type SweepReport = {
 }
 
 export type SweepOptions = {
-  /** Only remove entries listed under this version (and lower if specified). */
+  /** Include entries at or below this version. Omit to remove all known stale dirs. */
   forVersion?: string
   /** Skip the actual removal; just return what would be removed. */
   dryRun?: boolean
@@ -17,9 +17,24 @@ export type SweepOptions = {
 
 function dirsForVersion(version: string | undefined): string[] {
   if (!version) return allStaleSkillDirs()
-  // Naive: include the named version. A semver-aware include-all-≤-version
-  // can be added later if we ever cross multiple cutovers.
-  return STALE_SKILL_DIRS_BY_VERSION[version] ?? []
+  const selected = new Set<string>()
+  for (const [cutoverVersion, dirs] of Object.entries(STALE_SKILL_DIRS_BY_VERSION)) {
+    if (compareSemver(cutoverVersion, version) <= 0) {
+      for (const dir of dirs) selected.add(dir)
+    }
+  }
+  return [...selected]
+}
+
+function compareSemver(left: string, right: string): number {
+  const leftParts = left.split(".").map((part) => Number.parseInt(part, 10))
+  const rightParts = right.split(".").map((part) => Number.parseInt(part, 10))
+  for (let i = 0; i < 3; i++) {
+    const l = Number.isFinite(leftParts[i]) ? leftParts[i] : 0
+    const r = Number.isFinite(rightParts[i]) ? rightParts[i] : 0
+    if (l !== r) return l - r
+  }
+  return 0
 }
 
 async function exists(p: string): Promise<boolean> {

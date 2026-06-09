@@ -45,7 +45,7 @@ If no learnings match or `docs/solutions/` doesn't exist, skip silently.
 
 ## Phase 1: Survey the Environment
 
-Before designing anything, read [platform-discovery.md](./references/platform-discovery.md), then gather context by calling these MCP tools:
+Before designing anything, read [transport.md](./references/transport.md) and [platform-discovery.md](./references/platform-discovery.md). If `BASELOOP_TRANSPORT` was passed from `/baseloop-gtm`, use it as the selected transport. Otherwise select one Baseloop transport for the session, then gather context by calling these Baseloop tools through that transport:
 
 1. **`list_tables`** — See what tables already exist. The user may have existing data to build on.
 2. **`get_connected_platforms`** — See which integrations are connected (HubSpot, Salesforce, Slack, LinkedIn, etc.).
@@ -85,10 +85,10 @@ For each table, define the field chain in order:
 - **Sync**: Does data go to a CRM or outreach tool? (hubspot_create_object, outreach actions)
 
 ### 3. Define autoRunConditions
-Which fields gate on which upstream results? Apply the "filter cheap before expensive" principle:
-- Free: formulas, lookups
-- Cheap: enrichment (1-2 credits)
-- Expensive: AI + web search (5-50 credits), findPeople (2 credits/contact)
+Which fields gate on which upstream results? Apply outcome-preserving gates:
+- Deterministic gates: formulas, lookups, blocklists, and required non-null source values
+- Enrichment and people-finding: run when the row is still in the selected audience and the output improves coverage, confidence, routing, or CRM integrity
+- AI + web research: gate on meaningful prerequisites or missing deterministic data, but keep it when it materially improves the workflow's selected tier
 
 ### 4. Check CRM integrity
 Any CRM sync MUST follow the lookup-before-create pattern. Verify that:

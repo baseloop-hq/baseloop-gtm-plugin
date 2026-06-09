@@ -93,7 +93,6 @@ describe("marketplace consistency", () => {
 
   test("codex starter prompts only reference codex-compatible skills", async () => {
     const plugin = await readJson<{ interface: { defaultPrompt: string[] } }>(CODEX_PLUGIN_JSON)
-    expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:setup")
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:update")
   })
 
@@ -104,7 +103,6 @@ describe("marketplace consistency", () => {
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
-    expect(entries).not.toContain("setup")
     expect(entries).not.toContain("update")
 
     for (const entry of entries) {
@@ -112,7 +110,8 @@ describe("marketplace consistency", () => {
       const match = raw.match(/^---\n([\s\S]*?)\n---/)
       expect(match, `${entry}: missing frontmatter`).not.toBeNull()
       const frontmatter = load(match![1]) as { name?: string; ce_platforms?: string[] }
-      expect(frontmatter.name, `${entry}: Codex skill name should be plugin-local`).toBe(entry)
+      const expectedName = entry === "baseloop-gtm" ? "baseloop-gtm" : entry
+      expect(frontmatter.name, `${entry}: Codex skill name should be plugin-local`).toBe(expectedName)
       expect(frontmatter.name?.startsWith("baseloop-gtm:"), `${entry}: Codex skill name is double-namespaced`).toBe(false)
       expect(frontmatter.ce_platforms === undefined || frontmatter.ce_platforms.includes("codex")).toBe(true)
     }

@@ -69,7 +69,7 @@ describe("reference paths", () => {
   })
 
   test("codex skill copies match canonical codex-compatible skills", async () => {
-    const canonicalSkills = (await listSkills()).filter((skill) => !["setup", "update"].includes(skill)).sort()
+    const canonicalSkills = (await listSkills()).filter((skill) => !["update"].includes(skill)).sort()
     const codexSkills = (await fs.readdir(CODEX_SKILLS_DIR, { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
@@ -111,6 +111,7 @@ async function listRelativeFiles(root: string, dir: string = root): Promise<stri
 
 function codexMirrorContent(skill: string, relativeFile: string, content: string): string {
   if (relativeFile !== "SKILL.md") return content
+  if (skill === "baseloop-gtm") return content
   return content.replace(
     new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)baseloop-gtm:${skill}(\\s*$)`, "m"),
     `$1${skill}$2`,

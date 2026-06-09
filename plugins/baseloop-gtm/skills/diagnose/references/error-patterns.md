@@ -2,7 +2,7 @@
 
 # Error Patterns and Diagnosis
 
-Error signatures observed in Baseloop workflow runs, mapped to root causes and fix procedures. Each entry shows what MCP tools reveal, why it happened, and how to resolve it.
+Error signatures observed in Baseloop workflow runs, mapped to root causes and fix procedures. Each entry shows what Baseloop tool calls reveal, why it happened, and how to resolve it.
 
 **For preventive guidance** (how to avoid errors when building), see [pitfalls.md](./pitfalls.md).
 

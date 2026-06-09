@@ -43,7 +43,7 @@ If no learnings match or `docs/solutions/` doesn't exist, skip silently.
 
 Before building, verify:
 
-1. **MCP connection** — Call `list_tables` to confirm the Baseloop MCP server is connected. If it fails, tell the user to set up the MCP connection first.
+1. **Transport** — Read [transport.md](./references/transport.md). If `BASELOOP_TRANSPORT` was passed from `/baseloop-gtm`, use it. Otherwise select CLI or MCP for this workflow and state `BASELOOP_TRANSPORT=<cli|mcp>` before calling Baseloop tools.
 2. **Connected platforms** — Call `get_connected_platforms` to verify needed integrations are connected (e.g. HubSpot OAuth, Slack).
 3. **Runtime action metadata** — Read [platform-discovery.md](./references/platform-discovery.md), then call `list_actions` and inspect `provider`, `creationMethod`, `requiresConnection`, `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide` for the actions in the plan.
 4. **Existing tables** — Call `list_tables` to check if any tables from the plan already exist. If so, ask whether to reuse or create new ones.

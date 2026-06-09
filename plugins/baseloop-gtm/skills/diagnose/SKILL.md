@@ -23,7 +23,7 @@ Ask one question at a time. Prefer a concise single-select choice when natural o
 
 If the problem description above is empty, ask: "Which table or field is having issues? Describe what you expected vs. what happened."
 
-Before starting, read [error-patterns.md](./references/error-patterns.md), [pitfalls.md](./references/pitfalls.md), and [platform-discovery.md](./references/platform-discovery.md) to load known error signatures and current runtime-discovery rules.
+Before starting, read [transport.md](./references/transport.md), [error-patterns.md](./references/error-patterns.md), [pitfalls.md](./references/pitfalls.md), and [platform-discovery.md](./references/platform-discovery.md) to load the transport contract, known error signatures, and current runtime-discovery rules. If `BASELOOP_TRANSPORT` was passed from `/baseloop-gtm`, use it. Otherwise select one Baseloop transport and use it consistently through investigation, fix, and verification.
 
 ## Phase 0: Load Applicable Learnings
 
@@ -45,7 +45,7 @@ If no learnings match or `docs/solutions/` doesn't exist, skip silently.
 
 ## Phase 1: Investigate (read-only)
 
-Gather evidence without changing anything.
+Gather evidence without changing anything. Use the selected transport for every Baseloop tool call.
 
 ### Step 1: Locate the failing table and field
 

@@ -1,6 +1,6 @@
 ---
 name: review
-description: This skill should be used to proactively audit an existing Baseloop workflow for known pitfalls, missing safeguards, and credit-wasting patterns before they cause problems. It is read-only and never modifies the workflow.
+description: This skill should be used to proactively audit an existing Baseloop workflow for known pitfalls, missing safeguards, low-value work, and data-quality risks before they cause problems. It is read-only and never modifies the workflow.
 argument-hint: "[workspace name or table name to audit]"
 ---
 
@@ -17,7 +17,7 @@ Ask one question at a time. Prefer a concise single-select choice when natural o
 <!-- INTERACTION-METHOD-END -->
 
 
-Inspect an existing workflow for known pitfalls, missing safeguards, and credit-wasting patterns. This skill is **read-only** — it never creates, updates, or deletes anything.
+Inspect an existing workflow for known pitfalls, missing safeguards, low-value work, and data-quality risks. This skill is **read-only** — it never creates, updates, or deletes anything.
 
 ## Target
 
@@ -25,7 +25,7 @@ Inspect an existing workflow for known pitfalls, missing safeguards, and credit-
 
 If the target above is empty, ask: "Which workspace or table should I audit? I'll check it for known pitfalls and missing safeguards."
 
-Before starting, read [pitfalls.md](./references/pitfalls.md), [error-patterns.md](./references/error-patterns.md), and [platform-discovery.md](./references/platform-discovery.md) to load the full checklist and current runtime-discovery rules.
+Before starting, read [transport.md](./references/transport.md), [pitfalls.md](./references/pitfalls.md), [error-patterns.md](./references/error-patterns.md), and [platform-discovery.md](./references/platform-discovery.md) to load the transport contract, full checklist, and current runtime-discovery rules. If `BASELOOP_TRANSPORT` was passed from `/baseloop-gtm`, use it. Otherwise select one Baseloop transport and keep this audit read-only under that transport.
 
 ## Phase 0: Load Applicable Learnings
 
@@ -47,6 +47,8 @@ If no learnings match or `docs/solutions/` doesn't exist, skip silently.
 
 ## Phase 1: Discover
 
+Use the selected transport for every Baseloop tool call:
+
 1. `list_workspaces` — find the target workspace.
 2. `list_tables` — get all tables in the workspace.
 3. `get_connected_platforms` — load org-specific provider connection state.
@@ -63,11 +65,12 @@ Build a mental map of the workflow: source tables → enrichment tables → rout
 
 Check every table and field against the following checklist. For each finding, record the severity and specific field.
 
-### Critical (credit waste or data corruption)
+### Critical (credit waste, material quality loss, or data corruption)
 
 **C1 — Missing autoRunCondition on paid or variable-credit actions**
 For each field whose current `list_actions` metadata has `creditCostHint` other than `free`, or whose `get_action_schema` guide indicates credit usage.
-- Does it have an `autoRunCondition`? If not → **Critical**: "Field [name] runs [action] on every row without gating. Add autoRunCondition on upstream prerequisites."
+- If the field has an obvious prerequisite, blocklist, CRM lookup, qualification result, required source value, or dedupe check and no `autoRunCondition` → **Critical** when it can create bad CRM data or large low-value runs; otherwise **Warning**.
+- If the action is intentionally supposed to run on every row in the selected audience, do not flag missing gating by itself. Note the expected row volume and whether the selected audience is already narrowed upstream.
 
 **C1b — Disconnected, legacy, or deprecated action**
 For each action field, compare the stored action key against `list_actions`.
@@ -92,7 +95,7 @@ For each `send_to_table` field, check the destination table:
 ### Warning (likely bugs or inefficiencies)
 
 **W1 — Missing blocklist check**
-Does the workflow have enrichment fields but no `lookup_single_record` against a blocklist table before them? → **Warning**: "No blocklist check before enrichment. Credits may be wasted on existing customers or churned accounts."
+Does the workflow have enrichment fields but no `lookup_single_record` against a blocklist table before them? → **Warning**: "No blocklist check before enrichment. Existing customers or churned accounts may repeat low-value enrichment."
 
 **W2 — No email verification before outreach routing**
 Does the workflow route to an outreach platform without an email verification step? → **Warning**: "No email verification before outreach. Expect high bounce rates."

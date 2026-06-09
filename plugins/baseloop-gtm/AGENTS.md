@@ -5,8 +5,8 @@
 ### Skills
 Each canonical skill is a directory under `skills/` with `SKILL.md` and its own `references/` (and optionally `assets/`). No cross-skill reference paths — every skill is self-contained. `codex-skills/` is a generated runtime mirror for Codex native plugin discovery; do not edit it directly. Run `bun run references:sync` after canonical skill/reference edits so the mirror stays in sync and excludes Claude-only skills.
 
-- `skills/engineering/SKILL.md` — Domain mental model, design principles, critical rules. Shared foundation; `name: baseloop-gtm:engineering`.
-- `skills/engineering/references/` — Loaded on demand by the engineering skill itself.
+- `skills/baseloop-gtm/SKILL.md` — Root router, transport selection, domain mental model, design principles, critical rules. Shared foundation; `name: baseloop-gtm`.
+- `skills/baseloop-gtm/references/` — Loaded on demand by the root skill itself.
   - `cost-estimation.md` — Runtime credit-cost hinting and rung-based estimates
   - `platform-discovery.md` — Runtime source-of-truth rules for action metadata and schemas
   - `tool-classifications.md` — Read-only / mutation / destructive categories
@@ -24,7 +24,6 @@ Flat layout, `.agent.md` suffix, documented in `agents/README.md` (persona catal
 
 - `agents/crm-integrity-checker.agent.md` — HubSpot sync integrity audit (duplicates, associations, enums)
 - `agents/data-quality-auditor.agent.md` — Row data inspection (nulls, extraction paths, type coercion)
-- `agents/workflow-cost-optimizer.agent.md` — Credit consumption analysis and savings recommendations
 
 ## Runtime vs Authoring Context
 
@@ -42,7 +41,7 @@ When modifying:
 2. Keep each `SKILL.md` focused on the decision framework. Move long-form detail to `references/`.
 3. When editing a shared reference (pitfalls, error-patterns, workflow-patterns), edit `docs/reference-sources/<name>.md` first, then run `bun run references:sync`.
 4. Verify frontmatter fields match the plugin spec.
-5. Test skills by invoking them: `/baseloop-gtm:plan`, `/baseloop-gtm:build`, `/baseloop-gtm:review`.
+5. Test skills by invoking them: `/baseloop-gtm`, `/baseloop-gtm:plan`, `/baseloop-gtm:build`, `/baseloop-gtm:review`.
 
 ## MCP Server
 

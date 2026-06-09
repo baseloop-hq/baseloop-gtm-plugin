@@ -1,6 +1,7 @@
 {
-  "pitfalls.md": ["review", "diagnose", "engineering", "build"],
-  "error-patterns.md": ["diagnose", "build", "review", "engineering"],
-  "workflow-patterns.md": ["plan", "engineering"],
-  "platform-discovery.md": ["plan", "build", "review", "diagnose", "engineering"]
+  "pitfalls.md": ["review", "diagnose", "baseloop-gtm", "build"],
+  "error-patterns.md": ["diagnose", "build", "review", "baseloop-gtm"],
+  "workflow-patterns.md": ["plan", "baseloop-gtm"],
+  "platform-discovery.md": ["plan", "build", "review", "diagnose", "baseloop-gtm"],
+  "transport.md": ["baseloop-gtm", "plan", "build", "review", "diagnose", "lfg", "help", "setup"]
 }

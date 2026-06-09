@@ -25,6 +25,8 @@ Build an entire GTM workflow end-to-end: plan the architecture, create all table
 
 If the goal above is empty, ask: "What workflow do you want me to build? Describe the data flow you want to achieve."
 
+Before Step 1, read [transport.md](./references/transport.md). If `BASELOOP_TRANSPORT` was passed from `/baseloop-gtm`, use it. Otherwise select one Baseloop transport for the entire autonomous run and state `BASELOOP_TRANSPORT=<cli|mcp>`. Plan, build, diagnose, and verification steps must all use that same transport.
+
 ---
 
 ## Step 1: Plan
