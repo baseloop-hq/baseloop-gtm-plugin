@@ -10,7 +10,7 @@ If `BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp` was already selected by 
 
 1. Prefer CLI when all CLI readiness probes succeed:
    - `command -v baseloop`
-   - `baseloop doctor --json` reports usable auth/API access. Do not reject CLI solely because doctor reports missing local agent-skill installs.
+   - `baseloop doctor --json` reports usable auth/API access. Do not reject CLI solely because doctor reports advisory `gtm_skills` status or missing local agent-skill installs.
    - `baseloop tools list --agent` returns a compact JSON tool catalog
    - `baseloop tools call list_workspaces --input '{}' --agent` returns JSON
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.
@@ -45,6 +45,7 @@ Prefer compact CLI commands whenever they can answer the next decision:
 | CLI/API/auth health | `baseloop doctor --json` |
 | CLI command shape | `baseloop tools --agent --help` |
 | Tool discovery | `baseloop tools list --agent` |
+| One tool's full input schema/detail | `baseloop tools describe <tool_name> --agent` |
 | Tool execution | `baseloop tools call <tool_name> --input '<json-object>' --agent` |
 
 Do not use verbose JSON envelopes or full schema/detail responses when a compact command already has enough information for the next step.
@@ -62,9 +63,9 @@ baseloop tools call run_field --input '{"fieldId":"<field-id>","runAction":"firs
 
 Do not load every full tool schema at startup or during transport readiness. Use `baseloop tools list --agent` only as a compact discovery catalog: it lists tool names, descriptions, org scope, and safety metadata such as read-only/destructive status, cost hints, and idempotency. Treat the catalog as summary-only; it is not the source for full input schemas.
 
-The CLI server contract supports detail on demand: the summary catalog may include a `detailHint` such as `GET /v1/cli/tools/:toolName`, and that endpoint returns one full tool schema. Use that contract lazily. Never replace the compact catalog with an all-tools full-schema dump.
+The CLI supports detail on demand with `baseloop tools describe <tool_name> --agent`, which fetches one tool's full input schema/detail. `baseloop tools schema <tool_name> --agent` is an alias. Use either command lazily. Never replace the compact catalog with an all-tools full-schema dump.
 
-Fetch a full transport-tool input schema only for the one tool you are about to call, and only when you need it because the tool is unfamiliar, the input object is unclear, the user is multi-org and `organizationId` requirements matter, or a structured CLI/MCP error says the input is invalid. If the installed CLI advertises a schema/detail subcommand in `baseloop tools --agent --help`, use that command for the single tool. If no schema-detail command is available, do not invent one and do not fall back to loading all tools; call known tools with the documented input object and rely on structured errors for missing or invalid arguments.
+Fetch a full transport-tool input schema only for the one tool you are about to call, and only when you need it because the tool is unfamiliar, the input object is unclear, the user is multi-org and `organizationId` requirements matter, or a structured CLI/MCP error says the input is invalid. If no schema-detail command is available in an older CLI, do not invent one and do not fall back to loading all tools; call known tools with the documented input object and rely on structured errors for missing or invalid arguments.
 
 Keep transport-tool input schemas separate from Baseloop action schemas. `get_action_schema` is the live schema/guide for configuring an action field inside a workflow; call it only after `list_actions` narrows the action candidates and only for the action being configured or compared.
 

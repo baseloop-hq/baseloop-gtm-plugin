@@ -29,7 +29,7 @@ If the request above is empty, ask what the user wants to do in Baseloop. Use th
 
 Before any Baseloop operation, read [transport.md](./references/transport.md) and select one transport for this workflow:
 
-1. Prefer CLI when CLI readiness is fully proven: `command -v baseloop` succeeds, `baseloop doctor --json` reports usable auth/API access, `baseloop tools list --agent` returns a compact JSON catalog, and a read-only `baseloop tools call list_workspaces --input '{}' --agent` returns JSON. Do not reject CLI solely because doctor reports missing local agent-skill installs.
+1. Prefer CLI when CLI readiness is fully proven: `command -v baseloop` succeeds, `baseloop doctor --json` reports usable auth/API access, `baseloop tools list --agent` returns a compact JSON catalog, and a read-only `baseloop tools call list_workspaces --input '{}' --agent` returns JSON. Do not reject CLI solely because doctor reports advisory `gtm_skills` status or missing local agent-skill installs.
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.
 3. If neither transport works, route to `baseloop-gtm:setup`.
 
