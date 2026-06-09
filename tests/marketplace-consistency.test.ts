@@ -217,6 +217,7 @@ describe("marketplace consistency", () => {
     expect(uploadScript).toContain('gh release upload "$TAG_NAME"')
     expect(uploadScript).toContain('"release-assets/baseloop-gtm-${VERSION}.zip"')
     expect(uploadScript).toContain('"release-assets/checksums.txt"')
+    expect(uploadScript).toContain('--repo "$GITHUB_REPOSITORY"')
     expect(uploadScript).toContain("--clobber")
   })
 })

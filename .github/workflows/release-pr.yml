@@ -149,4 +149,5 @@ jobs:
           gh release upload "$TAG_NAME" \
             "release-assets/baseloop-gtm-${VERSION}.zip" \
             "release-assets/checksums.txt" \
+            --repo "$GITHUB_REPOSITORY" \
             --clobber
