@@ -3,7 +3,6 @@ import { promises as fs } from "fs"
 import path from "path"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex-skills")
 
 type Issue = { skill: string; ref: string; reason: string }
 
@@ -68,30 +67,15 @@ describe("reference paths", () => {
     }
   })
 
-  test("codex skill copies match canonical codex-compatible skills", async () => {
-    const canonicalSkills = (await listSkills()).filter((skill) => !["setup", "update"].includes(skill)).sort()
-    const codexSkills = (await fs.readdir(CODEX_SKILLS_DIR, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort()
-
-    expect(codexSkills).toEqual(canonicalSkills)
-
-    for (const skill of canonicalSkills) {
-      const canonicalDir = path.join(SKILLS_DIR, skill)
-      const codexDir = path.join(CODEX_SKILLS_DIR, skill)
-      const canonicalFiles = await listRelativeFiles(canonicalDir)
-      const codexFiles = await listRelativeFiles(codexDir)
-      expect(codexFiles, `${skill}: codex skill file list drift`).toEqual(canonicalFiles)
-
-      for (const relativeFile of canonicalFiles) {
-        const canonical = await fs.readFile(path.join(canonicalDir, relativeFile), "utf8")
-        const codex = await fs.readFile(path.join(codexDir, relativeFile), "utf8")
-        expect(codex, `${skill}/${relativeFile}: codex skill content drift`).toBe(
-          codexMirrorContent(skill, relativeFile, canonical),
-        )
-      }
+  test("codex plugin ships no skill mirror (Codex reads ~/.agents/skills natively)", async () => {
+    const codexSkillsDir = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex-skills")
+    let exists = true
+    try {
+      await fs.access(codexSkillsDir)
+    } catch {
+      exists = false
     }
+    expect(exists, "codex-skills mirror must stay deleted; plugin skills would double-list next to ~/.agents/skills in Codex").toBe(false)
   })
 })
 

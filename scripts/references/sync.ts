@@ -19,12 +19,10 @@ import path from "path"
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const REF_SOURCES_DIR = path.join(REPO_ROOT, "docs", "reference-sources")
 const SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills")
 const REGISTRY_PATH = path.join(REF_SOURCES_DIR, "registry.json")
 const INTERACTION_METHOD_PATH = path.join(REF_SOURCES_DIR, "interaction-method.md")
 const INTERACTION_START = "<!-- INTERACTION-METHOD-START -->"
 const INTERACTION_END = "<!-- INTERACTION-METHOD-END -->"
-const CODEX_EXCLUDED_SKILLS = new Set(["setup", "update"])
 
 type Registry = Record<string, string[]>
 
@@ -49,19 +47,6 @@ function stripSyncHeader(content: string): string {
   return rest.startsWith("\n") ? rest.slice(1) : rest
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-}
-
-function codexMirrorContent(skill: string, relativeFile: string, content: string): string {
-  if (relativeFile !== "SKILL.md") return content
-  const namespacedName = `baseloop-gtm:${skill}`
-  return content.replace(
-    new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)${escapeRegExp(namespacedName)}(\\s*$)`, "m"),
-    `$1${skill}$2`,
-  )
-}
-
 async function pathExists(p: string): Promise<boolean> {
   try {
     await fs.access(p)
@@ -69,21 +54,6 @@ async function pathExists(p: string): Promise<boolean> {
   } catch {
     return false
   }
-}
-
-async function listRelativeFiles(root: string, dir: string = root): Promise<string[]> {
-  if (!(await pathExists(root))) return []
-  const out: string[] = []
-  const entries = await fs.readdir(dir, { withFileTypes: true })
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      out.push(...await listRelativeFiles(root, fullPath))
-    } else if (entry.isFile()) {
-      out.push(path.relative(root, fullPath))
-    }
-  }
-  return out.sort()
 }
 
 async function syncSharedReferences(): Promise<void> {
@@ -151,61 +121,8 @@ async function syncInteractionMethodBlocks(): Promise<void> {
   }
 }
 
-async function syncCodexSkillMirror(): Promise<void> {
-  const skillEntries = (await fs.readdir(SKILLS_DIR, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory() && !CODEX_EXCLUDED_SKILLS.has(entry.name))
-    .map((entry) => entry.name)
-    .sort()
-
-  if (checkOnly) {
-    const codexEntries = (await fs.readdir(CODEX_SKILLS_DIR, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort()
-    if (JSON.stringify(codexEntries) !== JSON.stringify(skillEntries)) {
-      drifts.push({ file: path.relative(REPO_ROOT, CODEX_SKILLS_DIR), reason: "codex skill mirror directory drift" })
-      return
-    }
-
-    for (const skill of skillEntries) {
-      const sourceDir = path.join(SKILLS_DIR, skill)
-      const mirrorDir = path.join(CODEX_SKILLS_DIR, skill)
-      const sourceFiles = await listRelativeFiles(sourceDir)
-      const mirrorFiles = await listRelativeFiles(mirrorDir)
-      if (JSON.stringify(mirrorFiles) !== JSON.stringify(sourceFiles)) {
-        drifts.push({ file: path.relative(REPO_ROOT, mirrorDir), reason: "codex skill mirror file-list drift" })
-        continue
-      }
-      for (const relativeFile of sourceFiles) {
-        const source = codexMirrorContent(
-          skill,
-          relativeFile,
-          await fs.readFile(path.join(sourceDir, relativeFile), "utf8"),
-        )
-        const mirror = await fs.readFile(path.join(mirrorDir, relativeFile), "utf8")
-        if (mirror !== source) {
-          drifts.push({ file: path.relative(REPO_ROOT, path.join(mirrorDir, relativeFile)), reason: "codex skill mirror content drift" })
-        }
-      }
-    }
-    return
-  }
-
-  await fs.rm(CODEX_SKILLS_DIR, { recursive: true, force: true })
-  await fs.mkdir(CODEX_SKILLS_DIR, { recursive: true })
-  for (const skill of skillEntries) {
-    const sourceDir = path.join(SKILLS_DIR, skill)
-    const mirrorDir = path.join(CODEX_SKILLS_DIR, skill)
-    await fs.cp(sourceDir, mirrorDir, { recursive: true })
-    const skillPath = path.join(mirrorDir, "SKILL.md")
-    const content = await fs.readFile(skillPath, "utf8")
-    await fs.writeFile(skillPath, codexMirrorContent(skill, "SKILL.md", content))
-  }
-}
-
 await syncSharedReferences()
 await syncInteractionMethodBlocks()
-await syncCodexSkillMirror()
 
 if (checkOnly && drifts.length > 0) {
   console.error("Reference drift detected:")

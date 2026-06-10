@@ -83,8 +83,8 @@ describe("marketplace consistency", () => {
   })
 
   test("codex manifest references MCP config by path", async () => {
-    const plugin = await readJson<{ mcpServers: string; skills: string }>(CODEX_PLUGIN_JSON)
-    expect(plugin.skills).toBe("./codex-skills/")
+    const plugin = await readJson<{ mcpServers: string; skills?: string }>(CODEX_PLUGIN_JSON)
+    expect(plugin.skills, "codex plugin must not ship skills; Codex reads ~/.agents/skills natively").toBeUndefined()
     expect(plugin.mcpServers).toBe("./.mcp.json")
 
     const mcp = await readJson<{ mcpServers: Record<string, unknown> }>(CODEX_MCP_JSON)
@@ -97,26 +97,6 @@ describe("marketplace consistency", () => {
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:update")
   })
 
-  test("codex native skill tree excludes Claude-only skills", async () => {
-    const plugin = await readJson<{ skills: string }>(CODEX_PLUGIN_JSON)
-    const codexSkillsDir = path.join(REPO_ROOT, "plugins", "baseloop-gtm", plugin.skills)
-    const entries = (await fs.readdir(codexSkillsDir, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort()
-    expect(entries).not.toContain("setup")
-    expect(entries).not.toContain("update")
-
-    for (const entry of entries) {
-      const raw = await fs.readFile(path.join(codexSkillsDir, entry, "SKILL.md"), "utf8")
-      const match = raw.match(/^---\n([\s\S]*?)\n---/)
-      expect(match, `${entry}: missing frontmatter`).not.toBeNull()
-      const frontmatter = load(match![1]) as { name?: string; ce_platforms?: string[] }
-      expect(frontmatter.name, `${entry}: Codex skill name should be plugin-local`).toBe(entry)
-      expect(frontmatter.name?.startsWith("baseloop-gtm:"), `${entry}: Codex skill name is double-namespaced`).toBe(false)
-      expect(frontmatter.ce_platforms === undefined || frontmatter.ce_platforms.includes("codex")).toBe(true)
-    }
-  })
 
   test("package.json has expected scripts", async () => {
     const pkg = await readJson<{ scripts: Record<string, string> }>(PACKAGE_JSON)

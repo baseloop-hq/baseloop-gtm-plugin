@@ -17,7 +17,6 @@
     "mcp",
     "baseloop"
   ],
-  "skills": "./codex-skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Baseloop GTM",

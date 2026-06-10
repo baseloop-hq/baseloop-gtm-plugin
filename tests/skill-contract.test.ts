@@ -5,7 +5,6 @@ import { load } from "js-yaml"
 import { parseFrontmatter } from "../src/utils/frontmatter"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex-skills")
 const AGENTS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "agents")
 const REFERENCE_SOURCES_DIR = path.resolve(import.meta.dir, "..", "docs", "reference-sources")
 const VALID_PLATFORMS = new Set(["claude", "codex", "gemini"])
@@ -150,7 +149,6 @@ describe("skill contract", () => {
   test("shipped skill docs avoid static action inventory wording", async () => {
     const files = [
       ...(await listMarkdownFiles(SKILLS_DIR)),
-      ...(await listMarkdownFiles(CODEX_SKILLS_DIR)),
       ...(await listMarkdownFiles(AGENTS_DIR)),
       ...(await listMarkdownFiles(REFERENCE_SOURCES_DIR)),
     ]
@@ -166,7 +164,6 @@ describe("skill contract", () => {
   test("shipped skill docs avoid stale action guide references", async () => {
     const files = [
       ...(await listMarkdownFiles(SKILLS_DIR)),
-      ...(await listMarkdownFiles(CODEX_SKILLS_DIR)),
       ...(await listMarkdownFiles(AGENTS_DIR)),
       ...(await listMarkdownFiles(REFERENCE_SOURCES_DIR)),
     ]
