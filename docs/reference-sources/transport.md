@@ -8,7 +8,7 @@ If `BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp` was already selected by 
 
 1. Prefer CLI when all CLI readiness probes succeed:
    - `command -v baseloop`
-   - `baseloop doctor --json` reports usable auth/API access. Do not reject CLI solely because doctor reports advisory `gtm_skills` status or missing local agent-skill installs.
+   - `baseloop doctor --json` reports usable auth/API access. Do not reject CLI because of advisory checks such as `gtm_skills`, `cli_version`, or missing local agent-skill installs; only failed auth/API access disqualifies CLI.
    - `baseloop tools list --agent` returns a compact JSON tool catalog
    - `baseloop tools call list_workspaces --input '{}' --agent` returns JSON
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.

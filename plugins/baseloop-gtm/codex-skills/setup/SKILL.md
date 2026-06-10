@@ -30,7 +30,7 @@ This skill is **read-only**. It never creates or modifies workspace data.
 
 Read [transport.md](./references/transport.md), then check transports in order.
 
-1. **CLI check:** Run `command -v baseloop`, then `baseloop doctor --json` if the binary exists. If doctor reports usable auth/API access, prove the tool-call bridge before selecting CLI. Do not reject CLI solely because doctor reports advisory `gtm_skills` status or missing local agent-skill installs:
+1. **CLI check:** Run `command -v baseloop`, then `baseloop doctor --json` if the binary exists. If doctor reports usable auth/API access, prove the tool-call bridge before selecting CLI. Do not reject CLI because of advisory checks such as `gtm_skills`, `cli_version`, or missing local agent-skill installs; only failed auth/API access disqualifies CLI. If the `cli_version` advisory reports `ok: false`, note in the setup report that the user can run `baseloop upgrade` to update the CLI and refresh its embedded skills:
    - Run `baseloop tools list --agent` and confirm it returns a compact JSON tool catalog.
    - Run `baseloop tools call list_workspaces --input '{}' --agent` and keep that workspace response for Phase 3.
    - If all probes succeed, set `BASELOOP_TRANSPORT=cli` and continue.
