@@ -1,6 +1,6 @@
 import { promises as fs } from "fs"
 import path from "path"
-import { allStaleSkillDirs, STALE_SKILL_DIRS_BY_VERSION } from "../data/legacy-artifacts"
+import { allStaleSkillDirs, STALE_SKILL_DIRS_BY_VERSION, type StaleSkillDir } from "../data/legacy-artifacts"
 
 export type SweepReport = {
   removed: string[]
@@ -15,15 +15,15 @@ export type SweepOptions = {
   dryRun?: boolean
 }
 
-function dirsForVersion(version: string | undefined): string[] {
+function dirsForVersion(version: string | undefined): StaleSkillDir[] {
   if (!version) return allStaleSkillDirs()
-  const selected = new Set<string>()
-  for (const [cutoverVersion, dirs] of Object.entries(STALE_SKILL_DIRS_BY_VERSION)) {
+  const selected = new Map<string, StaleSkillDir>()
+  for (const [cutoverVersion, entries] of Object.entries(STALE_SKILL_DIRS_BY_VERSION)) {
     if (compareSemver(cutoverVersion, version) <= 0) {
-      for (const dir of dirs) selected.add(dir)
+      for (const entry of entries) selected.set(entry.stale, entry)
     }
   }
-  return [...selected]
+  return [...selected.values()]
 }
 
 function compareSemver(left: string, right: string): number {
@@ -55,6 +55,11 @@ async function exists(p: string): Promise<boolean> {
  * Only directories explicitly registered in `STALE_SKILL_DIRS_BY_VERSION`
  * are touched. User-authored sibling files and unrelated directories are
  * never modified.
+ *
+ * A stale directory is removed only when its registered rename target exists
+ * in `targetSkillsDir`. When the target is absent — a pre-rename install or
+ * an interrupted upgrade — the directory is reported in `preserved` instead,
+ * so the sweep can never delete the only live copy of a skill.
  */
 export async function sweepLegacyArtifacts(
   targetSkillsDir: string,
@@ -66,9 +71,13 @@ export async function sweepLegacyArtifacts(
     return report
   }
 
-  for (const dirName of dirsForVersion(options.forVersion)) {
-    const candidate = path.join(targetSkillsDir, dirName)
+  for (const entry of dirsForVersion(options.forVersion)) {
+    const candidate = path.join(targetSkillsDir, entry.stale)
     if (!(await exists(candidate))) {
+      continue
+    }
+    if (!(await exists(path.join(targetSkillsDir, entry.target)))) {
+      report.preserved.push(candidate)
       continue
     }
     if (options.dryRun) {
