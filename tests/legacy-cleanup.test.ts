@@ -75,6 +75,32 @@ describe("legacy cleanup", () => {
     await expect(fs.access(path.join(tmpRoot, "engineering"))).rejects.toThrow()
   })
 
+  test("no-op when forVersion predates all cleanup entries", async () => {
+    await fs.mkdir(path.join(tmpRoot, "gtm-engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old content")
+    await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
+
+    const report = await sweepLegacyArtifacts(tmpRoot, { forVersion: "0.7.0" })
+
+    expect(report.removed.length).toBe(0)
+    expect(await fs.access(path.join(tmpRoot, "gtm-engineering")).then(() => true)).toBe(true)
+    expect(await fs.access(path.join(tmpRoot, "engineering")).then(() => true)).toBe(true)
+  })
+
+  test("version-less sweep removes all known stale dirs", async () => {
+    await fs.mkdir(path.join(tmpRoot, "gtm-engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old content")
+    await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
+
+    const report = await sweepLegacyArtifacts(tmpRoot)
+
+    expect(report.removed.length).toBe(2)
+    await expect(fs.access(path.join(tmpRoot, "gtm-engineering"))).rejects.toThrow()
+    await expect(fs.access(path.join(tmpRoot, "engineering"))).rejects.toThrow()
+  })
+
   test("no-op when stale dir doesn't exist", async () => {
     await fs.mkdir(path.join(tmpRoot, "current-skill"), { recursive: true })
     const report = await sweepLegacyArtifacts(tmpRoot, { forVersion: "0.8.0" })

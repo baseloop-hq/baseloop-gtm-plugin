@@ -209,6 +209,14 @@ describe("skill contract", () => {
     expect(transport).toContain("baseloop tools call list_workspaces")
   })
 
+  test("root skill states the transport selection protocol", async () => {
+    const { body } = await readFrontmatter(ROOT_SKILL)
+    expect(body).toContain("## Transport Selection")
+    expect(body).toContain("`BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp`")
+    expect(body).toContain("baseloop doctor --json")
+    expect(body).toContain("route to `baseloop-gtm:setup`")
+  })
+
   test("plan and build use outcome-focused credit guidance", async () => {
     const planText = await readSkillWithReferences("plan")
     expect(planText).toContain("best expected business outcome per credit")
