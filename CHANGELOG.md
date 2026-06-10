@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.8.0...cli-v0.8.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* publish GTM setup release assets ([#20](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/20)) ([2e4d602](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/2e4d602d464eea49d916b2e3e618bffe3e661fca))
+
 ## [0.8.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.7.0...cli-v0.8.0) (2026-05-11)
 
 

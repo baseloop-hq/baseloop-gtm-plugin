@@ -173,4 +173,50 @@ describe("marketplace consistency", () => {
       }
     }
   })
+
+  test("release workflow uploads GTM assets only for baseloop-gtm component releases", async () => {
+    const workflow = load(await fs.readFile(path.join(REPO_ROOT, ".github", "workflows", "release-pr.yml"), "utf8")) as {
+      jobs: Record<
+        string,
+        {
+          if?: string
+          needs?: string | string[]
+          outputs?: Record<string, string>
+          permissions?: Record<string, string>
+          steps?: Array<Record<string, unknown>>
+        }
+      >
+    }
+    const releaseJob = workflow.jobs["release-pr"]
+    const buildJob = workflow.jobs["build-gtm-assets"]
+    const uploadJob = workflow.jobs["upload-gtm-assets"]
+
+    expect(releaseJob.outputs?.gtm_release_created).toContain("plugins/baseloop-gtm--release_created")
+    expect(releaseJob.outputs?.gtm_tag_name).toContain("plugins/baseloop-gtm--tag_name")
+    expect(buildJob.if).toBe("needs.release-pr.outputs.gtm_release_created == 'true'")
+    expect(uploadJob.if).toBe("needs.release-pr.outputs.gtm_release_created == 'true'")
+    expect(buildJob.permissions?.contents).toBe("read")
+    expect(uploadJob.permissions?.contents).toBe("write")
+
+    const buildScript = buildJob.steps?.find((step) => step.name === "Package and checksum GTM assets")?.run
+    expect(buildScript).toContain('VERSION="${TAG_NAME#baseloop-gtm-v}"')
+    expect(buildScript).toContain('ZIP="dist/baseloop-gtm-${VERSION}.zip"')
+    expect(buildScript).toContain('bun run package:zip')
+    expect(buildScript).toContain('[[ ! -f "$ZIP" ]]')
+    expect(buildScript).toContain('(cd dist && sha256sum "baseloop-gtm-${VERSION}.zip" > checksums.txt)')
+    expect(buildScript).toContain('cp "$ZIP" release-assets/')
+    expect(buildScript).toContain("cp dist/checksums.txt release-assets/")
+
+    const artifactPaths = (buildJob.steps?.find((step) => step.name === "Upload GTM asset artifact")?.with as
+      | Record<string, unknown>
+      | undefined)?.path
+    expect(artifactPaths).toBe("release-assets/")
+
+    const uploadScript = uploadJob.steps?.find((step) => step.name === "Upload GTM release assets")?.run
+    expect(uploadScript).toContain('gh release upload "$TAG_NAME"')
+    expect(uploadScript).toContain('"release-assets/baseloop-gtm-${VERSION}.zip"')
+    expect(uploadScript).toContain('"release-assets/checksums.txt"')
+    expect(uploadScript).toContain('--repo "$GITHUB_REPOSITORY"')
+    expect(uploadScript).toContain("--clobber")
+  })
 })
