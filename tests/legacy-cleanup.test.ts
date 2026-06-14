@@ -94,6 +94,22 @@ describe("legacy cleanup", () => {
     await expect(fs.access(path.join(tmpRoot, "engineering"))).rejects.toThrow()
   })
 
+  test("versioned sweeps ignore prerelease and build metadata suffixes", async () => {
+    await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
+    await fs.mkdir(path.join(tmpRoot, "baseloop-gtm"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "baseloop-gtm", "SKILL.md"), "new content")
+
+    const prerelease = await sweepLegacyArtifacts(tmpRoot, { forVersion: "0.8.0-rc.1" })
+    expect(prerelease.removed.some((removed) => removed.endsWith("engineering"))).toBe(true)
+
+    await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
+
+    const buildMetadata = await sweepLegacyArtifacts(tmpRoot, { forVersion: "0.8.0+build.7" })
+    expect(buildMetadata.removed.some((removed) => removed.endsWith("engineering"))).toBe(true)
+  })
+
   test("no-op when forVersion predates all cleanup entries", async () => {
     await fs.mkdir(path.join(tmpRoot, "gtm-engineering"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old content")
