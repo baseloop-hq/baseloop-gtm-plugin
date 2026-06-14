@@ -10,7 +10,7 @@ argument-hint: "[Baseloop GTM task, question, or workflow goal]"
 
 ## Interaction Method
 
-When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+When asking the user a question, use the platform's blocking question tool when it is available in the current harness: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex when exposed by the active mode, or `ask_user` in Gemini. Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
 
 Ask one question at a time. Prefer a concise single-select choice when natural options exist.
 
@@ -33,7 +33,7 @@ Before any Baseloop operation, read [transport.md](./references/transport.md) an
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.
 3. If neither transport works, route to `baseloop-gtm:setup`.
 
-After selection, state the choice in working notes as `BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp`. Use that same transport for every Baseloop tool call in the current workflow. Do not alternate between CLI and MCP unless the selected transport fails completely and the user approves fallback.
+After selection, state the choice in working notes as either "using Baseloop CLI" or "using Baseloop MCP". When routing to another Baseloop GTM skill, preserve that transport choice in the conversation context and continue with the original request. Use the same transport for every Baseloop tool call in the current workflow. Do not alternate between CLI and MCP unless the selected transport fails and the user approves fallback.
 
 ## Intent Routing
 
@@ -47,6 +47,7 @@ Route the user's request by intent:
 | Existing workflow audit, pre-scale check, cost/pitfall review | `baseloop-gtm:review` |
 | Broken field, failed run, unexpected output, debugging | `baseloop-gtm:diagnose` |
 | Install, auth, CLI/MCP readiness, connected-platform check | `baseloop-gtm:setup` |
+| Installed version check or plugin update question | Answer inline with host-specific update guidance. Claude Code has a dedicated update skill, but it is not installed on all hosts. |
 | Capabilities, available tools, examples | `baseloop-gtm:help` |
 | Capture a non-obvious solved workflow lesson | `baseloop-gtm:save-learning` |
 
@@ -62,9 +63,10 @@ The specialized skills apply the principles below to specific tasks:
 - `/baseloop-gtm:diagnose` — investigate and fix a failing field
 - `/baseloop-gtm:lfg` — plan + build + test autonomously
 - `/baseloop-gtm:setup` — diagnose CLI/MCP readiness, auth, connected platforms, and workspace access
+- `/baseloop-gtm:save-learning` — capture a solved workflow lesson in `docs/solutions/`
 - `/baseloop-gtm:help` — tool and skill catalog
 
-When routing, invoke the chosen skill and pass along the original request plus the selected transport. If the user is asking a conceptual question rather than requesting execution, answer from the mental model below.
+When routing, invoke the chosen skill with the original request and continue using the transport already selected for this workflow. If the user is asking a conceptual question rather than requesting execution, answer from the mental model below.
 
 ## Mental Model
 
@@ -76,10 +78,10 @@ Design every workflow around these principles:
 - **Exclude before enriching** — check against blocklist/existing CRM data with `lookup_single_record` before enrichment when the data needed for that lookup is available. This protects CRM quality and avoids low-value work without weakening the workflow.
 - **Run reliable gates before broader research** — formulas, lookups, and blocklists should narrow the path when they are reliable and preserve the selected plan tier's quality. Do not gate so aggressively that coverage, confidence, CRM integrity, contact quality, deliverability, or downstream conversion suffers. Do not turn this into oversized formula logic: if classification depends on a large open-ended list, semantic judgment, or ambiguous free text, use `custom_ai_agent` and gate it on meaningful prerequisites instead of embedding the world into a formula.
 - **Choose the right people-finding method** — `li_find_people_at_company` (LinkedIn) vs `custom_ai_agent` with web search vs both. Don't default to building both. LinkedIn works for tech/enterprise/B2B; AI web search works for small businesses, non-tech, or low-LinkedIn-adoption regions. Ask about the target audience before deciding. See workflow-patterns.md for the full decision guide.
-- **CRM integrity** — always **lookup before create** when syncing to a CRM. Gate creation on lookup returning "not found". Pass parent record IDs (e.g., company HubSpot ID) so associations are set on creation. This makes workflows idempotent. **Company association is mandatory:** any workflow that updates a contact's company in HubSpot must also create the Company object and associate the contact with it. Updating the company as a flat text field without a Company object breaks HubSpot's relationship graph, reporting, and ABM features. If `companyWebsite` is null after enrichment, resolve the domain with an AI agent before the company lookup. **Enum properties need conversion:** external enrichment values won't match CRM internal enum formats — use `resolve_action_options` to verify, or omit the field. See pitfalls.md "HubSpot enum property mismatch."
+- **CRM integrity** — always **lookup before create** when syncing to a CRM. Gate creation on lookup returning "not found". Pass parent record IDs (e.g., company HubSpot ID) so associations are set on creation. This makes workflows idempotent. **Company association is mandatory:** any workflow that updates a contact's company in HubSpot must also create the Company object and associate the contact with it. Updating the company as a flat text field without a Company object breaks HubSpot's relationship graph, reporting, and ABM features. If `companyWebsite` is null after enrichment, resolve the domain with an AI agent before the company lookup. **Enum properties need conversion:** external enrichment values won't match CRM internal enum formats — use `resolve_action_options` to verify, or omit the field. For any CRM or outreach-platform mutation, resolve allowed properties/options first and get explicit user approval before overwriting owner, lifecycle stage, email, domain, association, or similarly identity/routing-critical fields. See pitfalls.md "HubSpot enum property mismatch."
 - **CRM audit trail** — write HubSpot engagement notes for every outcome (qualified, disqualified with reason, not found). Sales reps need to know why each account was or wasn't pursued.
 - **Lookup back to parent** — when contacts are created via Send to Table, use `lookup_single_record` to pull company-level data (HubSpot ID, AE assignment, qualification results) back into the contacts table.
-- **Incremental building** — build one step at a time. Verify output before adding the next step. Never build the entire workflow and run it all at once.
+- **Incremental building** — configure each table's known non-extraction field chain before running it, then verify the chain field-by-field through the Scaling Ladder. Never run an entire workflow at scale before Rung 1 and Rung 2 have passed.
 - **Scaling Ladder** — every `run_field` call must follow the ladder: `first_one` (validate output) → `first_ten` (validate at scale) → full scale (only after user approval). For tables with >100 rows, use `list_row_ids` to paginate through all row IDs, then batch them through `run_fields` with `rowIds` (max 100 rows per call). Never skip rungs. Never call `run_field` without `runAction`.
 - **Reusable reference tables** — blocklists, tiering data, and other lookup targets should live in their own workspace and be referenced via `lookup_single_record` from multiple workflows. Maintain them separately; never embed exclusion logic in each workflow.
 - **Template workspaces for campaign batches** — build a workflow once, then clone the workspace for each new campaign batch. Each batch gets its own data but the same field structure. Track the source batch with a "Table Source" formula or input field.
@@ -98,13 +100,13 @@ Design every workflow around these principles:
 
 These are the non-negotiable rules that every workflow must follow. The execution skills (`build`, `diagnose`) enforce them as part of their protocol — this section exists so the rules are in one place.
 
-### NEVER call run_field without runAction
+### NEVER call run_field without runAction for non-source fields
 
-Every `run_field` call MUST include the `runAction` parameter. Omitting it defaults to `first_ten` — relying on defaults is fragile. Treat a bare `run_field` as a bug.
+Every non-source-field `run_field` call MUST include the `runAction` parameter. Omitting it defaults to `first_ten` — relying on defaults is fragile. Treat a bare `run_field` on normal action fields as a bug. Source import fields are the exception: call `run_field` with only `tableId` and `fieldId`; omit `runAction` and `selectedIds` because source imports execute as `entire_set` internally and create or update their own rows.
 
 - Testing a field: `runAction: "first_one"`
 - Small-scale validation: `runAction: "first_ten"`
-- Full dataset: only after user approval — `runAction: "first_hundred"` or larger
+- Full dataset: only after user approval. For tables with <=100 rows, use `runAction: "first_hundred"` only when running everything is intended. For tables with >100 rows, use `list_row_ids` pagination and `run_fields` with explicit `rowIds` batches.
 - Watch for small datasets: if a table has < 100 rows, `"first_hundred"` runs everything
 
 ### Send to Table auto-creates destination fields
@@ -152,8 +154,10 @@ Creating tables, running fields, and autoRunConditions can trigger downstream ef
 ### Destructive tools require restraint
 
 - `delete_field` — use only when a field was created with the wrong action type. Prefer `update_field` for config fixes.
-- `delete_rows` — use only to clean up test/placeholder rows after validation. Never delete production data rows.
+- `delete_rows` — use only to clean up test rows after validation. Never delete production data rows.
 - `delete_table` / `delete_workspace` — use only when structure must be rebuilt from scratch.
+
+Before any destructive call, state the target name, ID, count, and production-data impact, then get explicit user approval. The only exception is deleting test row IDs created and recorded by the same build step.
 
 ### Scheduling recurring imports
 

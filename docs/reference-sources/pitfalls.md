@@ -69,10 +69,10 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 **Cause:** `create_table` with `sourceField` creates the table and source field but does NOT auto-trigger the import.
 
 **Fix:** After creating the table:
-1. Prefer the source's own sample/test path when available (for example, `send_webhook_data` with realistic sample JSON, or an action-specific sample import mode from `get_action_schema`).
-2. Run the source field/import against that sample and verify the resulting row data with `list_rows` or `get_row_details`.
-3. Only if the source action requires a row trigger and has no sample/test path, create a temporary placeholder row with `create_rows` using `[{}]`, run the source field with `skipCellsWithData: false`, then verify with `list_rows`.
-4. Clean up temporary placeholder rows after validation if they remain in the table.
+1. Use the source's own sampling controls when available (for example, `recordLimit`, `maxJobs`, list selection, criteria, or selected properties from `get_action_schema`).
+2. Call `run_field` with only the table ID and source field ID. Omit `runAction` and `selectedIds`; source imports execute as `entire_set` internally and create or update their own rows.
+3. `wait_for_run` and inspect `sourceImportSummary` when available.
+4. Verify imported data with `list_rows` or `get_row_details`.
 
 ---
 

@@ -2,9 +2,9 @@
 
 # Baseloop Transport
 
-Use one Baseloop transport per workflow session. Do not mix CLI and MCP calls in the same workflow unless the selected transport fails completely and the user approves fallback.
+Use whichever Baseloop transport is available and healthy when the workflow needs live Baseloop data. Prefer the CLI when its readiness probes pass; otherwise use MCP when its tools are available and authenticated.
 
-If `BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp` was already selected by a parent skill, treat that as authoritative. Do not re-run transport selection in routed subskills unless the selected transport fails completely and the user approves fallback.
+If a parent or earlier step in the same workflow already used CLI or MCP successfully, keep using that transport for later Baseloop calls. Do not mix CLI and MCP in the same workflow unless the current transport fails and the user approves fallback.
 
 ## Selection Order
 
@@ -16,17 +16,7 @@ If `BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp` was already selected by 
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.
 3. If neither transport works, stop and route to setup.
 
-After selecting, state the choice in working notes:
-
-```text
-BASELOOP_TRANSPORT=cli
-```
-
-or:
-
-```text
-BASELOOP_TRANSPORT=mcp
-```
+After selecting, state the choice in working notes as either "using Baseloop CLI" or "using Baseloop MCP".
 
 ## CLI Invocation
 
@@ -93,4 +83,4 @@ Tool names such as `list_tables`, `create_field`, `run_field`, and `wait_for_run
 - Read-only phases use only read-only tools, regardless of transport.
 - Destructive tools require explicit user approval, regardless of transport.
 - Paid or high-cost execution follows the Scaling Ladder and cost approval gates.
-- Every `run_field` call must include `runAction`.
+- Every non-source `run_field` call must include `runAction`. Source import fields are the exception: call them with only `tableId` and `fieldId` so the source import runs through its own table-level import behavior.

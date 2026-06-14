@@ -11,4 +11,5 @@ reviews:
     - "!plugins/baseloop-gtm/skills/*/references/error-patterns.md"
     - "!plugins/baseloop-gtm/skills/*/references/workflow-patterns.md"
     - "!plugins/baseloop-gtm/skills/*/references/platform-discovery.md"
+    - "!plugins/baseloop-gtm/skills/*/references/scaling-ladder.md"
     - "!plugins/baseloop-gtm/skills/*/references/transport.md"

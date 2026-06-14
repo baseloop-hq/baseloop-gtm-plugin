@@ -10,7 +10,7 @@ argument-hint: "[workflow goal, e.g. 'Import HubSpot companies, qualify B2B SaaS
 
 ## Interaction Method
 
-When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+When asking the user a question, use the platform's blocking question tool when it is available in the current harness: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex when exposed by the active mode, or `ask_user` in Gemini. Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
 
 Ask one question at a time. Prefer a concise single-select choice when natural options exist.
 
@@ -25,7 +25,7 @@ Build an entire GTM workflow end-to-end: plan the architecture, create all table
 
 If the goal above is empty, ask: "What workflow do you want me to build? Describe the data flow you want to achieve."
 
-Before Step 1, read [transport.md](./references/transport.md). If `BASELOOP_TRANSPORT` was passed from `/baseloop-gtm`, use it. Otherwise select one Baseloop transport for the entire autonomous run and state `BASELOOP_TRANSPORT=<cli|mcp>`. Plan, build, diagnose, and verification steps must all use that same transport.
+Before Step 1, read [transport.md](./references/transport.md). If CLI or MCP was already used successfully earlier in this workflow, continue using that transport. Otherwise select whichever transport is available and healthy for the autonomous run. Plan, build, diagnose, and verification steps must all use that same transport unless it fails and the user approves fallback.
 
 ---
 
@@ -42,23 +42,21 @@ Follow the `/baseloop-gtm:plan` workflow:
 
 ## Step 2: Build and Rung 1
 
-Follow the `/baseloop-gtm:build` workflow (Steps 1 through 4.5) using the approved plan. Every `run_field` in this step MUST use `runAction: "first_one"`. Rung 1 must pass (all fields healthy on the test row) before proceeding.
+Follow the `/baseloop-gtm:build` protocol for pre-flight checks, table creation, source import, pre-Rung-1 field configuration, and Scaling Ladder Rung 1. Every `run_field` in this step MUST use `runAction: "first_one"`.
+
+If Rung 1 finds a failing field, immediately follow the `/baseloop-gtm:diagnose` protocol on that field, apply the fix if confidence is high or medium, then retry Rung 1. Do not proceed to Rung 2 until Rung 1 passes with all fields healthy on the test row.
 
 ---
 
 ## Step 3: Rung 2
 
-Follow `/baseloop-gtm:build` Step 5 — Rung 2 (`first_ten`). Enable `autoRunEnabled`, run with `first_ten`, verify zero failures across the full chain. Rung 2 must pass before proceeding.
+Follow `/baseloop-gtm:build` Scaling Ladder Rung 2 (`first_ten`). Enable `autoRunEnabled`, run with `first_ten`, and verify zero failures across the full chain.
+
+If Rung 2 finds a failing field, immediately follow the `/baseloop-gtm:diagnose` protocol on that field. After fixing a field, re-check downstream fields because the fix may unblock them. Retry Rung 2 until all fields are healthy or escalate to the user after two failed fix attempts on the same field.
 
 ---
 
-## Step 4: Diagnose and Fix
-
-For each failing field found in Rung 1 or Rung 2, follow the `/baseloop-gtm:diagnose` workflow. After fixing a field, re-check downstream fields — the fix may unblock them. Repeat until all fields are healthy or escalate to the user.
-
----
-
-## Step 5: Final Report and Rung 3 Approval
+## Step 4: Final Report and Rung 3 Approval
 
 Present the completed workflow and **ask for user approval before full-scale execution**:
 
@@ -91,4 +89,4 @@ If "Errors Resolved" lists any non-trivial findings (config gotchas, upstream-da
 
 **Do NOT run the full dataset without user approval.** LFG is autonomous through Rung 1 and Rung 2, but pauses at Rung 3.
 
-After approval, for tables with >100 rows, use the batch processing pattern: `list_row_ids` (with `hasNotRun` filter) → chunk into batches of 100 → `run_fields` with `rowIds` → `wait_for_run` between batches. See SKILL.md "Batch processing with `list_row_ids`".
+After approval, follow `/baseloop-gtm:build` Scaling Ladder Rung 3. For tables with >100 rows, use the batch processing pattern from [scaling-ladder.md](./references/scaling-ladder.md): `list_row_ids` (with `hasNotRun` filter) → chunk into batches of 100 → `run_fields` with `rowIds` → `wait_for_run` between batches.

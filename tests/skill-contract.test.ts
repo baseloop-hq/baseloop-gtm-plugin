@@ -6,7 +6,6 @@ import { parseFrontmatter } from "../src/utils/frontmatter"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
 const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex-skills")
-const AGENTS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "agents")
 const REFERENCE_SOURCES_DIR = path.resolve(import.meta.dir, "..", "docs", "reference-sources")
 const VALID_PLATFORMS = new Set(["claude", "codex", "gemini"])
 const ROOT_SKILL = "baseloop-gtm"
@@ -152,7 +151,6 @@ describe("skill contract", () => {
     const files = [
       ...(await listMarkdownFiles(SKILLS_DIR)),
       ...(await listMarkdownFiles(CODEX_SKILLS_DIR)),
-      ...(await listMarkdownFiles(AGENTS_DIR)),
       ...(await listMarkdownFiles(REFERENCE_SOURCES_DIR)),
     ]
 
@@ -168,7 +166,6 @@ describe("skill contract", () => {
     const files = [
       ...(await listMarkdownFiles(SKILLS_DIR)),
       ...(await listMarkdownFiles(CODEX_SKILLS_DIR)),
-      ...(await listMarkdownFiles(AGENTS_DIR)),
       ...(await listMarkdownFiles(REFERENCE_SOURCES_DIR)),
     ]
 
@@ -189,14 +186,16 @@ describe("skill contract", () => {
     }
   })
 
-  test("routed runtime skills honor inherited transport selection", async () => {
+  test("routed runtime skills reuse the active transport", async () => {
     for (const skill of TRANSPORT_ROUTED_SKILLS) {
       const text = await readSkillWithReferences(skill)
-      expect(text, `${skill}: should support inherited BASELOOP_TRANSPORT`).toContain("If `BASELOOP_TRANSPORT` was passed")
+      expect(text, `${skill}: should reuse a transport already used in the workflow`).toContain("already used successfully earlier in this workflow")
+      expect(text, `${skill}: should select from available transports`).toContain("available and healthy")
     }
 
     const transport = await fs.readFile(path.join(REFERENCE_SOURCES_DIR, "transport.md"), "utf8")
-    expect(transport).toContain("already selected by a parent skill")
+    expect(transport).toContain("already used CLI or MCP successfully")
+    expect(transport).toContain("whichever Baseloop transport is available and healthy")
     expect(transport).toContain("baseloop tools list --agent")
     expect(transport).toContain("baseloop tools describe <tool_name> --agent")
     expect(transport).toContain("Use `--agent` for routine workflow calls")
@@ -212,7 +211,8 @@ describe("skill contract", () => {
   test("root skill states the transport selection protocol", async () => {
     const { body } = await readFrontmatter(ROOT_SKILL)
     expect(body).toContain("## Transport Selection")
-    expect(body).toContain("`BASELOOP_TRANSPORT=cli` or `BASELOOP_TRANSPORT=mcp`")
+    expect(body).toContain("using Baseloop CLI")
+    expect(body).toContain("using Baseloop MCP")
     expect(body).toContain("baseloop doctor --json")
     expect(body).toContain("route to `baseloop-gtm:setup`")
   })

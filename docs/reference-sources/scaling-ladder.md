@@ -1,5 +1,3 @@
-<!-- SYNC SOURCE: docs/reference-sources/scaling-ladder.md. Run `bun run references:sync` to refresh. Do not edit directly. -->
-
 # Scaling Ladder — Rung 1 → Rung 2 → Rung 3
 
 Never skip rungs. Never run a non-source action field without explicit `runAction`. Source import fields are not row-scoped like normal action fields; call `run_field` with only `tableId` and `fieldId` before entering the ladder. The ladder is sequential and verification-gated.

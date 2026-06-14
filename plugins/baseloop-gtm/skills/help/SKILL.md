@@ -10,7 +10,7 @@ argument-hint: "[optional: specific topic like 'actions', 'tables', 'views']"
 
 ## Interaction Method
 
-When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+When asking the user a question, use the platform's blocking question tool when it is available in the current harness: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex when exposed by the active mode, or `ask_user` in Gemini. Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
 
 Ask one question at a time. Prefer a concise single-select choice when natural options exist.
 
@@ -27,7 +27,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 
 ## Start Here
 
-Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow skill and selects one Baseloop transport for the session. Read [transport.md](./references/transport.md) when you need the CLI/MCP invocation contract. If a help topic requires live Baseloop data and no `BASELOOP_TRANSPORT` is already selected, select a transport before calling live tools.
+Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow skill and selects one Baseloop transport for the session. Read [transport.md](./references/transport.md) when you need the CLI/MCP invocation contract. If a help topic requires live Baseloop data and no transport has already been used successfully in this workflow, select whichever transport is available and healthy before calling live tools.
 
 ---
 
@@ -141,7 +141,7 @@ Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow ski
 | `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
 | `/baseloop-gtm:diagnose` | Investigate and fix a failing field |
 | `/baseloop-gtm:save-learning` | Capture a workflow learning to `docs/solutions/` for future reuse |
-| `/baseloop-gtm:update` | Check installed plugin version against upstream (Claude Code only) |
+| Installed version check | Claude Code has a dedicated update skill; on other hosts, use the host's plugin manager or compare the installed package with the upstream release metadata. |
 | `/baseloop-gtm:help` | This help page |
 
 ---

@@ -13,7 +13,7 @@ argument-hint: "[optional: workspace name to verify access against]"
 
 ## Interaction Method
 
-When asking the user a question, use the platform's blocking question tool: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex, `ask_user` in Gemini, `ask_user` in Pi (requires the `pi-ask-user` extension). Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
+When asking the user a question, use the platform's blocking question tool when it is available in the current harness: `AskUserQuestion` in Claude Code (call `ToolSearch` with `select:AskUserQuestion` first if its schema isn't loaded), `request_user_input` in Codex when exposed by the active mode, or `ask_user` in Gemini. Fall back to numbered options in chat only when no blocking tool exists in the harness or the call errors — not because a schema load is required. Never silently skip the question.
 
 Ask one question at a time. Prefer a concise single-select choice when natural options exist.
 
@@ -33,10 +33,10 @@ Read [transport.md](./references/transport.md), then check transports in order.
 1. **CLI check:** Run `command -v baseloop`, then `baseloop doctor --json` if the binary exists. If doctor reports usable auth/API access, prove the tool-call bridge before selecting CLI. Do not reject CLI because of advisory checks such as `gtm_skills`, `cli_version`, or missing local agent-skill installs; only failed auth/API access disqualifies CLI. If the `cli_version` advisory reports `ok: false`, note in the setup report that the user can run `baseloop upgrade` to update the CLI and refresh its embedded skills:
    - Run `baseloop tools list --agent` and confirm it returns a compact JSON tool catalog.
    - Run `baseloop tools call list_workspaces --input '{}' --agent` and keep that workspace response for Phase 3.
-   - If all probes succeed, set `BASELOOP_TRANSPORT=cli` and continue.
+   - If all probes succeed, use Baseloop CLI and continue.
    - If missing or unhealthy, record the failure and continue to MCP fallback.
 2. **MCP fallback:** Call `list_workspaces` through the Baseloop MCP tool surface.
-   - If successful, set `BASELOOP_TRANSPORT=mcp` and continue.
+   - If successful, use Baseloop MCP and continue.
    - If it fails, stop and report both setup paths:
      - CLI: install/authenticate the Baseloop CLI, then run `baseloop doctor --json`.
      - MCP: authenticate the `baseloop` MCP server in the host tool.

@@ -3,5 +3,6 @@
   "error-patterns.md": ["diagnose", "build", "review", "baseloop-gtm"],
   "workflow-patterns.md": ["plan", "baseloop-gtm"],
   "platform-discovery.md": ["plan", "build", "review", "diagnose", "baseloop-gtm"],
+  "scaling-ladder.md": ["build", "lfg"],
   "transport.md": ["baseloop-gtm", "plan", "build", "review", "diagnose", "lfg", "help", "setup"]
 }

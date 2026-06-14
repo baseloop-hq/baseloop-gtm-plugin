@@ -10,6 +10,7 @@ const CODEX_MCP_JSON = path.join(REPO_ROOT, "plugins", "baseloop-gtm", ".mcp.jso
 const MARKETPLACE_JSON = path.join(REPO_ROOT, ".claude-plugin", "marketplace.json")
 const AGENTS_MARKETPLACE_JSON = path.join(REPO_ROOT, ".agents", "plugins", "marketplace.json")
 const PACKAGE_JSON = path.join(REPO_ROOT, "package.json")
+const CODERABBIT_YAML = path.join(REPO_ROOT, ".coderabbit.yaml")
 
 async function readJson<T>(p: string): Promise<T> {
   return JSON.parse(await fs.readFile(p, "utf8")) as T
@@ -114,6 +115,25 @@ describe("marketplace consistency", () => {
       expect(frontmatter.name, `${entry}: Codex skill name should be plugin-local`).toBe(expectedName)
       expect(frontmatter.name?.startsWith("baseloop-gtm:"), `${entry}: Codex skill name is double-namespaced`).toBe(false)
       expect(frontmatter.ce_platforms === undefined || frontmatter.ce_platforms.includes("codex")).toBe(true)
+    }
+  })
+
+  test("codex root skill does not route to Claude-only update skill", async () => {
+    const rootSkill = await fs.readFile(path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills", "baseloop-gtm", "SKILL.md"), "utf8")
+    expect(rootSkill).not.toContain("baseloop-gtm:update")
+  })
+
+  test("CodeRabbit ignores synced reference copies", async () => {
+    const config = await fs.readFile(CODERABBIT_YAML, "utf8")
+    for (const file of [
+      "pitfalls.md",
+      "error-patterns.md",
+      "workflow-patterns.md",
+      "platform-discovery.md",
+      "scaling-ladder.md",
+      "transport.md",
+    ]) {
+      expect(config).toContain(`!plugins/baseloop-gtm/skills/*/references/${file}`)
     }
   })
 
