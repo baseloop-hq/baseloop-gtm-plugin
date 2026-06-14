@@ -26,9 +26,13 @@ function dirsForVersion(version: string | undefined): StaleSkillDir[] {
   return [...selected.values()]
 }
 
+function semverCore(version: string): string {
+  return version.split("-", 1)[0].split("+", 1)[0]
+}
+
 function compareSemver(left: string, right: string): number {
-  const leftParts = left.split(".").map((part) => Number.parseInt(part, 10))
-  const rightParts = right.split(".").map((part) => Number.parseInt(part, 10))
+  const leftParts = semverCore(left).split(".").map((part) => Number.parseInt(part, 10))
+  const rightParts = semverCore(right).split(".").map((part) => Number.parseInt(part, 10))
   for (let i = 0; i < 3; i++) {
     const l = Number.isFinite(leftParts[i]) ? leftParts[i] : 0
     const r = Number.isFinite(rightParts[i]) ? rightParts[i] : 0

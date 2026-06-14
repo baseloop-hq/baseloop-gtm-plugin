@@ -2,7 +2,7 @@
 
 Build automated GTM data workflows through conversation. This plugin teaches your coding agent how to design, build, diagnose, audit, and autonomously operate Baseloop workflows that source, enrich, qualify, and route company and contact data.
 
-**10 skills, 2 read-only audit agents, CLI-ready instructions, and MCP compatibility.**
+**10 skills, CLI-ready instructions, and MCP compatibility.**
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Build automated GTM data workflows through conversation. This plugin teaches you
 The repo-root [`README.md`](../../README.md) has install instructions for all three platforms. The summary:
 
 - **Claude Code:** native install — `/plugin marketplace add baseloop-hq/baseloop-gtm-plugin` then `/plugin install baseloop-gtm`. Start with `/baseloop-gtm`.
-- **Codex:** native install end-to-end (`codex plugin marketplace add` + `/plugins` in the TUI). Skills + MCP compatibility wire up through the repo's native marketplace metadata; CLI is used only when installed and healthy. The Bun converter is optional, only for installing standalone audit agents.
+- **Codex:** native install end-to-end (`codex plugin marketplace add` + `/plugins` in the TUI). Skills + MCP compatibility wire up through the repo's native marketplace metadata; CLI is used only when installed and healthy.
 - **Gemini CLI:** Bun converter (`bun run src/index.ts install --to gemini`) — installs skills and merges MCP config into `~/.gemini/settings.json`.
 
 ## Skills
@@ -29,12 +29,8 @@ The repo-root [`README.md`](../../README.md) has install instructions for all th
 | `/baseloop-gtm:review` | Audit an existing workflow for known pitfalls, missing safeguards, low-value work, and data-quality risks. Read-only. |
 | `/baseloop-gtm:lfg` | Autonomous end-to-end: plan → build → test → diagnose. Pauses for cost approval before full-scale runs. |
 | `/baseloop-gtm:save-learning` | Capture a non-obvious workflow learning to `docs/solutions/` so the next session inherits it. |
-| `/baseloop-gtm:update` | Check installed plugin version against upstream main (Claude Code only). |
+| Installed version check | Claude Code has a dedicated update skill; on other hosts, use the host's plugin manager or compare the installed package with upstream release metadata. |
 | `/baseloop-gtm:help` | Skill + tool catalog. |
-
-## Agents
-
-Read-only auditors available for direct invocation when a workflow needs a deeper pass. `/baseloop-gtm:review` performs the core audit inline and uses the same severity conventions; invoke these agents directly when you want row-level data quality or CRM-specific review. Cost optimization stays embedded in the workflow skills. See [`agents/README.md`](./agents/README.md) for the persona catalog.
 
 ## Examples
 
@@ -78,7 +74,6 @@ Read-only auditors available for direct invocation when a workflow needs a deepe
 
 - `skills/<name>/SKILL.md` — each skill is self-contained with its own `references/` and (optionally) `assets/`.
 - `skills/baseloop-gtm/SKILL.md` — root router, transport selection, domain mental model, design principles, and critical rules.
-- `agents/<name>.agent.md` — read-only auditors with TOML-/markdown-style frontmatter.
 - `.claude-plugin/plugin.json` — Claude Code plugin manifest with `mcpServers.baseloop`.
 - `.codex-plugin/plugin.json` — Codex plugin manifest with `interface` block for native install.
 - `.mcp.json` — Codex MCP server config referenced by the Codex manifest.

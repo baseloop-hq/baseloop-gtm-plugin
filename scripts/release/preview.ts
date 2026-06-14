@@ -17,7 +17,6 @@ import {
 const counts = await getBaseloopGtmCounts()
 console.log("Plugin inventory")
 console.log(`  skills:      ${counts.skills}`)
-console.log(`  agents:      ${counts.agents}`)
 console.log(`  mcp servers: ${counts.mcpServers}`)
 console.log()
 console.log("plugin.json description (canonical):")

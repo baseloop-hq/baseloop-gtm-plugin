@@ -146,7 +146,7 @@ export async function writeGeminiBundle(
     report.skillsWritten.push(dirname)
   }
 
-  // Agents.
+  // Legacy agents.
   for (const a of bundle.agents) {
     const filename = `${sanitizePathName(a.name)}.md`
     if (!dryRun) {

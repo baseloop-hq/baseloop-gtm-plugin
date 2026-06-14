@@ -20,7 +20,7 @@ export type CodexTargetPaths = {
   codexHome: string
   /** Where the install manifest for this plugin is recorded. */
   managedDir: string
-  /** Directory where TOML custom-agent files land. */
+  /** Legacy custom-agent directory, used only for cleanup of prior installs. */
   agentsDir: string
   /** Directory where skill folders land (only when --include-skills). */
   skillsDir: string
@@ -68,7 +68,7 @@ export async function writeCodexBundle(
 
   if (!dryRun) {
     await ensureDir(paths.codexHome)
-    await ensureDir(paths.agentsDir)
+    if (bundle.agents.length > 0) await ensureDir(paths.agentsDir)
     if (bundle.skills.length > 0) await ensureDir(paths.skillsDir)
   }
 
@@ -103,7 +103,7 @@ export async function writeCodexBundle(
     await writeManifestAtomic(paths.managedDir, activeManifest)
   }
 
-  // Write new agents.
+  // Legacy agents.
   for (const a of bundle.agents) {
     const filename = `${sanitizePathName(a.name)}.toml`
     if (!dryRun) {

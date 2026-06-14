@@ -26,6 +26,11 @@ export async function countSkillDirectories(pluginDir: string): Promise<number> 
 
 export async function countAgentFiles(pluginDir: string): Promise<number> {
   const dir = path.join(pluginDir, "agents")
+  try {
+    await fs.access(dir)
+  } catch {
+    return 0
+  }
   const entries = await fs.readdir(dir, { withFileTypes: true })
   return entries.filter((e) => e.isFile() && e.name.endsWith(".agent.md")).length
 }
@@ -49,13 +54,13 @@ export async function getBaseloopGtmCounts(pluginDir: string = PLUGIN_DIR): Prom
 
 export function buildBaseloopGtmDescription(counts: PluginCounts): string {
   return (
-    `GTM workflow engineering for Baseloop. ${counts.skills} skills, ${counts.agents} agents, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.`
+    `GTM workflow engineering for Baseloop. ${counts.skills} skills, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.`
   )
 }
 
 export function buildBaseloopGtmMarketplaceDescription(counts: PluginCounts): string {
   return (
-    `Build automated GTM data workflows in Baseloop with ${counts.skills} skills, ${counts.agents} read-only audit agents, CLI-ready instructions, and MCP compatibility.`
+    `Build automated GTM data workflows in Baseloop with ${counts.skills} skills, CLI-ready instructions, and MCP compatibility.`
   )
 }
 

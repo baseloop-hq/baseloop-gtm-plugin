@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "baseloop-gtm",
-      "description": "Build automated GTM data workflows in Baseloop with 10 skills, 2 read-only audit agents, CLI-ready instructions, and MCP compatibility.",
+      "description": "Build automated GTM data workflows in Baseloop with 10 skills, CLI-ready instructions, and MCP compatibility.",
       "author": {
         "name": "Baseloop",
         "url": "https://baseloop.io"

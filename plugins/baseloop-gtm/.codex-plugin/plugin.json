@@ -1,7 +1,7 @@
 {
   "name": "baseloop-gtm",
   "version": "0.8.1",
-  "description": "GTM workflow engineering for Baseloop. 10 skills, 2 agents, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
+  "description": "GTM workflow engineering for Baseloop. 10 skills, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
   "author": {
     "name": "Baseloop",
     "url": "https://baseloop.io"
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Baseloop GTM",
     "shortDescription": "Start with /baseloop-gtm to build automated GTM data workflows.",
-    "longDescription": "Start with /baseloop-gtm to design, build, review, and diagnose automated GTM data workflows in Baseloop. The root skill chooses the right workflow and transport: MCP works today, and CLI is used automatically when installed with a healthy tool bridge. Skills install natively via Codex; the companion Bun converter installs the read-only audit agents that Codex's native plugin spec doesn't yet register.",
+    "longDescription": "Start with /baseloop-gtm to design, build, review, and diagnose automated GTM data workflows in Baseloop. The root skill chooses the right workflow and transport: MCP works today, and CLI is used automatically when installed with a healthy tool bridge. Skills install natively via Codex.",
     "developerName": "Baseloop",
     "category": "Productivity",
     "capabilities": [

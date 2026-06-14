@@ -39,22 +39,19 @@ describe("install codex (end-to-end)", () => {
     await expect(loadClaudePlugin(pluginRoot)).rejects.toThrow(/ce_platforms.*array of strings/)
   })
 
-  test("writes agent TOML files + manifest", async () => {
+  test("default install writes no standalone agent files and records empty manifest groups", async () => {
     const plugin = await loadClaudePlugin(MINI_PLUGIN)
     const bundle = convertClaudeToCodex(plugin)
     const paths = resolveCodexPaths(tmpRoot, plugin.manifest.name)
     await writeCodexBundle(bundle, paths)
 
-    const tomlPath = path.join(paths.agentsDir, "data-quality-auditor.toml")
-    const tomlContent = await fs.readFile(tomlPath, "utf8")
-    expect(tomlContent).toContain('name = "data-quality-auditor"')
-    expect(tomlContent).toContain("developer_instructions = ")
-    expect(tomlContent).not.toContain("[agent]")
+    await expect(fs.access(paths.agentsDir)).rejects.toThrow()
 
     const manifestPath = path.join(paths.managedDir, "install-manifest.json")
     const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"))
     expect(manifest.pluginName).toBe("mini-plugin")
-    expect(manifest.groups.agents).toContain("data-quality-auditor.toml")
+    expect(manifest.groups.agents).toEqual([])
+    expect(manifest.groups.skills).toEqual([])
   })
 
   test("dry-run writes nothing", async () => {
@@ -62,7 +59,7 @@ describe("install codex (end-to-end)", () => {
     const bundle = convertClaudeToCodex(plugin)
     const paths = resolveCodexPaths(tmpRoot, plugin.manifest.name)
     const report = await writeCodexBundle(bundle, paths, { dryRun: true })
-    expect(report.agentsWritten.length).toBe(1)
+    expect(report.agentsWritten.length).toBe(0)
 
     // Nothing actually on disk.
     let exists = true
@@ -74,26 +71,38 @@ describe("install codex (end-to-end)", () => {
     expect(exists).toBe(false)
   })
 
-  test("re-install is idempotent (cleanup of stale files via manifest)", async () => {
+  test("re-install is idempotent", async () => {
     const plugin = await loadClaudePlugin(MINI_PLUGIN)
     const bundle = convertClaudeToCodex(plugin)
     const paths = resolveCodexPaths(tmpRoot, plugin.manifest.name)
 
     await writeCodexBundle(bundle, paths)
-    const before = (await fs.readdir(paths.agentsDir)).sort()
+    const before = await fs.readFile(path.join(paths.managedDir, "install-manifest.json"), "utf8")
     await writeCodexBundle(bundle, paths)
-    const after = (await fs.readdir(paths.agentsDir)).sort()
+    const after = await fs.readFile(path.join(paths.managedDir, "install-manifest.json"), "utf8")
     expect(after).toEqual(before)
   })
 
-  test("refuses to overwrite unmanaged Codex agent files", async () => {
+  test("removes prior manifest-tracked Codex agents without touching unmanaged files", async () => {
     const plugin = await loadClaudePlugin(MINI_PLUGIN)
     const bundle = convertClaudeToCodex(plugin)
     const paths = resolveCodexPaths(tmpRoot, plugin.manifest.name)
     await fs.mkdir(paths.agentsDir, { recursive: true })
-    await fs.writeFile(path.join(paths.agentsDir, "data-quality-auditor.toml"), "user-owned")
+    await fs.mkdir(paths.managedDir, { recursive: true })
+    await fs.writeFile(path.join(paths.agentsDir, "old-agent.toml"), "old")
+    await fs.writeFile(path.join(paths.agentsDir, "user-agent.toml"), "user-owned")
+    await fs.writeFile(
+      path.join(paths.managedDir, "install-manifest.json"),
+      JSON.stringify({
+        version: 1,
+        pluginName: "mini-plugin",
+        groups: { agents: ["old-agent.toml"], skills: [] },
+      }),
+    )
 
-    await expect(writeCodexBundle(bundle, paths)).rejects.toThrow(/Refusing to overwrite unmanaged agents target/)
+    await writeCodexBundle(bundle, paths)
+    await expect(fs.access(path.join(paths.agentsDir, "old-agent.toml"))).rejects.toThrow()
+    expect(await fs.readFile(path.join(paths.agentsDir, "user-agent.toml"), "utf8")).toBe("user-owned")
   })
 
   test("Codex install can recover after a mid-install copy failure", async () => {
@@ -103,7 +112,7 @@ describe("install codex (end-to-end)", () => {
     await fs.writeFile(path.join(goodSkillDir, "SKILL.md"), "# Good\n")
     const bundle: CodexBundle = {
       pluginName: "partial-plugin",
-      agents: [{ name: "partial-agent", toml: 'name = "partial-agent"\n' }],
+      agents: [],
       skills: [
         { name: "good-skill", sourceDir: goodSkillDir },
         { name: "missing-skill", sourceDir: missingSkillDir },
@@ -114,7 +123,7 @@ describe("install codex (end-to-end)", () => {
 
     await expect(writeCodexBundle(bundle, paths)).rejects.toThrow()
     expect(await fs.access(path.join(paths.managedDir, "install-manifest.json")).then(() => true)).toBe(true)
-    expect(await fs.access(path.join(paths.agentsDir, "partial-agent.toml")).then(() => true)).toBe(true)
+    await expect(fs.access(paths.agentsDir)).rejects.toThrow()
 
     await fs.mkdir(missingSkillDir, { recursive: true })
     await fs.writeFile(path.join(missingSkillDir, "SKILL.md"), "# Recovered\n")
@@ -163,13 +172,37 @@ describe("install codex (end-to-end)", () => {
     ])
 
     expect(result.exitCode).toBe(0)
-    expect(await fs.access(path.join(codexHome, "agents", "data-quality-auditor.toml")).then(() => true)).toBe(true)
+    await expect(fs.access(path.join(codexHome, "agents"))).rejects.toThrow()
     expect(await fs.access(path.join(geminiHome, "settings.json")).then(() => true)).toBe(true)
+  })
+
+  test("CLI --include-skills writes Codex skills and tool-mapping instructions", async () => {
+    const codexHome = path.join(tmpRoot, "codex-home")
+    const result = Bun.spawnSync([
+      "bun",
+      "run",
+      path.resolve(import.meta.dir, "..", "src", "index.ts"),
+      "install",
+      MINI_PLUGIN,
+      "--to",
+      "codex",
+      "--codex-home",
+      codexHome,
+      "--include-skills",
+    ])
+
+    expect(result.exitCode).toBe(0)
+    expect(
+      await fs.access(path.join(codexHome, "skills", "mini-plugin", "mini-plugin-foo", "SKILL.md")).then(() => true),
+    ).toBe(true)
+    const agentsContent = await fs.readFile(path.join(codexHome, "AGENTS.md"), "utf8")
+    expect(agentsContent).toContain("BASELOOP CODEX TOOL MAP")
+    expect(agentsContent).toContain("Task (subagent dispatch)")
   })
 })
 
 describe("install gemini (end-to-end)", () => {
-  test("writes skills + agents + merges MCP into settings.json", async () => {
+  test("writes skills + merges MCP into settings.json", async () => {
     const plugin = await loadClaudePlugin(MINI_PLUGIN)
     const bundle = convertClaudeToGemini(plugin)
     const paths = resolveGeminiPaths(tmpRoot, plugin.manifest.name)
@@ -179,7 +212,7 @@ describe("install gemini (end-to-end)", () => {
     })
 
     expect(report.skillsWritten.length).toBeGreaterThan(0)
-    expect(report.agentsWritten.length).toBe(1)
+    expect(report.agentsWritten.length).toBe(0)
     expect(report.mcpServersMerged).toContain("baseloop")
     expect(report.mcpServersMerged).toContain("secret-server")
 
@@ -190,6 +223,33 @@ describe("install gemini (end-to-end)", () => {
 
     // Secrets warning fired for secret-server (has MY_API_KEY).
     expect(warnings.some((m) => m.includes("secret-server") && m.includes("MY_API_KEY"))).toBe(true)
+    await expect(fs.access(paths.agentsDir)).rejects.toThrow()
+  })
+
+  test("removes prior manifest-tracked Gemini agents without touching unmanaged files", async () => {
+    const plugin = await loadClaudePlugin(MINI_PLUGIN)
+    const bundle = convertClaudeToGemini(plugin)
+    const paths = resolveGeminiPaths(tmpRoot, plugin.manifest.name)
+    await fs.mkdir(paths.agentsDir, { recursive: true })
+    await fs.mkdir(paths.managedDir, { recursive: true })
+    await fs.writeFile(path.join(paths.agentsDir, "old-agent.md"), "old")
+    await fs.writeFile(path.join(paths.agentsDir, "user-agent.md"), "user-owned")
+    await fs.writeFile(
+      path.join(paths.managedDir, "install-manifest.json"),
+      JSON.stringify({
+        version: 1,
+        pluginName: "mini-plugin",
+        groups: { agents: ["old-agent.md"], skills: [] },
+      }),
+    )
+
+    const report = await writeGeminiBundle(bundle, paths, { warn: () => {} })
+    expect(report.agentsRemoved).toEqual(["old-agent.md"])
+    await expect(fs.access(path.join(paths.agentsDir, "old-agent.md"))).rejects.toThrow()
+    expect(await fs.readFile(path.join(paths.agentsDir, "user-agent.md"), "utf8")).toBe("user-owned")
+
+    const manifest = JSON.parse(await fs.readFile(path.join(paths.managedDir, "install-manifest.json"), "utf8"))
+    expect(manifest.groups.agents).toEqual([])
   })
 
   test("refuses to overwrite unmanaged Gemini skill directories", async () => {

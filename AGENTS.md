@@ -1,6 +1,6 @@
 # Repo Instructions
 
-This repo packages and distributes the **baseloop-gtm** Claude Code plugin: skills, agents, and the Baseloop MCP server declaration that together let users design, build, review, and diagnose automated GTM data workflows in Baseloop.
+This repo packages and distributes the **baseloop-gtm** Claude Code plugin: skills and the Baseloop MCP server declaration that together let users design, build, review, and diagnose automated GTM data workflows in Baseloop.
 
 This file is the canonical contributor instruction file. `CLAUDE.md` is a one-line shim that includes this file via the `@AGENTS.md` directive. Both Claude Code and Codex resolve `@file.md` references at load time.
 
@@ -42,7 +42,7 @@ bun run release:validate       # Release-config + metadata + reference-sync drif
 
 - Versions live in three (eventually four) places: `plugin.json`, `.codex-plugin/plugin.json` (when added), `marketplace.json` (`.metadata.version` only — per-plugin version field is dropped), `package.json`.
 - Release-please syncs them via `extra-files` in `.github/release-please-config.json`. Manual edits to any of these version fields trigger a release-please PR conflict on next run.
-- Plugin description strings auto-sync from skill/agent/MCP counts via `bun run release:sync-metadata --write`. Hand-editing description text drifts from disk reality and fails `release:validate`.
+- Plugin description strings auto-sync from skill/MCP counts via `bun run release:sync-metadata --write`. Hand-editing description text drifts from disk reality and fails `release:validate`.
 
 ## Scratch Space
 

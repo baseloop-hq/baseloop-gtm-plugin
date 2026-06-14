@@ -60,7 +60,7 @@ export default defineCommand({
 
     const plugin = await loadClaudePlugin(pluginPath)
     console.log(`Loaded plugin "${plugin.manifest.name}" v${plugin.manifest.version}`)
-    console.log(`  Skills: ${plugin.skills.length}, Agents: ${plugin.agents.length}, MCP: ${Object.keys(plugin.mcpServers || {}).length}`)
+    console.log(`  Skills: ${plugin.skills.length}, MCP: ${Object.keys(plugin.mcpServers || {}).length}`)
 
     const targets = target === "all" ? (["codex", "gemini"] as const) : ([target] as const)
     let detected: Awaited<ReturnType<typeof detectInstalledTools>> | null = null
@@ -89,7 +89,7 @@ export default defineCommand({
           const paths = resolveCodexPaths(args["codex-home"] ? String(args["codex-home"]) : undefined, plugin.manifest.name)
           const report = await writeCodexBundle(bundle, paths, { dryRun })
           summarizeCodex(t, paths.codexHome, report)
-          if (!dryRun) {
+          if (!dryRun && includeSkills) {
             const { created, path: agentsPath } = await ensureCodexAgentsFile(paths.codexHome)
             console.log(`  ${created ? "wrote" : "updated"} tool-mapping block in ${agentsPath}`)
           }
@@ -118,18 +118,16 @@ export default defineCommand({
 
 function summarizeCodex(target: string, root: string, report: Awaited<ReturnType<typeof writeCodexBundle>>): void {
   console.log(`  root: ${root}`)
-  console.log(`  agents written:   ${report.agentsWritten.length}`)
-  if (report.agentsRemoved.length) console.log(`  agents removed:   ${report.agentsRemoved.length} (${report.agentsRemoved.join(", ")})`)
   console.log(`  skills written:   ${report.skillsWritten.length}`)
   if (report.skillsRemoved.length) console.log(`  skills removed:   ${report.skillsRemoved.length}`)
+  if (report.agentsRemoved.length) console.log(`  legacy agents removed: ${report.agentsRemoved.length} (${report.agentsRemoved.join(", ")})`)
 }
 
 function summarizeGemini(target: string, root: string, report: Awaited<ReturnType<typeof writeGeminiBundle>>): void {
   console.log(`  root: ${root}`)
   console.log(`  skills written:    ${report.skillsWritten.length}`)
   if (report.skillsRemoved.length) console.log(`  skills removed:    ${report.skillsRemoved.length}`)
-  console.log(`  agents written:    ${report.agentsWritten.length}`)
-  if (report.agentsRemoved.length) console.log(`  agents removed:    ${report.agentsRemoved.length}`)
+  if (report.agentsRemoved.length) console.log(`  legacy agents removed: ${report.agentsRemoved.length}`)
   console.log(`  MCP servers merged: ${report.mcpServersMerged.length} (${report.mcpServersMerged.join(", ")})`)
   if (report.settingsBackup) console.log(`  settings backup:   ${report.settingsBackup}`)
   if (report.secretsWarnings.length) console.log(`  ⚠️  ${report.secretsWarnings.length} potential-secret warning(s) — see above.`)

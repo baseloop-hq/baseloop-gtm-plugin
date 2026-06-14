@@ -16,14 +16,10 @@ Each canonical skill is a directory under `skills/` with `SKILL.md` and its own 
 - `skills/diagnose/SKILL.md` — 3-phase debugging (investigate → diagnose → fix)
 - `skills/lfg/SKILL.md` — Autonomous plan→build→diagnose chain
 - `skills/help/SKILL.md` — Capabilities overview and quick start examples
+- `skills/save-learning/SKILL.md` — Capture reusable workflow learnings in `docs/solutions/`
+- `skills/update/SKILL.md` — Claude-Code-only installed-version check
 
 Shared reference content (`pitfalls.md`, `error-patterns.md`, `workflow-patterns.md`) is duplicated per consuming skill via a sync mechanism — see `docs/reference-sources/README.md` at the repo root.
-
-### Agents
-Flat layout, `.agent.md` suffix, documented in `agents/README.md` (persona catalog).
-
-- `agents/crm-integrity-checker.agent.md` — HubSpot sync integrity audit (duplicates, associations, enums)
-- `agents/data-quality-auditor.agent.md` — Row data inspection (nulls, extraction paths, type coercion)
 
 ## Runtime vs Authoring Context
 

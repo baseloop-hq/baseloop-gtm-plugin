@@ -2,7 +2,7 @@
 
 A plugin for [Baseloop](https://baseloop.io), the GTM data workflow platform. Build automated GTM workflows — sourcing, enrichment, qualification, CRM sync, autonomous end-to-end runs — through conversation in Claude Code, Codex, or Gemini CLI.
 
-**Includes 10 skills, 2 read-only audit agents, CLI-ready instructions, and MCP compatibility.**
+**Includes 10 skills, CLI-ready instructions, and MCP compatibility.**
 
 ## Install
 
@@ -37,17 +37,6 @@ codex
 # inside Codex: /plugins → find Baseloop GTM → Install → restart codex
 ```
 
-#### Optional: install standalone audit agents
-
-`/baseloop-gtm:review` runs its audit inline, so the standalone agents (`crm-integrity-checker`, `data-quality-auditor`) are **not required** for the review flow. Install them only if you want to invoke them directly as Codex subagents:
-
-```bash
-git clone https://github.com/baseloop-hq/baseloop-gtm-plugin.git
-cd baseloop-gtm-plugin
-bun install
-bun run src/index.ts install --to codex
-```
-
 ### Gemini CLI
 
 Gemini has no native plugin spec; everything flows through the converter:
@@ -62,7 +51,6 @@ bun run src/index.ts install --to gemini
 This writes:
 - Skills to `~/.gemini/skills/<skill-name>/`
 - MCP server config merged into `~/.gemini/settings.json` (existing config preserved)
-- Standalone audit agents to `~/.gemini/agents/` (optional — `/baseloop-gtm:review` runs the audit inline; agents are only needed if you want to invoke them directly)
 
 If your MCP server config has env-var keys that look like secrets (`API_KEY`, `TOKEN`, etc.), the installer prints a warning so you can review before committing `settings.json` to version control.
 
@@ -103,19 +91,10 @@ bun run src/index.ts cleanup --target codex --dry-run
 
 `update` is Claude-Code-only by design; `setup` is available wherever the skill bundle is installed.
 
-## Agents
-
-Read-only auditors invoked from `/baseloop-gtm:review` or directly:
-
-- `crm-integrity-checker` — HubSpot sync integrity (duplicates, associations, enums)
-- `data-quality-auditor` — Row data inspection (nulls, extraction paths, type coercion)
-
-See [`plugins/baseloop-gtm/agents/README.md`](./plugins/baseloop-gtm/agents/README.md) for the persona catalog.
-
 ## Requirements
 
 - A [Baseloop](https://baseloop.io) account with an active workspace.
-- For Codex standalone audit-agent installs and Gemini installs: [Bun](https://bun.sh) (`curl -fsSL https://bun.sh/install | bash`).
+- For Gemini installs: [Bun](https://bun.sh) (`curl -fsSL https://bun.sh/install | bash`).
 - For Claude Code: only the plugin install steps above.
 
 ## Local Development
