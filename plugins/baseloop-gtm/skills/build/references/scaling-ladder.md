@@ -2,17 +2,17 @@
 
 # Scaling Ladder — Rung 1 → Rung 2 → Rung 3
 
-Never skip rungs. Never run a non-source action field without explicit `runAction`. Source import fields are not row-scoped like normal action fields; call `run_field` with only `tableId` and `fieldId` before entering the ladder. The ladder is sequential and verification-gated.
+Never skip rungs. Never run a non-source action field without explicit `runAction`. Source import fields are not row-scoped like normal action fields; call `run_field` with only `tableId` and `fieldId` before entering the ladder. Formula and data-extraction fields are outside the run lifecycle: do not call `run_field` on them; verify them by previewing or inspecting row values after their referenced cells have data. The ladder is sequential and verification-gated.
 
 ## Rung 1 (`first_one`)
 
 **Every non-source `run_field` in this step MUST use `runAction: "first_one"`. No exceptions for normal action fields.**
 
-Run a single row through the **entire chain** to validate autoRunCondition cascading and data flow through Send to Table.
+Run a single row through the **entire runnable chain** to validate autoRunCondition cascading and data flow through Send to Table. When a formula or data-extraction field sits between runnable fields, inspect its cell value before running the downstream field.
 
-1. Run the first field — `run_field` with `runAction: "first_one"`.
+1. Run the first runnable field — `run_field` with `runAction: "first_one"`.
 2. `wait_for_run`, then `get_row_details` to verify output.
-3. Run the next field on the same row — `run_field` with `runAction: "first_one"`.
+3. Run the next runnable field on the same row — `run_field` with `runAction: "first_one"`.
 4. Continue field by field on the same row, verifying each step.
 5. After Send to Table runs, call `list_rows` on destination tables to confirm rows were created with correct data.
 6. Follow data to the end — continue in destination tables until it reaches the final step (CRM sync, outreach, notification).
@@ -33,7 +33,7 @@ Before scaling up, verify every table in the workflow:
 
 Only after Rung 1 passes with zero errors:
 
-1. Enable `autoRunEnabled` on fields that should auto-trigger — `update_field` for each.
+1. Enable `autoRunEnabled` on runnable fields that should auto-trigger — `update_field` for each. Formula and data-extraction fields do not need this.
 2. Run a small batch — `run_field` on the first field with `runAction: "first_ten"`. AutoRunConditions cascade.
 3. Wait for propagation — poll with `get_run_status` or `wait_for_run`.
 4. Verify — `list_rows` on each table; `get_run_status` confirms 0 failures.
@@ -69,7 +69,8 @@ Use `run_field` (single field) with explicit `runAction` when first testing each
 
 ## Critical rules
 
-- **NEVER call `run_field` on non-source fields without `runAction`.** Omitting it defaults to `first_ten` — relying on defaults is fragile. Treat a bare `run_field` on normal action fields as a bug.
+- **NEVER call `run_field` on formula or data-extraction fields.** They are not runnable and evaluate automatically from referenced cells.
+- **NEVER call `run_field` on non-source runnable fields without `runAction`.** Omitting it defaults to `first_ten` — relying on defaults is fragile. Treat a bare `run_field` on normal action fields as a bug.
 - **Small datasets:** if a table has < 100 rows, `"first_hundred"` runs everything. Use `"first_ten"` or `"first_one"` instead when you intend a partial run.
 - **NEVER skip from Rung 1 to Rung 3.** The ladder is sequential.
 - **AI fields are non-deterministic.** Never re-run an upstream AI field to fix a downstream config issue. Re-run only the field whose *configuration* changed.
