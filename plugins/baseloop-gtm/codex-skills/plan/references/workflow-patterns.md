@@ -183,7 +183,7 @@ Qualified Accounts (webhook) → Qualified Contacts
 
 ### Key Decisions
 - **Webhook source**: No import action needed. External system POSTs data to the table's webhook URL. `autoRunOnNewRow` handles the rest.
-- **Blocklist as first gate**: Cheapest check (lookup against existing table) runs before any enrichment.
+- **Blocklist as early gate**: Lookup against existing customer/churn data runs before enrichment when the domain or account key is available.
 - **Bidirectional HubSpot sync**: Read existing records, create missing ones, update all with enrichment data.
 
 ---
@@ -268,13 +268,13 @@ This exact sequence appears in most workflows:
 Write a note to HubSpot for every outcome — qualified (with ICP summary), disqualified (with specific reason: FTE too small, country count too low, LinkedIn not found). This creates a CRM audit trail.
 
 ### Blocklist/Exclusion Tables
-Maintain a "Master CRM Blocklist" table with closed-won + churned accounts. Use `lookup_single_record` as the first gate before spending credits on enrichment.
+Maintain a "Master CRM Blocklist" table with closed-won + churned accounts. Use `lookup_single_record` as an early gate before enrichment when the matching key is available.
 
 ---
 
 ## Pattern 6: Shared Blocklist with Multi-Source Feeding
 
-**Goal:** Maintain a single exclusion registry (closed-won + churned accounts) that multiple workflows reference before spending credits on enrichment.
+**Goal:** Maintain a single exclusion registry (closed-won + churned accounts) that multiple workflows reference before enrichment.
 
 ### Architecture
 
@@ -303,7 +303,7 @@ HubSpot Import (New Batch)   ──┘         ↑ lookup_single_record FROM:
 ### Key Decisions
 - **Multi-source feeding**: Each HubSpot deal stage (closed-won, churned, etc.) gets its own import table, all feeding the same master blocklist. New exclusion criteria = new import table.
 - **Cross-workspace reference**: The blocklist lives in its own workspace. Other workspaces reference it via `lookup_single_record` by domain. The blocklist is never modified by consuming workflows.
-- **Cheapest gate**: `lookup_single_record` costs zero credits and runs before any enrichment. Gate all downstream fields on blocklist lookup being `isNotFound`.
+- **Early exclusion gate**: `lookup_single_record` runs before enrichment when the matching key is available. Gate downstream enrichment on blocklist lookup being `isNotFound`.
 
 ---
 
@@ -472,7 +472,7 @@ When external enrichment returns a different domain than the input (common with 
 Merge results with a formula (prioritize the one that found a match). This prevents missed CRM matches.
 
 ### Recency Gating
-Before spending credits on recently worked accounts, add a "Contacted Within 30 Days" formula:
+Before re-enriching or re-contacting recently worked accounts, add a "Contacted Within 30 Days" formula:
 - Input: `hs_last_contacted_date` from HubSpot lookup
 - Logic: return "true" if last contact < 30 days ago
 - Gate downstream enrichment on this being "false" or empty

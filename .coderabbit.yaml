@@ -1,0 +1,15 @@
+# Generated mirrors and synced reference copies are excluded: codex-skills/ is
+# rebuilt wholesale by `bun run references:sync`, and per-skill copies of the
+# docs/reference-sources/ files are sync output. Drift is CI-enforced by
+# `bun run references:check`; reviewing the copies only duplicates findings
+# against the canonical sources, which remain in review scope.
+reviews:
+  profile: assertive
+  path_filters:
+    - "!plugins/baseloop-gtm/codex-skills/**"
+    - "!plugins/baseloop-gtm/skills/*/references/pitfalls.md"
+    - "!plugins/baseloop-gtm/skills/*/references/error-patterns.md"
+    - "!plugins/baseloop-gtm/skills/*/references/workflow-patterns.md"
+    - "!plugins/baseloop-gtm/skills/*/references/platform-discovery.md"
+    - "!plugins/baseloop-gtm/skills/*/references/scaling-ladder.md"
+    - "!plugins/baseloop-gtm/skills/*/references/transport.md"

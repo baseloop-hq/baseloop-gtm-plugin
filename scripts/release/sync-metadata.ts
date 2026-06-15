@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Auto-sync plugin description strings from current skill/agent/MCP counts.
+ * Auto-sync plugin description strings from current skill/MCP counts.
  *
  * Default mode: prints diff (dry-run). Pass --write to apply.
  */

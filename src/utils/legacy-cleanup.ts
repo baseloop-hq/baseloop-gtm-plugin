@@ -1,6 +1,6 @@
 import { promises as fs } from "fs"
 import path from "path"
-import { allStaleSkillDirs, STALE_SKILL_DIRS_BY_VERSION } from "../data/legacy-artifacts"
+import { allStaleSkillDirs, STALE_SKILL_DIRS_BY_VERSION, type StaleSkillDir } from "../data/legacy-artifacts"
 
 export type SweepReport = {
   removed: string[]
@@ -9,17 +9,36 @@ export type SweepReport = {
 }
 
 export type SweepOptions = {
-  /** Only remove entries listed under this version (and lower if specified). */
+  /** Include entries at or below this version. Omit to remove all known stale dirs. */
   forVersion?: string
   /** Skip the actual removal; just return what would be removed. */
   dryRun?: boolean
 }
 
-function dirsForVersion(version: string | undefined): string[] {
+function dirsForVersion(version: string | undefined): StaleSkillDir[] {
   if (!version) return allStaleSkillDirs()
-  // Naive: include the named version. A semver-aware include-all-≤-version
-  // can be added later if we ever cross multiple cutovers.
-  return STALE_SKILL_DIRS_BY_VERSION[version] ?? []
+  const selected = new Map<string, StaleSkillDir>()
+  for (const [cutoverVersion, entries] of Object.entries(STALE_SKILL_DIRS_BY_VERSION)) {
+    if (compareSemver(cutoverVersion, version) <= 0) {
+      for (const entry of entries) selected.set(entry.stale, entry)
+    }
+  }
+  return [...selected.values()]
+}
+
+function semverCore(version: string): string {
+  return version.split("-", 1)[0].split("+", 1)[0]
+}
+
+function compareSemver(left: string, right: string): number {
+  const leftParts = semverCore(left).split(".").map((part) => Number.parseInt(part, 10))
+  const rightParts = semverCore(right).split(".").map((part) => Number.parseInt(part, 10))
+  for (let i = 0; i < 3; i++) {
+    const l = Number.isFinite(leftParts[i]) ? leftParts[i] : 0
+    const r = Number.isFinite(rightParts[i]) ? rightParts[i] : 0
+    if (l !== r) return l - r
+  }
+  return 0
 }
 
 async function exists(p: string): Promise<boolean> {
@@ -40,6 +59,11 @@ async function exists(p: string): Promise<boolean> {
  * Only directories explicitly registered in `STALE_SKILL_DIRS_BY_VERSION`
  * are touched. User-authored sibling files and unrelated directories are
  * never modified.
+ *
+ * A stale directory is removed only when its registered rename target exists
+ * in `targetSkillsDir`. When the target is absent — a pre-rename install or
+ * an interrupted upgrade — the directory is reported in `preserved` instead,
+ * so the sweep can never delete the only live copy of a skill.
  */
 export async function sweepLegacyArtifacts(
   targetSkillsDir: string,
@@ -51,9 +75,13 @@ export async function sweepLegacyArtifacts(
     return report
   }
 
-  for (const dirName of dirsForVersion(options.forVersion)) {
-    const candidate = path.join(targetSkillsDir, dirName)
+  for (const entry of dirsForVersion(options.forVersion)) {
+    const candidate = path.join(targetSkillsDir, entry.stale)
     if (!(await exists(candidate))) {
+      continue
+    }
+    if (!(await exists(path.join(targetSkillsDir, entry.target)))) {
+      report.preserved.push(candidate)
       continue
     }
     if (options.dryRun) {

@@ -1,10 +1,12 @@
+<!-- SYNC SOURCE: docs/reference-sources/scaling-ladder.md. Run `bun run references:sync` to refresh. Do not edit directly. -->
+
 # Scaling Ladder — Rung 1 → Rung 2 → Rung 3
 
-Never skip rungs. Never run a field without explicit `runAction`. The ladder is sequential and verification-gated.
+Never skip rungs. Never run a non-source action field without explicit `runAction`. Source import fields are not row-scoped like normal action fields; call `run_field` with only `tableId` and `fieldId` before entering the ladder. The ladder is sequential and verification-gated.
 
 ## Rung 1 (`first_one`)
 
-**Every `run_field` in this step MUST use `runAction: "first_one"`. No exceptions.**
+**Every non-source `run_field` in this step MUST use `runAction: "first_one"`. No exceptions for normal action fields.**
 
 Run a single row through the **entire chain** to validate autoRunCondition cascading and data flow through Send to Table.
 
@@ -25,7 +27,7 @@ Before scaling up, verify every table in the workflow:
 4. **CRM sync responses** — for HubSpot create/update fields, `fullValue` shows successful API responses.
 5. **autoRunConditions** — gated fields ran only on rows that met the condition.
 
-**Do NOT proceed to Rung 2 until Rung 1 passes.** Fix errors first (see [inline-diagnosis.md](./inline-diagnosis.md)).
+**Do NOT proceed to Rung 2 until Rung 1 passes.** Fix errors first using the active skill's diagnosis protocol.
 
 ## Rung 2 (`first_ten`)
 
@@ -44,7 +46,7 @@ Only after Rung 1 passes with zero errors:
 2. State the cost and expected outcome — row count remaining, estimated credit cost for the full run, and the observed quality, coverage, confidence, or CRM-safety benefit from the higher-confidence steps.
 3. Ask for approval before running on the full dataset.
 4. Only after explicit approval:
-   - **≤100 rows:** `run_fields` with `runAction: "first_hundred"` covers everything.
+   - **<=100 rows:** `run_fields` with `runAction: "first_hundred"` covers everything.
    - **>100 rows:** batch processing pattern:
      1. `list_row_ids` with filters (e.g. `hasNotRun` on the target field) to get only unprocessed row IDs. Use `limit: 500`, paginate via `page` if needed.
      2. Chunk IDs into batches of 100.
@@ -67,7 +69,7 @@ Use `run_field` (single field) with explicit `runAction` when first testing each
 
 ## Critical rules
 
-- **NEVER call `run_field` without `runAction`.** Omitting it defaults to `first_ten` — relying on defaults is fragile. Treat a bare `run_field` as a bug.
+- **NEVER call `run_field` on non-source fields without `runAction`.** Omitting it defaults to `first_ten` — relying on defaults is fragile. Treat a bare `run_field` on normal action fields as a bug.
 - **Small datasets:** if a table has < 100 rows, `"first_hundred"` runs everything. Use `"first_ten"` or `"first_one"` instead when you intend a partial run.
 - **NEVER skip from Rung 1 to Rung 3.** The ladder is sequential.
 - **AI fields are non-deterministic.** Never re-run an upstream AI field to fix a downstream config issue. Re-run only the field whose *configuration* changed.

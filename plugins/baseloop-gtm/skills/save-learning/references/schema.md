@@ -31,7 +31,7 @@ Every file in `docs/solutions/` starts with YAML frontmatter that the workflow s
 - `hubspot` — any HubSpot-specific action
 - `linkedin` — LinkedIn-specific action (Sales Navigator, find people)
 - `webhooks` — webhook source or feedback POST
-- `ai-agents` — `custom_ai_agent`, web-research actions, AI extraction
+- `ai-agents` — Baseloop `custom_ai_agent`, web-research actions, and AI extraction fields; this does not mean standalone agent files
 - `formulas` — formula fields, `preview_formula`
 - `send-to-table` — Send to Table mode/mappings
 

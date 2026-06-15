@@ -6,10 +6,11 @@ import { parseFrontmatter } from "../src/utils/frontmatter"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
 const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex-skills")
-const AGENTS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "agents")
 const REFERENCE_SOURCES_DIR = path.resolve(import.meta.dir, "..", "docs", "reference-sources")
 const VALID_PLATFORMS = new Set(["claude", "codex", "gemini"])
-const RUNTIME_FIRST_SKILLS = ["plan", "build", "review", "diagnose", "engineering"]
+const ROOT_SKILL = "baseloop-gtm"
+const RUNTIME_FIRST_SKILLS = ["plan", "build", "review", "diagnose", ROOT_SKILL]
+const TRANSPORT_ROUTED_SKILLS = ["plan", "build", "review", "diagnose", "lfg"]
 const RUNTIME_DISCOVERY_TERMS = [
   "get_connected_platforms",
   "list_actions",
@@ -104,11 +105,12 @@ describe("skill contract", () => {
     }
   })
 
-  test("frontmatter name matches baseloop-gtm:<folder>", async () => {
+  test("frontmatter name matches skill contract", async () => {
     for (const skill of await listSkills()) {
       const { data } = await readFrontmatter(skill)
       expect(data.name, `${skill}: missing name`).toBeDefined()
-      expect(data.name).toBe(`baseloop-gtm:${skill}`)
+      const expected = skill === ROOT_SKILL ? ROOT_SKILL : `baseloop-gtm:${skill}`
+      expect(data.name).toBe(expected)
     }
   })
 
@@ -138,20 +140,17 @@ describe("skill contract", () => {
     }
   })
 
-  test("environment-probe skills (setup, update) are double-gated", async () => {
-    for (const skill of ["setup", "update"]) {
-      const { data } = await readFrontmatter(skill)
-      expect(data["disable-model-invocation"], `${skill}: should have disable-model-invocation: true`).toBe(true)
-      expect(data.ce_platforms, `${skill}: should have ce_platforms set`).toBeDefined()
-      expect(data.ce_platforms).toContain("claude")
-    }
+  test("Claude-only update skill is double-gated", async () => {
+    const { data } = await readFrontmatter("update")
+    expect(data["disable-model-invocation"], "update: should have disable-model-invocation: true").toBe(true)
+    expect(data.ce_platforms, "update: should have ce_platforms set").toBeDefined()
+    expect(data.ce_platforms).toContain("claude")
   })
 
   test("shipped skill docs avoid static action inventory wording", async () => {
     const files = [
       ...(await listMarkdownFiles(SKILLS_DIR)),
       ...(await listMarkdownFiles(CODEX_SKILLS_DIR)),
-      ...(await listMarkdownFiles(AGENTS_DIR)),
       ...(await listMarkdownFiles(REFERENCE_SOURCES_DIR)),
     ]
 
@@ -167,7 +166,6 @@ describe("skill contract", () => {
     const files = [
       ...(await listMarkdownFiles(SKILLS_DIR)),
       ...(await listMarkdownFiles(CODEX_SKILLS_DIR)),
-      ...(await listMarkdownFiles(AGENTS_DIR)),
       ...(await listMarkdownFiles(REFERENCE_SOURCES_DIR)),
     ]
 
@@ -186,6 +184,37 @@ describe("skill contract", () => {
         expect(text.includes(term), `${skill}: missing ${term}`).toBe(true)
       }
     }
+  })
+
+  test("routed runtime skills reuse the active transport", async () => {
+    for (const skill of TRANSPORT_ROUTED_SKILLS) {
+      const text = await readSkillWithReferences(skill)
+      expect(text, `${skill}: should reuse a transport already used in the workflow`).toContain("already used successfully earlier in this workflow")
+      expect(text, `${skill}: should select from available transports`).toContain("available and healthy")
+    }
+
+    const transport = await fs.readFile(path.join(REFERENCE_SOURCES_DIR, "transport.md"), "utf8")
+    expect(transport).toContain("already used CLI or MCP successfully")
+    expect(transport).toContain("whichever Baseloop transport is available and healthy")
+    expect(transport).toContain("baseloop tools list --agent")
+    expect(transport).toContain("baseloop tools describe <tool_name> --agent")
+    expect(transport).toContain("Use `--agent` for routine workflow calls")
+    expect(transport).toContain("Prefer compact CLI commands whenever they can answer the next decision")
+    expect(transport).toContain("Do not load every full tool schema at startup")
+    expect(transport).toContain("Treat the catalog as summary-only")
+    expect(transport).toContain("The CLI supports detail on demand")
+    expect(transport).toContain("only for the one tool you are about to call")
+    expect(transport).toContain("Keep transport-tool input schemas separate from Baseloop action schemas")
+    expect(transport).toContain("baseloop tools call list_workspaces")
+  })
+
+  test("root skill states the transport selection protocol", async () => {
+    const { body } = await readFrontmatter(ROOT_SKILL)
+    expect(body).toContain("## Transport Selection")
+    expect(body).toContain("using Baseloop CLI")
+    expect(body).toContain("using Baseloop MCP")
+    expect(body).toContain("baseloop doctor --json")
+    expect(body).toContain("route to `baseloop-gtm:setup`")
   })
 
   test("plan and build use outcome-focused credit guidance", async () => {

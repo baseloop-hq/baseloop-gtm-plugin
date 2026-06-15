@@ -24,7 +24,7 @@ const REGISTRY_PATH = path.join(REF_SOURCES_DIR, "registry.json")
 const INTERACTION_METHOD_PATH = path.join(REF_SOURCES_DIR, "interaction-method.md")
 const INTERACTION_START = "<!-- INTERACTION-METHOD-START -->"
 const INTERACTION_END = "<!-- INTERACTION-METHOD-END -->"
-const CODEX_EXCLUDED_SKILLS = new Set(["setup", "update"])
+const CODEX_EXCLUDED_SKILLS = new Set(["update"])
 
 type Registry = Record<string, string[]>
 
@@ -59,6 +59,9 @@ function codexMirrorContent(skill: string, relativeFile: string, content: string
   return content.replace(
     new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)${escapeRegExp(namespacedName)}(\\s*$)`, "m"),
     `$1${skill}$2`,
+  ).replace(
+    /(?<![\w./-])\/baseloop-gtm(?=(?:\s|`|$|[.,;]| —))/g,
+    "/baseloop-gtm:baseloop-gtm",
   )
 }
 

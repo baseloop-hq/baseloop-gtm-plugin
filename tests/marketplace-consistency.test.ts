@@ -10,6 +10,7 @@ const CODEX_MCP_JSON = path.join(REPO_ROOT, "plugins", "baseloop-gtm", ".mcp.jso
 const MARKETPLACE_JSON = path.join(REPO_ROOT, ".claude-plugin", "marketplace.json")
 const AGENTS_MARKETPLACE_JSON = path.join(REPO_ROOT, ".agents", "plugins", "marketplace.json")
 const PACKAGE_JSON = path.join(REPO_ROOT, "package.json")
+const CODERABBIT_YAML = path.join(REPO_ROOT, ".coderabbit.yaml")
 
 async function readJson<T>(p: string): Promise<T> {
   return JSON.parse(await fs.readFile(p, "utf8")) as T
@@ -93,8 +94,30 @@ describe("marketplace consistency", () => {
 
   test("codex starter prompts only reference codex-compatible skills", async () => {
     const plugin = await readJson<{ interface: { defaultPrompt: string[] } }>(CODEX_PLUGIN_JSON)
-    expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:setup")
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:update")
+    expect(plugin.interface.defaultPrompt).toContain("/baseloop-gtm:baseloop-gtm")
+    expect(plugin.interface.defaultPrompt).toContain(
+      "/baseloop-gtm:baseloop-gtm Import HubSpot companies and qualify SaaS",
+    )
+    expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm")
+  })
+
+  test("codex runtime docs use the Codex-qualified root command", async () => {
+    const badRootCommand = /\/baseloop-gtm(?:\s|`|$|[.,;]| —)/
+    const docs = [
+      path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills", "help", "SKILL.md"),
+      path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills", "setup", "SKILL.md"),
+    ]
+
+    for (const doc of docs) {
+      const content = await fs.readFile(doc, "utf8")
+      expect(content, `${doc}: should mention the Codex root router`).toContain(
+        "/baseloop-gtm:baseloop-gtm",
+      )
+      expect(content, `${doc}: should not mention the unqualified root router`).not.toMatch(
+        badRootCommand,
+      )
+    }
   })
 
   test("codex native skill tree excludes Claude-only skills", async () => {
@@ -104,7 +127,6 @@ describe("marketplace consistency", () => {
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
-    expect(entries).not.toContain("setup")
     expect(entries).not.toContain("update")
 
     for (const entry of entries) {
@@ -112,9 +134,29 @@ describe("marketplace consistency", () => {
       const match = raw.match(/^---\n([\s\S]*?)\n---/)
       expect(match, `${entry}: missing frontmatter`).not.toBeNull()
       const frontmatter = load(match![1]) as { name?: string; ce_platforms?: string[] }
-      expect(frontmatter.name, `${entry}: Codex skill name should be plugin-local`).toBe(entry)
+      const expectedName = entry === "baseloop-gtm" ? "baseloop-gtm" : entry
+      expect(frontmatter.name, `${entry}: Codex skill name should be plugin-local`).toBe(expectedName)
       expect(frontmatter.name?.startsWith("baseloop-gtm:"), `${entry}: Codex skill name is double-namespaced`).toBe(false)
       expect(frontmatter.ce_platforms === undefined || frontmatter.ce_platforms.includes("codex")).toBe(true)
+    }
+  })
+
+  test("codex root skill does not route to Claude-only update skill", async () => {
+    const rootSkill = await fs.readFile(path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills", "baseloop-gtm", "SKILL.md"), "utf8")
+    expect(rootSkill).not.toContain("baseloop-gtm:update")
+  })
+
+  test("CodeRabbit ignores synced reference copies", async () => {
+    const config = await fs.readFile(CODERABBIT_YAML, "utf8")
+    for (const file of [
+      "pitfalls.md",
+      "error-patterns.md",
+      "workflow-patterns.md",
+      "platform-discovery.md",
+      "scaling-ladder.md",
+      "transport.md",
+    ]) {
+      expect(config).toContain(`!plugins/baseloop-gtm/skills/*/references/${file}`)
     }
   })
 

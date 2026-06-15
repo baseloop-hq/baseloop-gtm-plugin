@@ -2,7 +2,7 @@
 
 A plugin for [Baseloop](https://baseloop.io), the GTM data workflow platform. Build automated GTM workflows — sourcing, enrichment, qualification, CRM sync, autonomous end-to-end runs — through conversation in Claude Code, Codex, or Gemini CLI.
 
-**Includes 10 skills, 3 read-only audit agents, and 1 MCP server.**
+**Includes 10 skills, CLI-ready instructions, and MCP compatibility.**
 
 ## Install
 
@@ -21,12 +21,12 @@ claude plugin marketplace add baseloop-hq/baseloop-gtm-plugin
 claude plugin install baseloop-gtm
 ```
 
-After install, run `/baseloop-gtm:setup` to verify your MCP connection and connected platforms.
+After install, run `/baseloop-gtm` to let the plugin choose setup, planning, building, review, or diagnosis. Run `/baseloop-gtm:setup` directly when you only want to verify CLI/MCP readiness and connected platforms.
 
 ### Codex
 
 The repository includes native marketplace metadata for Codex plugin discovery.
-The MCP server auto-registers from the plugin's `.mcp.json`; first invocation triggers OAuth.
+The MCP server auto-registers from the plugin's `.mcp.json` and remains the deployable default until the Baseloop CLI is available. When the `baseloop` CLI is installed and its tool bridge is healthy, skills prefer CLI calls.
 
 ```bash
 # 1. Register the marketplace.
@@ -37,16 +37,7 @@ codex
 # inside Codex: /plugins → find Baseloop GTM → Install → restart codex
 ```
 
-#### Optional: install standalone audit agents
-
-`/baseloop-gtm:review` runs its audit inline, so the standalone agents (`crm-integrity-checker`, `data-quality-auditor`, `workflow-cost-optimizer`) are **not required** for the review flow. Install them only if you want to invoke them directly as Codex subagents:
-
-```bash
-git clone https://github.com/baseloop-hq/baseloop-gtm-plugin.git
-cd baseloop-gtm-plugin
-bun install
-bun run src/index.ts install --to codex
-```
+After install, run `/baseloop-gtm:baseloop-gtm` to let the plugin choose setup, planning, building, review, or diagnosis. Subcommands such as `/baseloop-gtm:setup` and `/baseloop-gtm:review` keep the standard plugin-qualified form.
 
 ### Gemini CLI
 
@@ -62,7 +53,6 @@ bun run src/index.ts install --to gemini
 This writes:
 - Skills to `~/.gemini/skills/<skill-name>/`
 - MCP server config merged into `~/.gemini/settings.json` (existing config preserved)
-- Standalone audit agents to `~/.gemini/agents/` (optional — `/baseloop-gtm:review` runs the audit inline; agents are only needed if you want to invoke them directly)
 
 If your MCP server config has env-var keys that look like secrets (`API_KEY`, `TOKEN`, etc.), the installer prints a warning so you can review before committing `settings.json` to version control.
 
@@ -90,33 +80,23 @@ bun run src/index.ts cleanup --target codex --dry-run
 
 | Skill | Purpose |
 |---|---|
-| `/baseloop-gtm:setup` | Diagnose MCP auth + platform connections + workspace access (Claude Code only) |
+| `/baseloop-gtm` (Claude/Gemini)<br>`/baseloop-gtm:baseloop-gtm` (Codex) | Root router — choose workflow and transport |
+| `/baseloop-gtm:setup` | Diagnose CLI/MCP readiness + platform connections + workspace access |
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
 | `/baseloop-gtm:review` | Audit an existing workflow for pitfalls |
 | `/baseloop-gtm:diagnose` | Investigate and fix a failing field |
 | `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
-| `/baseloop-gtm:engineering` | Mental model, design principles, critical rules |
 | `/baseloop-gtm:save-learning` | Capture a workflow learning to `docs/solutions/` |
 | `/baseloop-gtm:update` | Check installed version against upstream (Claude Code only) |
 | `/baseloop-gtm:help` | Skill + tool catalog |
 
-`setup` and `update` are Claude-Code-only by design; the Bun converter excludes them from Codex and Gemini installs automatically.
-
-## Agents
-
-Read-only auditors invoked from `/baseloop-gtm:review` or directly:
-
-- `crm-integrity-checker` — HubSpot sync integrity (duplicates, associations, enums)
-- `data-quality-auditor` — Row data inspection (nulls, extraction paths, type coercion)
-- `workflow-cost-optimizer` — Credit consumption analysis
-
-See [`plugins/baseloop-gtm/agents/README.md`](./plugins/baseloop-gtm/agents/README.md) for the persona catalog.
+For Codex, the root router is `/baseloop-gtm:baseloop-gtm`; other subcommands keep the standard `/baseloop-gtm:<skill>` form. `update` is Claude-Code-only by design; `setup` is available wherever the skill bundle is installed.
 
 ## Requirements
 
 - A [Baseloop](https://baseloop.io) account with an active workspace.
-- For Codex standalone audit-agent installs and Gemini installs: [Bun](https://bun.sh) (`curl -fsSL https://bun.sh/install | bash`).
+- For Gemini installs: [Bun](https://bun.sh) (`curl -fsSL https://bun.sh/install | bash`).
 - For Claude Code: only the plugin install steps above.
 
 ## Local Development

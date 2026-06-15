@@ -2,7 +2,7 @@ import path from "path"
 import { ensureDir, pathExists, readText, writeText } from "./files"
 
 /**
- * Codex install ships skills/agents whose bodies reference Claude-Code-style
+ * Codex install ships skills whose bodies reference Claude-Code-style
  * tools (Read, Write, Bash, Task, AskUserQuestion, etc.). Codex's primitives
  * differ. We write a managed tool-mapping block to `~/.codex/AGENTS.md` so
  * Codex can interpret skill bodies correctly without rewriting them.

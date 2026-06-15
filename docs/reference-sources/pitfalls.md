@@ -69,20 +69,20 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 **Cause:** `create_table` with `sourceField` creates the table and source field but does NOT auto-trigger the import.
 
 **Fix:** After creating the table:
-1. Prefer the source's own sample/test path when available (for example, `send_webhook_data` with realistic sample JSON, or an action-specific sample import mode from `get_action_schema`).
-2. Run the source field/import against that sample and verify the resulting row data with `list_rows` or `get_row_details`.
-3. Only if the source action requires a row trigger and has no sample/test path, create a temporary placeholder row with `create_rows` using `[{}]`, run the source field with `skipCellsWithData: false`, then verify with `list_rows`.
-4. Clean up temporary placeholder rows after validation if they remain in the table.
+1. Use the source's own sampling controls when available (for example, `recordLimit`, `maxJobs`, list selection, criteria, or selected properties from `get_action_schema`).
+2. Call `run_field` with only the table ID and source field ID. Omit `runAction` and `selectedIds`; source imports execute as `entire_set` internally and create or update their own rows.
+3. `wait_for_run` and inspect `sourceImportSummary` when available.
+4. Verify imported data with `list_rows` or `get_row_details`.
 
 ---
 
 ## Missing autoRunCondition gating
 
-**Symptom:** Expensive actions (AI, enrichment) run on rows that should have been filtered, wasting credits.
+**Symptom:** Enrichment, people-finding, or AI actions run on rows that should have been filtered, producing low-value work or bad downstream data.
 
-**Cause:** Did not set `autoRunCondition` to gate on upstream results.
+**Cause:** Did not set `autoRunCondition` to gate on reliable upstream prerequisites, or treated every row as eligible even after CRM/blocklist/dedupe signals narrowed the audience.
 
-**Fix:** Always gate expensive actions on their prerequisites being non-null or meeting a condition. Example: gate `custom_ai_agent` on `enrich_company` being `notNull`. Gate `hubspot_create_object` on `hubspot_lookup_object` being `isNotFound`.
+**Fix:** Gate credit-consuming actions when a reliable prerequisite exists and the gate preserves the workflow's selected quality tier. Example: gate `custom_ai_agent` on `enrich_company` being `notNull` when the prompt depends on enriched company data. Gate `hubspot_create_object` on `hubspot_lookup_object` being `isNotFound`. Do not add gates that suppress rows the workflow explicitly needs for coverage, confidence, CRM integrity, contact quality, deliverability, or downstream conversion.
 
 ---
 
@@ -219,11 +219,11 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ## No blocklist check before enrichment
 
-**Symptom:** Credits wasted enriching companies that are already customers or churned accounts.
+**Symptom:** Companies that are already customers or churned accounts repeat low-value enrichment.
 
 **Cause:** Workflow runs enrichment on every imported company without checking against existing CRM data.
 
-**Fix:** Maintain a "Master CRM Blocklist" table with closed-won + churned companies. Add a `lookup_single_record` field as the **first gate** before any enrichment. Gate all downstream fields on blocklist lookup being `isNotFound`. This is one of the cheapest checks you can run.
+**Fix:** Maintain a "Master CRM Blocklist" table with closed-won + churned companies. Add a `lookup_single_record` field early in the workflow before enrichment when the matching key is available. Gate downstream fields on blocklist lookup being `isNotFound` so the workflow avoids low-value enrichment while preserving the selected audience.
 
 ---
 
@@ -352,7 +352,7 @@ Gate downstream processing on matches, or flag mismatches for manual review.
 
 ## Enriching recently contacted accounts
 
-**Symptom:** Credits wasted enriching and reaching out to accounts that sales reps already contacted last week.
+**Symptom:** Recently contacted accounts repeat enrichment or outreach instead of following the appropriate recency path.
 
 **Cause:** Workflow doesn't check when the account was last touched in HubSpot before enriching.
 
