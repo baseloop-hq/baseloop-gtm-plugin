@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.8.1...baseloop-gtm-v0.9.0) (2026-06-15)
+
+
+### Features
+
+* support CLI and MCP Baseloop GTM workflows ([#19](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/19)) ([e802c08](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/e802c089729cb53ddb55f688f7387200fa5f6ab2))
+
 ## [0.8.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.8.0...baseloop-gtm-v0.8.1) (2026-06-09)
 
 
