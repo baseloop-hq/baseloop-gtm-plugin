@@ -59,6 +59,9 @@ function codexMirrorContent(skill: string, relativeFile: string, content: string
   return content.replace(
     new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)${escapeRegExp(namespacedName)}(\\s*$)`, "m"),
     `$1${skill}$2`,
+  ).replace(
+    /(?<![\w./-])\/baseloop-gtm(?=(?:\s|`|$|[.,;]| —))/g,
+    "/baseloop-gtm:baseloop-gtm",
   )
 }
 

@@ -80,7 +80,7 @@ Format the report as a structured summary the user can scan. Example:
 ✓ Workspace "ICP Pipeline" accessible (12 tables)
 
 ### What you can do now
-- /baseloop-gtm — start here; routes to the right workflow and transport
+- /baseloop-gtm:baseloop-gtm — start here; routes to the right workflow and transport
 - /baseloop-gtm:plan — direct route to design a new workflow
 - /baseloop-gtm:review ICP Pipeline — direct route to audit your existing workflow
 - /baseloop-gtm:diagnose — direct route to investigate a failing field
@@ -90,7 +90,7 @@ Format the report as a structured summary the user can scan. Example:
 - LinkedIn Sales Navigator: connect from Baseloop UI if you plan to find contacts via LinkedIn.
 ```
 
-If everything is healthy, end with: "Ready to go. Try `/baseloop-gtm` to start a new workflow."
+If everything is healthy, end with: "Ready to go. Try `/baseloop-gtm:baseloop-gtm` to start a new workflow."
 
 If anything failed, end with the most actionable fix the user should do next.
 

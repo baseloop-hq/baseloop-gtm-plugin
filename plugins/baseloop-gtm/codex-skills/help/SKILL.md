@@ -27,7 +27,7 @@ If a specific topic is provided above, focus on that area. Otherwise, show the f
 
 ## Start Here
 
-Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow skill and selects one Baseloop transport for the session. Read [transport.md](./references/transport.md) when you need the CLI/MCP invocation contract. If a help topic requires live Baseloop data and no transport has already been used successfully in this workflow, select whichever transport is available and healthy before calling live tools.
+Use `/baseloop-gtm:baseloop-gtm` as the default entrypoint. It chooses the right workflow skill and selects one Baseloop transport for the session. Read [transport.md](./references/transport.md) when you need the CLI/MCP invocation contract. If a help topic requires live Baseloop data and no transport has already been used successfully in this workflow, select whichever transport is available and healthy before calling live tools.
 
 ---
 
@@ -133,7 +133,7 @@ Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow ski
 
 | Skill | Purpose |
 |---------|---------|
-| `/baseloop-gtm` | Root router — choose workflow and transport |
+| `/baseloop-gtm:baseloop-gtm` | Root router — choose workflow and transport |
 | `/baseloop-gtm:setup` | Diagnose CLI/MCP readiness, connected platforms, and workspace access |
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
@@ -149,16 +149,16 @@ Use `/baseloop-gtm` as the default entrypoint. It chooses the right workflow ski
 ## Quick Start Examples
 
 **"Import my HubSpot companies and enrich them"**
-→ `/baseloop-gtm Import HubSpot companies, enrich with company data`
+→ `/baseloop-gtm:baseloop-gtm Import HubSpot companies, enrich with company data`
 
 **"Find decision makers at my target companies"**
-→ `/baseloop-gtm Find contacts at companies, enrich, sync to HubSpot`
+→ `/baseloop-gtm:baseloop-gtm Find contacts at companies, enrich, sync to HubSpot`
 
 **"Check my workflow for issues before I scale up"**
-→ `/baseloop-gtm review ICP Pipeline workspace`
+→ `/baseloop-gtm:baseloop-gtm review ICP Pipeline workspace`
 
 **"My enrichment field is failing"**
-→ `/baseloop-gtm diagnose enrichment field errors`
+→ `/baseloop-gtm:baseloop-gtm diagnose enrichment field errors`
 
 **"What actions are available?"**
 → Use the selected transport to call `list_actions` and see the current enrichment, CRM, and AI action metadata. If no transport is selected yet, select one first.

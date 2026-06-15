@@ -111,9 +111,11 @@ async function listRelativeFiles(root: string, dir: string = root): Promise<stri
 
 function codexMirrorContent(skill: string, relativeFile: string, content: string): string {
   if (relativeFile !== "SKILL.md") return content
-  if (skill === "baseloop-gtm") return content
   return content.replace(
     new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)baseloop-gtm:${skill}(\\s*$)`, "m"),
     `$1${skill}$2`,
+  ).replace(
+    /(?<![\w./-])\/baseloop-gtm(?=(?:\s|`|$|[.,;]| —))/g,
+    "/baseloop-gtm:baseloop-gtm",
   )
 }

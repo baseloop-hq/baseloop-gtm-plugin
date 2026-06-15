@@ -102,6 +102,24 @@ describe("marketplace consistency", () => {
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm")
   })
 
+  test("codex runtime docs use the Codex-qualified root command", async () => {
+    const badRootCommand = /\/baseloop-gtm(?:\s|`|$|[.,;]| —)/
+    const docs = [
+      path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills", "help", "SKILL.md"),
+      path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills", "setup", "SKILL.md"),
+    ]
+
+    for (const doc of docs) {
+      const content = await fs.readFile(doc, "utf8")
+      expect(content, `${doc}: should mention the Codex root router`).toContain(
+        "/baseloop-gtm:baseloop-gtm",
+      )
+      expect(content, `${doc}: should not mention the unqualified root router`).not.toMatch(
+        badRootCommand,
+      )
+    }
+  })
+
   test("codex native skill tree excludes Claude-only skills", async () => {
     const plugin = await readJson<{ skills: string }>(CODEX_PLUGIN_JSON)
     const codexSkillsDir = path.join(REPO_ROOT, "plugins", "baseloop-gtm", plugin.skills)
