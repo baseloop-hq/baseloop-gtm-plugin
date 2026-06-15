@@ -21,8 +21,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Baseloop GTM",
-    "shortDescription": "Start with /baseloop-gtm to build automated GTM data workflows.",
-    "longDescription": "Start with /baseloop-gtm to design, build, review, and diagnose automated GTM data workflows in Baseloop. The root skill chooses the right workflow and transport: MCP works today, and CLI is used automatically when installed with a healthy tool bridge. Skills install natively via Codex.",
+    "shortDescription": "Start with /baseloop-gtm:baseloop-gtm to build automated GTM data workflows.",
+    "longDescription": "Start with /baseloop-gtm:baseloop-gtm to design, build, review, and diagnose automated GTM data workflows in Baseloop. The root skill chooses the right workflow and transport: MCP works today, and CLI is used automatically when installed with a healthy tool bridge. Skills install natively via Codex.",
     "developerName": "Baseloop",
     "category": "Productivity",
     "capabilities": [
@@ -31,8 +31,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "/baseloop-gtm",
-      "/baseloop-gtm Import HubSpot companies and qualify SaaS",
+      "/baseloop-gtm:baseloop-gtm",
+      "/baseloop-gtm:baseloop-gtm Import HubSpot companies and qualify SaaS",
       "/baseloop-gtm:review my pipeline workspace"
     ],
     "screenshots": []

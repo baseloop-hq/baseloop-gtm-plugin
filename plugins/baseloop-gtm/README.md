@@ -14,14 +14,14 @@ Build automated GTM data workflows through conversation. This plugin teaches you
 The repo-root [`README.md`](../../README.md) has install instructions for all three platforms. The summary:
 
 - **Claude Code:** native install — `/plugin marketplace add baseloop-hq/baseloop-gtm-plugin` then `/plugin install baseloop-gtm`. Start with `/baseloop-gtm`.
-- **Codex:** native install end-to-end (`codex plugin marketplace add` + `/plugins` in the TUI). Skills + MCP compatibility wire up through the repo's native marketplace metadata; CLI is used only when installed and healthy.
+- **Codex:** native install end-to-end (`codex plugin marketplace add` + `/plugins` in the TUI). Start with `/baseloop-gtm:baseloop-gtm`. Skills + MCP compatibility wire up through the repo's native marketplace metadata; CLI is used only when installed and healthy.
 - **Gemini CLI:** Bun converter (`bun run src/index.ts install --to gemini`) — installs skills and merges MCP config into `~/.gemini/settings.json`.
 
 ## Skills
 
 | Skill | Description |
 |---|---|
-| `/baseloop-gtm` | Root router — choose workflow and transport. Start here on a fresh install. |
+| `/baseloop-gtm` (Claude/Gemini)<br>`/baseloop-gtm:baseloop-gtm` (Codex) | Root router — choose workflow and transport. Start here on a fresh install. |
 | `/baseloop-gtm:setup` | Diagnose CLI/MCP readiness + connected platforms + workspace access. |
 | `/baseloop-gtm:plan` | Design a workflow from a goal. Surveys tables and integrations, produces an architecture plan. Read-only. |
 | `/baseloop-gtm:build` | Build a workflow step by step. Creates tables and fields, verifies each step before proceeding. Inline error diagnosis. |
@@ -33,6 +33,8 @@ The repo-root [`README.md`](../../README.md) has install instructions for all th
 | `/baseloop-gtm:help` | Skill + tool catalog. |
 
 ## Examples
+
+Codex users should replace root-router examples that start with `/baseloop-gtm` with `/baseloop-gtm:baseloop-gtm`. Subcommands such as `/baseloop-gtm:build` and `/baseloop-gtm:review` are the same across hosts.
 
 ### Plan → build
 

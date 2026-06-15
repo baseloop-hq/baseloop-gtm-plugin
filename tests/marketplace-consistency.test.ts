@@ -95,6 +95,11 @@ describe("marketplace consistency", () => {
   test("codex starter prompts only reference codex-compatible skills", async () => {
     const plugin = await readJson<{ interface: { defaultPrompt: string[] } }>(CODEX_PLUGIN_JSON)
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:update")
+    expect(plugin.interface.defaultPrompt).toContain("/baseloop-gtm:baseloop-gtm")
+    expect(plugin.interface.defaultPrompt).toContain(
+      "/baseloop-gtm:baseloop-gtm Import HubSpot companies and qualify SaaS",
+    )
+    expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm")
   })
 
   test("codex native skill tree excludes Claude-only skills", async () => {

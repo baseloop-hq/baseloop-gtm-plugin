@@ -37,6 +37,8 @@ codex
 # inside Codex: /plugins → find Baseloop GTM → Install → restart codex
 ```
 
+After install, run `/baseloop-gtm:baseloop-gtm` to let the plugin choose setup, planning, building, review, or diagnosis. Subcommands such as `/baseloop-gtm:setup` and `/baseloop-gtm:review` keep the standard plugin-qualified form.
+
 ### Gemini CLI
 
 Gemini has no native plugin spec; everything flows through the converter:
@@ -78,7 +80,7 @@ bun run src/index.ts cleanup --target codex --dry-run
 
 | Skill | Purpose |
 |---|---|
-| `/baseloop-gtm` | Root router — choose workflow and transport |
+| `/baseloop-gtm` (Claude/Gemini)<br>`/baseloop-gtm:baseloop-gtm` (Codex) | Root router — choose workflow and transport |
 | `/baseloop-gtm:setup` | Diagnose CLI/MCP readiness + platform connections + workspace access |
 | `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
 | `/baseloop-gtm:build` | Build a planned workflow step by step |
@@ -89,7 +91,7 @@ bun run src/index.ts cleanup --target codex --dry-run
 | `/baseloop-gtm:update` | Check installed version against upstream (Claude Code only) |
 | `/baseloop-gtm:help` | Skill + tool catalog |
 
-`update` is Claude-Code-only by design; `setup` is available wherever the skill bundle is installed.
+For Codex, the root router is `/baseloop-gtm:baseloop-gtm`; other subcommands keep the standard `/baseloop-gtm:<skill>` form. `update` is Claude-Code-only by design; `setup` is available wherever the skill bundle is installed.
 
 ## Requirements
 
