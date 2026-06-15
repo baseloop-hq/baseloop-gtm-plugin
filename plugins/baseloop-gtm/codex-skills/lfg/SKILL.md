@@ -42,7 +42,7 @@ Follow the `/baseloop-gtm:plan` workflow:
 
 ## Step 2: Build and Rung 1
 
-Follow the `/baseloop-gtm:build` protocol for pre-flight checks, table creation, source import, pre-Rung-1 field configuration, and Scaling Ladder Rung 1. Every `run_field` in this step MUST use `runAction: "first_one"`.
+Follow the `/baseloop-gtm:build` protocol for pre-flight checks, table creation, source import, pre-Rung-1 field configuration, and Scaling Ladder Rung 1. Every non-source `run_field` in this step MUST use `runAction: "first_one"`. The source import is the exception: call it with only `tableId` and `fieldId` (omit `runAction`), per the build protocol.
 
 If Rung 1 finds a failing field, immediately follow the `/baseloop-gtm:diagnose` protocol on that field, apply the fix if confidence is high or medium, then retry Rung 1. Do not proceed to Rung 2 until Rung 1 passes with all fields healthy on the test row.
 
