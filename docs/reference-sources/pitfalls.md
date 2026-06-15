@@ -158,6 +158,20 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
+## Trying to run formula or data-extraction fields
+
+**Risk level:** LOW — usually surfaces immediately as a rejected `run_field` call, but can lead agents to misunderstand when values refresh.
+
+**Symptom:** `run_field` fails with "Field is not runnable" or similar after creating a formula or data-extraction field.
+
+**Cause:** Formula and data-extraction fields are not action fields. They evaluate automatically from referenced cell values and are outside the `run_field` / `autoRunEnabled` lifecycle.
+
+**Fix:** Do not run these fields. For formulas, use `preview_formula` before creating or updating the field, then inspect row values after upstream cells have data. For extraction fields, run the upstream action field that produces the JSON/text being extracted, then inspect the extraction field value.
+
+**Prevention:** Only discuss `autoRunEnabled`, `runAction`, `run_field`, and `run_fields` for runnable action/AI fields. For formulas and data extraction, describe validation as previewing or row inspection, not running.
+
+---
+
 ## Formula used for open-ended semantic classification
 
 **Symptom:** A formula becomes large, brittle, or slow because it embeds long lists of countries, cities, industries, job titles, or synonyms. Classification misses obvious cases or requires constant maintenance.

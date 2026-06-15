@@ -94,7 +94,7 @@ For each field:
 1. **Read the action guide** — `get_action_schema` for the `aiDescription`. Pass the current `tableId` (and `viewId` when working in a specific view) so Baseloop can return auto-mapped defaults for field selectors. Read the guide fully before configuring.
 2. **Resolve field names** — `get_table_schema` for current field names (never guess).
 3. **Resolve dynamic options** — `resolve_action_options` for HubSpot/Salesforce properties, campaign IDs, list IDs, Send to Table array paths, and any other dropdowns. Pass `tableId`/`viewId` when options depend on table fields.
-4. **Create the field** — `create_field` with full configuration including `autoRunCondition`. Set `autoRunEnabled: false` for now — test with explicit runs first.
+4. **Create the field** — `create_field` with full configuration including `autoRunCondition` when the field supports it. For runnable action/AI fields, set `autoRunEnabled: false` for now and test with explicit runs first. Do not describe formulas or data-extraction fields as disabled by `autoRunEnabled`: they are not runnable through `run_field` and evaluate from referenced cell values instead.
 
 For credit-consuming fields, keep the field when it supports the selected plan tier's expected outcome. Add the narrowest practical `autoRunCondition` so work runs on rows where the step can improve the result, but do not gate it so aggressively that it undermines the promised workflow quality.
 

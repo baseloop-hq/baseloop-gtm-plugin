@@ -105,8 +105,8 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 - `update_field` with corrected formula prompt
-- `run_field` with `skipCellsWithData: false`
-- Use `preview_formula` to test before updating
+- Do not call `run_field` for formula fields; Baseloop rejects them as not runnable
+- Use `preview_formula` to test before updating, then inspect rows after referenced values are present because formulas evaluate automatically
 
 ---
 

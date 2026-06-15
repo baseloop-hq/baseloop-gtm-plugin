@@ -83,4 +83,4 @@ Tool names such as `list_tables`, `create_field`, `run_field`, and `wait_for_run
 - Read-only phases use only read-only tools, regardless of transport.
 - Destructive tools require explicit user approval, regardless of transport.
 - Paid or high-cost execution follows the Scaling Ladder and cost approval gates.
-- Every non-source `run_field` call must include `runAction`. Source import fields are the exception: call them with only `tableId` and `fieldId` so the source import runs through its own table-level import behavior.
+- Every non-source runnable `run_field` call must include `runAction`. Source import fields are the exception: call them with only `tableId` and `fieldId` so the source import runs through its own table-level import behavior. Formula and data-extraction fields are not runnable; validate formulas with `preview_formula` and by inspecting row values after referenced cells have data.
