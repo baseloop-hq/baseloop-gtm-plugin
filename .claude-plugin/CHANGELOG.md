@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/marketplace-v0.9.0...marketplace-v0.10.0) (2026-06-20)
+
+
+### Features
+
+* restructure GTM skills into start router with transport selection ([#27](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/27)) ([b001d3b](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/b001d3bbc8ab311b6f213da50a5b921bafe2ceb9))
+
 ## [0.9.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/marketplace-v0.8.1...marketplace-v0.9.0) (2026-06-15)
 
 

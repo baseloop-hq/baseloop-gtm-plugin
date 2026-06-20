@@ -1,5 +1,5 @@
 {
-  ".": "0.9.0",
-  "plugins/baseloop-gtm": "0.9.0",
-  ".claude-plugin": "0.9.0"
+  ".": "0.10.0",
+  "plugins/baseloop-gtm": "0.10.0",
+  ".claude-plugin": "0.10.0"
 }
