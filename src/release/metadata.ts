@@ -5,7 +5,7 @@ import type { ManifestUpdate, PluginCounts, SyncOptions, SyncResult } from "./ty
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const PLUGIN_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm")
 const PLUGIN_JSON = path.join(PLUGIN_DIR, ".claude-plugin", "plugin.json")
-const CODEX_PLUGIN_JSON = path.join(PLUGIN_DIR, ".codex-plugin", "plugin.json")
+const CODEX_PLUGIN_JSON = path.join(PLUGIN_DIR, "codex", ".codex-plugin", "plugin.json")
 const MARKETPLACE_JSON = path.join(REPO_ROOT, ".claude-plugin", "marketplace.json")
 
 export async function countSkillDirectories(pluginDir: string): Promise<number> {
@@ -102,12 +102,17 @@ function setNested(obj: JsonRecord, dotPath: Array<string | number>, value: unkn
 export async function syncReleaseMetadata(options: SyncOptions = {}): Promise<SyncResult> {
   const { write = false } = options
   const counts = await getBaseloopGtmCounts()
+  const codexCounts: PluginCounts = {
+    ...counts,
+    skills: await countSkillDirectories(path.join(PLUGIN_DIR, "codex")),
+  }
   const pluginDescription = buildBaseloopGtmDescription(counts)
+  const codexPluginDescription = buildBaseloopGtmDescription(codexCounts)
   const marketplaceDescription = buildBaseloopGtmMarketplaceDescription(counts)
 
   const targets: Array<{ path: string; dotPath: string[]; expected: string }> = [
     { path: PLUGIN_JSON, dotPath: ["description"], expected: pluginDescription },
-    { path: CODEX_PLUGIN_JSON, dotPath: ["description"], expected: pluginDescription },
+    { path: CODEX_PLUGIN_JSON, dotPath: ["description"], expected: codexPluginDescription },
     { path: MARKETPLACE_JSON, dotPath: ["plugins", "0", "description"], expected: marketplaceDescription },
   ]
 

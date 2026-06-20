@@ -22,11 +22,12 @@ Do not hand-edit the per-skill copies. CI (`release:validate`) fails on drift wi
 
 ```json
 {
-  "pitfalls.md": ["review", "diagnose", "baseloop-gtm", "build"],
-  "error-patterns.md": ["diagnose", "build", "review", "baseloop-gtm"],
-  "workflow-patterns.md": ["plan", "baseloop-gtm"],
-  "platform-discovery.md": ["plan", "build", "review", "diagnose", "baseloop-gtm"],
-  "transport.md": ["baseloop-gtm", "plan", "build", "review", "diagnose", "lfg", "help", "setup"]
+  "pitfalls.md": ["baseloop-gtm-review", "baseloop-gtm-diagnose", "baseloop-gtm", "baseloop-gtm-build"],
+  "error-patterns.md": ["baseloop-gtm-diagnose", "baseloop-gtm-build", "baseloop-gtm-review", "baseloop-gtm"],
+  "workflow-patterns.md": ["baseloop-gtm-plan", "baseloop-gtm"],
+  "platform-discovery.md": ["baseloop-gtm-plan", "baseloop-gtm-build", "baseloop-gtm-review", "baseloop-gtm-diagnose", "baseloop-gtm"],
+  "transport.md": ["baseloop-gtm", "baseloop-gtm-plan", "baseloop-gtm-build", "baseloop-gtm-review", "baseloop-gtm-diagnose"],
+  "solutions-schema.md": ["baseloop-gtm", "baseloop-gtm-build", "baseloop-gtm-diagnose"]
 }
 ```
 

@@ -5,12 +5,12 @@ import { load } from "js-yaml"
 import { parseFrontmatter } from "../src/utils/frontmatter"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex-skills")
+const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex", "skills")
 const REFERENCE_SOURCES_DIR = path.resolve(import.meta.dir, "..", "docs", "reference-sources")
 const VALID_PLATFORMS = new Set(["claude", "codex", "gemini"])
 const ROOT_SKILL = "baseloop-gtm"
-const RUNTIME_FIRST_SKILLS = ["plan", "build", "review", "diagnose", ROOT_SKILL]
-const TRANSPORT_ROUTED_SKILLS = ["plan", "build", "review", "diagnose", "lfg"]
+const RUNTIME_FIRST_SKILLS = ["baseloop-gtm-plan", "baseloop-gtm-build", "baseloop-gtm-review", "baseloop-gtm-diagnose", ROOT_SKILL]
+const TRANSPORT_ROUTED_SKILLS = ["baseloop-gtm-plan", "baseloop-gtm-build", "baseloop-gtm-review", "baseloop-gtm-diagnose"]
 const RUNTIME_DISCOVERY_TERMS = [
   "get_connected_platforms",
   "list_actions",
@@ -87,13 +87,13 @@ async function readSkillWithReferences(skill: string): Promise<string> {
 
 describe("skill contract", () => {
   test("unterminated frontmatter fails closed", () => {
-    expect(() => parseFrontmatter("---\nname: baseloop-gtm:setup\nce_platforms: [claude]\n# Missing delimiter")).toThrow(
+    expect(() => parseFrontmatter("---\nname: baseloop-gtm-plan\nce_platforms: [claude]\n# Missing delimiter")).toThrow(
       /missing closing --- delimiter/,
     )
   })
 
   test("non-mapping frontmatter fails closed", () => {
-    expect(() => parseFrontmatter("---\n- name: baseloop-gtm:bad\n---\n# Bad")).toThrow(
+    expect(() => parseFrontmatter("---\n- name: bad\n---\n# Bad")).toThrow(
       /expected a mapping\/object/,
     )
   })
@@ -109,8 +109,8 @@ describe("skill contract", () => {
     for (const skill of await listSkills()) {
       const { data } = await readFrontmatter(skill)
       expect(data.name, `${skill}: missing name`).toBeDefined()
-      const expected = skill === ROOT_SKILL ? ROOT_SKILL : `baseloop-gtm:${skill}`
-      expect(data.name).toBe(expected)
+      expect(data.name).toBe(skill)
+      expect(data.name, `${skill}: name must be plugin-local`).toMatch(/^[a-z0-9-]+$/)
     }
   })
 
@@ -140,11 +140,14 @@ describe("skill contract", () => {
     }
   })
 
-  test("Claude-only update skill is double-gated", async () => {
-    const { data } = await readFrontmatter("update")
-    expect(data["disable-model-invocation"], "update: should have disable-model-invocation: true").toBe(true)
-    expect(data.ce_platforms, "update: should have ce_platforms set").toBeDefined()
-    expect(data.ce_platforms).toContain("claude")
+  test("public skill surface stays focused", async () => {
+    expect((await listSkills()).sort()).toEqual([
+      "baseloop-gtm",
+      "baseloop-gtm-build",
+      "baseloop-gtm-diagnose",
+      "baseloop-gtm-plan",
+      "baseloop-gtm-review",
+    ])
   })
 
   test("shipped skill docs avoid static action inventory wording", async () => {
@@ -214,18 +217,18 @@ describe("skill contract", () => {
     expect(body).toContain("using Baseloop CLI")
     expect(body).toContain("using Baseloop MCP")
     expect(body).toContain("baseloop doctor --json")
-    expect(body).toContain("route to `baseloop-gtm:setup`")
+    expect(body).toContain("report the setup/authentication steps needed")
   })
 
   test("plan and build use outcome-focused credit guidance", async () => {
-    const planText = await readSkillWithReferences("plan")
+    const planText = await readSkillWithReferences("baseloop-gtm-plan")
     expect(planText).toContain("best expected business outcome per credit")
     expect(planText).toContain("Outcome rationale")
     expect(planText).toContain("Core")
     expect(planText).toContain("High confidence")
     expect(planText).not.toContain('prefer `creditCostHint: "free"`')
 
-    const buildText = await readSkillWithReferences("build")
+    const buildText = await readSkillWithReferences("baseloop-gtm-build")
     expect(buildText).toContain("Preserve the plan's value tier")
     expect(buildText).toContain("Avoid substituting a lower-cost action")
     expect(buildText).toContain("cost and expected outcome")

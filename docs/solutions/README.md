@@ -2,7 +2,7 @@
 
 Captured learnings from workflow-building sessions. Each file documents a problem solved once so future sessions don't have to re-derive the answer.
 
-**These files are yours.** They live in your project repo, you own them, you commit them. The `/baseloop-gtm:save-learning` skill writes new entries; you're free to edit, organize, or delete them like any other doc. Treat the schema as a soft contract — the loader greps frontmatter, so as long as the fields are present and parseable, your edits are safe.
+**These files are yours.** They live in your project repo, you own them, you commit them. You're free to write, edit, organize, or delete them like any other doc. Treat the schema as a soft contract — the loader greps frontmatter, so as long as the fields are present and parseable, your edits are safe.
 
 ## Structure
 
@@ -19,14 +19,28 @@ summary: "When enrichment returns null companyWebsite, an AI domain resolution s
 ---
 ```
 
-See [`plugins/baseloop-gtm/skills/save-learning/references/schema.md`](../../plugins/baseloop-gtm/skills/save-learning/references/schema.md) for the full schema.
+Schema fields:
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `title` | string | yes | Short imperative title. Used as document `# H1`. |
+| `date` | YYYY-MM-DD | yes | Date the learning was captured. |
+| `problem_type` | enum | yes | Single value. Used to bucket learnings during loader scan. |
+| `modules` | array of enum | yes | Workflow modules touched. Used to match against the current task. |
+| `tags` | array of string | yes | Free-text keywords. Searched by skills via grep. |
+| `summary` | string | yes | One-sentence problem + fix synopsis. Shown in the loader's "applicable learnings" list. |
+| `superseded_by` | filename | no | If this entry is replaced by a later one, point at it. The loader skips superseded entries. |
+
+Supported `problem_type` values: `enrichment-failure`, `hubspot-sync`, `qualification`, `routing`, `scaling`, `other`.
+
+Supported `modules` values: `companies`, `contacts`, `deals`, `hubspot`, `linkedin`, `webhooks`, `ai-agents`, `formulas`, `send-to-table`.
 
 ## How to add an entry
 
-Run `/baseloop-gtm:save-learning` after solving a non-obvious workflow problem. The skill walks through classification, captures the root cause and fix, and writes the file using `assets/learning-template.md` as the skeleton.
+Create a new `YYYY-MM-DD-<slug>.md` file after solving a non-obvious workflow problem. Include the frontmatter fields from the schema, then write the practical details a future workflow session should reuse: context, root cause, fix, verification, and any caveats.
 
-Don't hand-author files here. The schema is enforced by `/baseloop-gtm:save-learning` and the loader integrations in plan/build/review/diagnose.
+Keep entries concise and specific. The loader integrations in plan/build/review/diagnose scan frontmatter and named sections; they do not require a generated file.
 
 ## How learnings get used
 
-When you run `/baseloop-gtm:plan`, `/baseloop-gtm:build`, `/baseloop-gtm:review`, or `/baseloop-gtm:diagnose`, the skill scans this directory at start. Entries whose `problem_type` and `modules` match the current task are surfaced as "applicable learnings" — short summaries Claude reads before doing the work.
+When you run `/baseloop-gtm-plan`, `/baseloop-gtm-build`, `/baseloop-gtm-review`, or `/baseloop-gtm-diagnose`, the skill scans this directory at start. Entries whose `problem_type` and `modules` match the current task are surfaced as "applicable learnings" — short summaries Claude reads before doing the work.

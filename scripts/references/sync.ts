@@ -19,12 +19,19 @@ import path from "path"
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const REF_SOURCES_DIR = path.join(REPO_ROOT, "docs", "reference-sources")
 const SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex-skills")
+const CODEX_SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex", "skills")
 const REGISTRY_PATH = path.join(REF_SOURCES_DIR, "registry.json")
 const INTERACTION_METHOD_PATH = path.join(REF_SOURCES_DIR, "interaction-method.md")
 const INTERACTION_START = "<!-- INTERACTION-METHOD-START -->"
 const INTERACTION_END = "<!-- INTERACTION-METHOD-END -->"
 const CODEX_EXCLUDED_SKILLS = new Set(["update"])
+const CODEX_COMMAND_REWRITES: Record<string, string> = {
+  "/baseloop-gtm": "/baseloop-gtm:baseloop-gtm",
+  "/baseloop-gtm-plan": "/baseloop-gtm:baseloop-gtm-plan",
+  "/baseloop-gtm-build": "/baseloop-gtm:baseloop-gtm-build",
+  "/baseloop-gtm-review": "/baseloop-gtm:baseloop-gtm-review",
+  "/baseloop-gtm-diagnose": "/baseloop-gtm:baseloop-gtm-diagnose",
+}
 
 type Registry = Record<string, string[]>
 
@@ -54,15 +61,24 @@ function escapeRegExp(value: string): string {
 }
 
 function codexMirrorContent(skill: string, relativeFile: string, content: string): string {
-  if (relativeFile !== "SKILL.md") return content
-  const namespacedName = `baseloop-gtm:${skill}`
-  return content.replace(
-    new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)${escapeRegExp(namespacedName)}(\\s*$)`, "m"),
-    `$1${skill}$2`,
-  ).replace(
-    /(?<![\w./-])\/baseloop-gtm(?=(?:\s|`|$|[.,;]| —))/g,
-    "/baseloop-gtm:baseloop-gtm",
-  )
+  let result = content
+  if (relativeFile === "SKILL.md") {
+    const namespacedName = `baseloop-gtm:${skill}`
+    result = result.replace(
+      new RegExp(`(^---\\n[\\s\\S]*?^name:\\s*)${escapeRegExp(namespacedName)}(\\s*$)`, "m"),
+      `$1${skill}$2`,
+    ).replace(
+      /(?<![\w./-])\/baseloop-gtm(?=(?:\s|`|$|[.,;)\]]| —))/g,
+      "/baseloop-gtm:baseloop-gtm",
+    )
+  }
+  for (const [claudeCommand, codexCommand] of Object.entries(CODEX_COMMAND_REWRITES)) {
+    result = result.replace(
+      new RegExp(`(?<![\\w./:-])${escapeRegExp(claudeCommand)}(?=(?:\\s|\\\`|$|[.,;)\\]]| —))`, "g"),
+      codexCommand,
+    )
+  }
+  return result
 }
 
 async function pathExists(p: string): Promise<boolean> {
@@ -200,9 +216,11 @@ async function syncCodexSkillMirror(): Promise<void> {
     const sourceDir = path.join(SKILLS_DIR, skill)
     const mirrorDir = path.join(CODEX_SKILLS_DIR, skill)
     await fs.cp(sourceDir, mirrorDir, { recursive: true })
-    const skillPath = path.join(mirrorDir, "SKILL.md")
-    const content = await fs.readFile(skillPath, "utf8")
-    await fs.writeFile(skillPath, codexMirrorContent(skill, "SKILL.md", content))
+    for (const relativeFile of await listRelativeFiles(mirrorDir)) {
+      const filePath = path.join(mirrorDir, relativeFile)
+      const content = await fs.readFile(filePath, "utf8")
+      await fs.writeFile(filePath, codexMirrorContent(skill, relativeFile, content))
+    }
   }
 }
 

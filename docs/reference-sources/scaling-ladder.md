@@ -44,7 +44,7 @@ Only after Rung 1 passes with zero errors:
 2. State the cost and expected outcome — row count remaining, estimated credit cost for the full run, and the observed quality, coverage, confidence, or CRM-safety benefit from the higher-confidence steps.
 3. Ask for approval before running on the full dataset.
 4. Only after explicit approval:
-   - **<=100 rows:** `run_fields` with `runAction: "first_hundred"` covers everything.
+   - **<=100 rows:** `run_fields` with `runAction: "first_hundred"` covers everything. `wait_for_run` on the returned `runIds` before treating the batch as complete.
    - **>100 rows:** batch processing pattern:
      1. `list_row_ids` with filters (e.g. `hasNotRun` on the target field) to get only unprocessed row IDs. Use `limit: 500`, paginate via `page` if needed.
      2. Chunk IDs into batches of 100.

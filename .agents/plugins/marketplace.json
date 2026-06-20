@@ -8,7 +8,7 @@
       "name": "baseloop-gtm",
       "source": {
         "source": "local",
-        "path": "./plugins/baseloop-gtm"
+        "path": "./plugins/baseloop-gtm/codex"
       },
       "policy": {
         "installation": "AVAILABLE",

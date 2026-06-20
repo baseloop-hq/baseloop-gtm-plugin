@@ -24,11 +24,11 @@ describe("transformContentForCodex", () => {
     expect(out).toBe("Run the baseloop-gtm:plan skill now.")
   })
 
-  test("rewrites root slash command to known root skill", () => {
-    const out = transformContentForCodex("Run /baseloop-gtm now.", {
-      skillTargets: { "baseloop-gtm": "baseloop-gtm" },
+  test("rewrites start slash command to known root skill", () => {
+    const out = transformContentForCodex("Run /baseloop-gtm:start now.", {
+      skillTargets: { "baseloop-gtm_start": "baseloop-gtm:start" },
     })
-    expect(out).toBe("Run the baseloop-gtm skill now.")
+    expect(out).toBe("Run the baseloop-gtm:start skill now.")
   })
 
   test("rewrites .claude/ paths to .codex/", () => {
@@ -46,8 +46,8 @@ describe("transformContentForCodex", () => {
     expect(transformContentForCodex("[refs](./references/error-patterns.md)")).toBe(
       "[refs](./references/error-patterns.md)",
     )
-    expect(transformContentForCodex("[up](../baseloop-gtm/SKILL.md)")).toBe(
-      "[up](../baseloop-gtm/SKILL.md)",
+    expect(transformContentForCodex("[up](../start/SKILL.md)")).toBe(
+      "[up](../start/SKILL.md)",
     )
   })
 

@@ -30,14 +30,21 @@ export type StaleSkillDir = {
 
 export const STALE_SKILL_DIRS_BY_VERSION: Record<string, StaleSkillDir[]> = {
   // Root entrypoint lineage:
-  // skills/gtm-engineering/ -> skills/engineering/ -> skills/baseloop-gtm/.
-  // Users upgrading across either rename can leave old directories in their
-  // plugin cache; sweeping them prevents stale loads. Both point at the
-  // current live name: an install that has baseloop-gtm/ no longer needs
-  // either ancestor.
+  // skills/gtm-engineering/ -> skills/engineering/ -> skills/start/
+  // -> skills/baseloop-gtm/.
+  // Users upgrading across any rename can leave old directories in their
+  // plugin cache; sweeping them prevents stale loads. Each entry points at the
+  // current live name: an install that has baseloop-gtm/ no longer needs any ancestor.
   "0.8.0": [
     { stale: "gtm-engineering", target: "baseloop-gtm" },
     { stale: "engineering", target: "baseloop-gtm" },
+  ],
+  "0.9.0": [
+    { stale: "start", target: "baseloop-gtm" },
+    { stale: "plan", target: "baseloop-gtm-plan" },
+    { stale: "build", target: "baseloop-gtm-build" },
+    { stale: "review", target: "baseloop-gtm-review" },
+    { stale: "diagnose", target: "baseloop-gtm-diagnose" },
   ],
 }
 

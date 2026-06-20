@@ -11,7 +11,7 @@ export type DetectedTool = {
 /**
  * Detect whether Codex / Gemini are likely installed locally by checking the
  * standard config directories. Used by `install --to all` to skip missing
- * targets, and by `/baseloop-gtm:setup` to suggest install commands.
+ * targets, and by Baseloop GTM setup guidance to suggest install commands.
  */
 export async function detectInstalledTools(home: string = os.homedir()): Promise<DetectedTool[]> {
   const codexPath = path.join(home, ".codex")
