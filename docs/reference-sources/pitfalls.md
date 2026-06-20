@@ -166,7 +166,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Formula and data-extraction fields are not action fields. They evaluate automatically from referenced cell values and are outside the `run_field` / `autoRunEnabled` lifecycle.
 
-**Fix:** Do not run these fields. For formulas, use `preview_formula` before creating or updating the field, then inspect row values after upstream cells have data. For extraction fields, run the upstream action field that produces the JSON/text being extracted, then inspect the extraction field value.
+**Fix:** Do not run these fields. For formulas, use `preview_formula` before creating or updating the field, then inspect row values after upstream cells have data. For extraction fields, ensure the referenced source cells have data (e.g. by running the upstream action field that produces the JSON/text, or by populating whatever referenced cell feeds the extraction), then inspect the extraction field value.
 
 **Prevention:** Only discuss `autoRunEnabled`, `runAction`, `run_field`, and `run_fields` for runnable action/AI fields. For formulas and data extraction, describe validation as previewing or row inspection, not running.
 

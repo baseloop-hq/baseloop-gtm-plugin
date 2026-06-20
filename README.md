@@ -2,7 +2,7 @@
 
 A plugin for [Baseloop](https://baseloop.io), the GTM data workflow platform. Build automated GTM workflows — sourcing, enrichment, qualification, CRM sync, autonomous end-to-end runs — through conversation in Claude Code, Codex, or Gemini CLI.
 
-**Includes 10 skills, CLI-ready instructions, and MCP compatibility.**
+**Includes 5 skills, CLI-ready instructions, and MCP compatibility.**
 
 ## Install
 
@@ -21,11 +21,11 @@ claude plugin marketplace add baseloop-hq/baseloop-gtm-plugin
 claude plugin install baseloop-gtm
 ```
 
-After install, run `/baseloop-gtm` to let the plugin choose setup, planning, building, review, or diagnosis. Run `/baseloop-gtm:setup` directly when you only want to verify CLI/MCP readiness and connected platforms.
+After install, run `/baseloop-gtm` to let the plugin choose planning, building, review, diagnosis, or setup guidance.
 
 ### Codex
 
-The repository includes native marketplace metadata for Codex plugin discovery.
+The repository includes native marketplace metadata for Codex plugin discovery. Codex installs from the Codex-only package root at `plugins/baseloop-gtm/codex` so it sees one skill tree, not the Claude-compatible `skills/` directory next to it.
 The MCP server auto-registers from the plugin's `.mcp.json` and remains the deployable default until the Baseloop CLI is available. When the `baseloop` CLI is installed and its tool bridge is healthy, skills prefer CLI calls.
 
 ```bash
@@ -34,10 +34,10 @@ codex plugin marketplace add baseloop-hq/baseloop-gtm-plugin
 
 # 2. Install via the Codex TUI.
 codex
-# inside Codex: /plugins → find Baseloop GTM → Install → restart codex
+# inside Codex: /plugins -> find Baseloop GTM -> Install -> restart codex
 ```
 
-After install, run `/baseloop-gtm:baseloop-gtm` to let the plugin choose setup, planning, building, review, or diagnosis. Subcommands such as `/baseloop-gtm:setup` and `/baseloop-gtm:review` keep the standard plugin-qualified form.
+After install, start from the Baseloop GTM skill. Codex may display the plugin namespace separately, so the root command appears as `/baseloop-gtm:baseloop-gtm`; the skill names are `baseloop-gtm`, `baseloop-gtm-plan`, `baseloop-gtm-build`, `baseloop-gtm-review`, and `baseloop-gtm-diagnose`.
 
 ### Gemini CLI
 
@@ -80,18 +80,13 @@ bun run src/index.ts cleanup --target codex --dry-run
 
 | Skill | Purpose |
 |---|---|
-| `/baseloop-gtm` (Claude/Gemini)<br>`/baseloop-gtm:baseloop-gtm` (Codex) | Root router — choose workflow and transport |
-| `/baseloop-gtm:setup` | Diagnose CLI/MCP readiness + platform connections + workspace access |
-| `/baseloop-gtm:plan` | Design a workflow architecture from a goal |
-| `/baseloop-gtm:build` | Build a planned workflow step by step |
-| `/baseloop-gtm:review` | Audit an existing workflow for pitfalls |
-| `/baseloop-gtm:diagnose` | Investigate and fix a failing field |
-| `/baseloop-gtm:lfg` | Plan + build + test autonomously (pauses before full scale) |
-| `/baseloop-gtm:save-learning` | Capture a workflow learning to `docs/solutions/` |
-| `/baseloop-gtm:update` | Check installed version against upstream (Claude Code only) |
-| `/baseloop-gtm:help` | Skill + tool catalog |
+| `/baseloop-gtm` | Root router — choose workflow and transport |
+| `/baseloop-gtm-plan` | Design a workflow architecture from a goal |
+| `/baseloop-gtm-build` | Build a planned workflow step by step |
+| `/baseloop-gtm-review` | Audit an existing workflow for pitfalls |
+| `/baseloop-gtm-diagnose` | Investigate and fix a failing field |
 
-For Codex, the root router is `/baseloop-gtm:baseloop-gtm`; other subcommands keep the standard `/baseloop-gtm:<skill>` form. `update` is Claude-Code-only by design; `setup` is available wherever the skill bundle is installed.
+Claude Code and Gemini show the commands above directly. Codex may present them under the Baseloop GTM plugin namespace.
 
 ## Requirements
 

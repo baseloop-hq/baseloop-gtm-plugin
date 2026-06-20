@@ -17,10 +17,17 @@ afterEach(async () => {
 
 describe("legacy cleanup", () => {
   test("registry contains known stale skill directories with rename targets", () => {
-    expect(Object.keys(STALE_SKILL_DIRS_BY_VERSION)).toEqual(["0.8.0"])
+    expect(Object.keys(STALE_SKILL_DIRS_BY_VERSION)).toEqual(["0.8.0", "0.9.0"])
     expect(STALE_SKILL_DIRS_BY_VERSION["0.8.0"]).toEqual([
       { stale: "gtm-engineering", target: "baseloop-gtm" },
       { stale: "engineering", target: "baseloop-gtm" },
+    ])
+    expect(STALE_SKILL_DIRS_BY_VERSION["0.9.0"]).toEqual([
+      { stale: "start", target: "baseloop-gtm" },
+      { stale: "plan", target: "baseloop-gtm-plan" },
+      { stale: "build", target: "baseloop-gtm-build" },
+      { stale: "review", target: "baseloop-gtm-review" },
+      { stale: "diagnose", target: "baseloop-gtm-diagnose" },
     ])
   })
 
@@ -37,6 +44,7 @@ describe("legacy cleanup", () => {
     expect(report.removed.length).toBe(2)
     expect(report.removed.some((removed) => removed.endsWith("gtm-engineering"))).toBe(true)
     expect(report.removed.some((removed) => removed.endsWith("engineering"))).toBe(true)
+    expect(report.removed.some((removed) => removed.endsWith("baseloop-gtm"))).toBe(false)
     expect(report.preserved.length).toBe(0)
 
     // Stale directories gone, live skill intact.
@@ -45,9 +53,23 @@ describe("legacy cleanup", () => {
     expect(await fs.access(path.join(tmpRoot, "baseloop-gtm")).then(() => true)).toBe(true)
   })
 
+  test("preserves the current root skill when the baseloop target is absent", async () => {
+    await fs.mkdir(path.join(tmpRoot, "gtm-engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old content")
+    await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
+
+    const report = await sweepLegacyArtifacts(tmpRoot, { forVersion: "0.8.0" })
+
+    expect(report.removed.length).toBe(0)
+    expect(report.preserved.length).toBe(2)
+    expect(await fs.access(path.join(tmpRoot, "engineering")).then(() => true)).toBe(true)
+    expect(await fs.access(path.join(tmpRoot, "gtm-engineering")).then(() => true)).toBe(true)
+  })
+
   test("preserves the live root skill when the rename target is absent", async () => {
-    // The real layout of every 0.8.x install: engineering/ IS the live root
-    // skill and baseloop-gtm/ does not exist yet. A sweep here (or during an
+    // The real layout of older installs: engineering/ IS the live root skill
+    // and baseloop-gtm/ does not exist yet. A sweep here (or during an
     // interrupted upgrade that runs before new files land) must not delete it.
     await fs.mkdir(path.join(tmpRoot, "gtm-engineering"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old content")
@@ -63,7 +85,7 @@ describe("legacy cleanup", () => {
     expect(await fs.access(path.join(tmpRoot, "gtm-engineering")).then(() => true)).toBe(true)
   })
 
-  test("sweeps engineering/ after the root skill rename", async () => {
+  test("sweeps engineering/ after the baseloop root skill rename", async () => {
     await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
     await fs.mkdir(path.join(tmpRoot, "baseloop-gtm"), { recursive: true })
@@ -82,6 +104,8 @@ describe("legacy cleanup", () => {
     await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old 0.x content")
     await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old 1.x content")
+    await fs.mkdir(path.join(tmpRoot, "start"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "start", "SKILL.md"), "old 2.x content")
     await fs.mkdir(path.join(tmpRoot, "baseloop-gtm"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "baseloop-gtm", "SKILL.md"), "new content")
 
@@ -89,9 +113,12 @@ describe("legacy cleanup", () => {
 
     expect(report.removed.some((removed) => removed.endsWith("gtm-engineering"))).toBe(true)
     expect(report.removed.some((removed) => removed.endsWith("engineering"))).toBe(true)
+    expect(report.removed.some((removed) => removed.endsWith("start"))).toBe(true)
+    expect(report.removed.some((removed) => removed.endsWith("baseloop-gtm"))).toBe(false)
     expect(await fs.access(path.join(tmpRoot, "baseloop-gtm")).then(() => true)).toBe(true)
     await expect(fs.access(path.join(tmpRoot, "gtm-engineering"))).rejects.toThrow()
     await expect(fs.access(path.join(tmpRoot, "engineering"))).rejects.toThrow()
+    await expect(fs.access(path.join(tmpRoot, "start"))).rejects.toThrow()
   })
 
   test("versioned sweeps ignore prerelease and build metadata suffixes", async () => {
@@ -128,14 +155,18 @@ describe("legacy cleanup", () => {
     await fs.writeFile(path.join(tmpRoot, "gtm-engineering", "SKILL.md"), "old content")
     await fs.mkdir(path.join(tmpRoot, "engineering"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "engineering", "SKILL.md"), "old content")
+    await fs.mkdir(path.join(tmpRoot, "start"), { recursive: true })
+    await fs.writeFile(path.join(tmpRoot, "start", "SKILL.md"), "old content")
     await fs.mkdir(path.join(tmpRoot, "baseloop-gtm"), { recursive: true })
     await fs.writeFile(path.join(tmpRoot, "baseloop-gtm", "SKILL.md"), "new content")
 
     const report = await sweepLegacyArtifacts(tmpRoot)
 
-    expect(report.removed.length).toBe(2)
+    expect(report.removed.length).toBe(3)
     await expect(fs.access(path.join(tmpRoot, "gtm-engineering"))).rejects.toThrow()
     await expect(fs.access(path.join(tmpRoot, "engineering"))).rejects.toThrow()
+    await expect(fs.access(path.join(tmpRoot, "start"))).rejects.toThrow()
+    expect(await fs.access(path.join(tmpRoot, "baseloop-gtm")).then(() => true)).toBe(true)
   })
 
   test("no-op when stale dir doesn't exist", async () => {

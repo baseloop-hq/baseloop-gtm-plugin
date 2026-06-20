@@ -12,7 +12,7 @@ If a parent or earlier step in the same workflow already used CLI or MCP success
    - `baseloop tools list --agent` returns a compact JSON tool catalog
    - `baseloop tools call list_workspaces --input '{}' --agent` returns JSON
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.
-3. If neither transport works, stop and route to setup.
+3. If neither transport works, stop and report the setup/authentication steps needed before live Baseloop work can continue.
 
 After selecting, state the choice in working notes as either "using Baseloop CLI" or "using Baseloop MCP".
 

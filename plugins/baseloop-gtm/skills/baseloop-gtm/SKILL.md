@@ -1,6 +1,6 @@
 ---
 name: baseloop-gtm
-description: "Start here for Baseloop GTM workflow work. Routes the user to planning, building, reviewing, diagnosing, setup, help, or autonomous execution, then chooses one Baseloop transport for the session: CLI when healthy, MCP as fallback."
+description: "Start here for Baseloop GTM workflow work. Routes the user to planning, building, reviewing, or diagnosing, then chooses one Baseloop transport for the session: CLI when healthy, MCP as fallback."
 argument-hint: "[Baseloop GTM task, question, or workflow goal]"
 ---
 
@@ -25,13 +25,17 @@ Use this as the single starting point for Baseloop GTM work. It routes the reque
 
 If the request above is empty, ask what the user wants to do in Baseloop. Use the answer to route them; do not make the user choose a sub-skill unless the request is genuinely ambiguous.
 
+## Capturing Learnings
+
+If the user explicitly asks to remember, save, or document a workflow learning, read [solutions-schema.md](./references/solutions-schema.md), then create `docs/solutions/YYYY-MM-DD-<slug>.md` in the current project using that schema. Only write this file on explicit user request.
+
 ## Transport Selection
 
 Before any Baseloop operation, read [transport.md](./references/transport.md) and select one transport for this workflow:
 
 1. Prefer CLI when CLI readiness is fully proven: `command -v baseloop` succeeds, `baseloop doctor --json` reports usable auth/API access, `baseloop tools list --agent` returns a compact JSON catalog, and a read-only `baseloop tools call list_workspaces --input '{}' --agent` returns JSON. Do not reject CLI because of advisory checks such as `gtm_skills`, `cli_version`, or missing local agent-skill installs; only failed auth/API access disqualifies CLI.
 2. Otherwise use MCP when the Baseloop MCP tools are available and authenticated. Probe with `list_workspaces`.
-3. If neither transport works, route to `baseloop-gtm:setup`.
+3. If neither transport works, stop and report the setup/authentication steps needed before live Baseloop work can continue.
 
 After selection, state the choice in working notes as either "using Baseloop CLI" or "using Baseloop MCP". When routing to another Baseloop GTM skill, preserve that transport choice in the conversation context and continue with the original request. Use the same transport for every Baseloop tool call in the current workflow. Do not alternate between CLI and MCP unless the selected transport fails and the user approves fallback.
 
@@ -41,30 +45,24 @@ Route the user's request by intent:
 
 | User intent | Use |
 | --- | --- |
-| New workflow, architecture, what should we build, data-flow design | `baseloop-gtm:plan` |
-| Approved plan, create tables/fields, run the workflow, execute step by step | `baseloop-gtm:build` |
-| Autonomous plan → build → test request | `baseloop-gtm:lfg` |
-| Existing workflow audit, pre-scale check, cost/pitfall review | `baseloop-gtm:review` |
-| Broken field, failed run, unexpected output, debugging | `baseloop-gtm:diagnose` |
-| Install, auth, CLI/MCP readiness, connected-platform check | `baseloop-gtm:setup` |
-| Installed version check or plugin update question | Answer inline with host-specific update guidance. Claude Code has a dedicated update skill, but it is not installed on all hosts. |
-| Capabilities, available tools, examples | `baseloop-gtm:help` |
-| Capture a non-obvious solved workflow lesson | `baseloop-gtm:save-learning` |
+| New workflow, architecture, what should we build, data-flow design | `baseloop-gtm-plan` |
+| Approved plan, create tables/fields, run the workflow, execute step by step | `baseloop-gtm-build` |
+| Existing workflow audit, pre-scale check, cost/pitfall review | `baseloop-gtm-review` |
+| Broken field, failed run, unexpected output, debugging | `baseloop-gtm-diagnose` |
+| Install, auth, CLI/MCP readiness, connected-platform check | Answer inline with read-only setup guidance and transport probes. |
+| Installed version check or plugin update question | Answer inline with host-specific plugin-manager guidance. |
+| Capabilities, available tools, examples | Answer inline from this skill's workflow list and mental model. |
 
-If a request combines multiple intents, choose the earliest useful workflow. For example, "build me a workflow from scratch" starts with `baseloop-gtm:plan` unless the user already supplied a concrete plan.
+If a request combines multiple intents, choose the earliest useful workflow. For example, "build me a workflow from scratch" starts with `baseloop-gtm-plan` unless the user already supplied a concrete plan.
 
 ## Workflow Skills
 
 The specialized skills apply the principles below to specific tasks:
 
-- `/baseloop-gtm:plan` — design an architecture from a goal
-- `/baseloop-gtm:build` — create tables and fields step by step
-- `/baseloop-gtm:review` — audit an existing workflow for pitfalls
-- `/baseloop-gtm:diagnose` — investigate and fix a failing field
-- `/baseloop-gtm:lfg` — plan + build + test autonomously
-- `/baseloop-gtm:setup` — diagnose CLI/MCP readiness, auth, connected platforms, and workspace access
-- `/baseloop-gtm:save-learning` — capture a solved workflow lesson in `docs/solutions/`
-- `/baseloop-gtm:help` — tool and skill catalog
+- `/baseloop-gtm-plan` — design an architecture from a goal
+- `/baseloop-gtm-build` — create tables and fields step by step
+- `/baseloop-gtm-review` — audit an existing workflow for pitfalls
+- `/baseloop-gtm-diagnose` — investigate and fix a failing field
 
 When routing, invoke the chosen skill with the original request and continue using the transport already selected for this workflow. If the user is asking a conceptual question rather than requesting execution, answer from the mental model below.
 
