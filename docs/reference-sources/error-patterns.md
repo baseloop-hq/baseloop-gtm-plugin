@@ -15,11 +15,11 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Diagnosis:**
 1. `get_row_details` with fieldId on the failing field — check what value was received
 2. If the value is `"Found"`, `"Sent"`, `"Created"`, or similar status string — the template resolved to display output
-3. Trace the `{{field_name}}` reference back — is it pointing at an action field rather than an extraction field?
+3. Trace the `{{field_name}}` reference back — is it a bare action-field reference with no path and no extraction field?
 
 **Fix:**
-1. `create_field` with `extractorFieldId` = the source action field's ID, `extractionPath` = JMESPath to the field you need
-2. `update_field` on the failing downstream field, replacing `{{action_field_name}}` with `{{extraction_field_name}}`
+1. `get_row_details` on the source action field — inspect the real `fullValue` shape
+2. `update_field` on the failing downstream field, replacing `{{action_field_name}}` with an inline path derived from that data (e.g. `{{action_field_name.results[0].id}}`). Use an extraction field instead (`create_field` with `extractorFieldId` + `extractionPath`, then reference `{{extraction_field_name}}`) when the value should be a visible column, feeds a formula, or has several consumers
 3. Re-run with `skipCellsWithData: false`
 
 ---
