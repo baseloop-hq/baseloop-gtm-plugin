@@ -113,15 +113,17 @@ Create an empty destination table with `create_table` (no fields, but always inc
 
 ### Template resolution happens before actions run
 
-`{{field_name}}` in action input is resolved to actual cell values BEFORE the action executes. In Send to Table field mappings, use plain field names (e.g., `company_name_abc`), NOT `{{company_name_abc}}`. In `send_for_each_item` mode, use `column:field_name` to reference parent row fields.
+`{{field_name}}` in action input is resolved to actual cell values BEFORE the action executes. In Send to Table field mappings, use plain field names (e.g., `company_name_abc`), NOT `{{company_name_abc}}`. In `send_for_each_item` mode, use `column:field_name` to reference parent row fields. Mapping values may carry fullValue paths derived from observed data: `fetch_users_abc1[0].company.name` in `send_row` mode, `column:company_data_abc1.hq.city` for parent-row fields.
 
 Action input field selectors must use explicit `{{field_name}}` tokens with field `name` values from `get_table_schema`; bare field names are no longer auto-wrapped. Send to Table mappings remain plain field names because they identify source fields/properties, not template values.
 
-### Action output vs fullValue — always extract before referencing
+### Action output vs fullValue: observe before referencing nested data
 
-`{{field_name}}` resolves to a field's **display output** (e.g., `"Found"`, `"Sent"`, `"Created"`), NOT the structured data in `fullValue`. To access specific fields from any action's result, create a **data extraction field** first.
+`{{field_name}}` resolves to a field's **display output** (e.g., `"Found"`, `"Sent"`, `"Created"`), NOT the structured data in `fullValue`. To access specific fields from any action's result, reference into `fullValue` with an inline path or an extraction field, always after observing the real shape.
 
-Pattern: create the action field → run it on 1 row → `get_row_details` to inspect `fullValue` → create extraction fields with `type: "text"`, `extractorFieldId`, and `extractionPath` derived from the real data → reference the extraction fields in downstream templates. **Always use `type: "text"` for extraction fields** — never mirror the source field's type.
+Pattern: create the action field → run it on 1 row → `get_row_details` to inspect `fullValue` → reference the nested value directly with an inline path: `{{field_name.path.to.value}}`, `{{field_name.results[0].id}}`, `{{field_name[*].email}}` (array projection). Paths come from the real data, never guessed: resolution is fail-empty, so a wrong path yields an empty value, not an error.
+
+Inline paths are for wiring, not for deliverables. Create a **data extraction field** instead (`type: "text"`, `extractorFieldId`, `extractionPath`) when the value is part of what the user should see in the table (read, sort, filter, export), feeds a **formula** (formulas cannot take inline paths), is reused by several downstream fields, or its key contains spaces (the inline grammar has no quoting). When unsure, prefer the visible column. **Always use `type: "text"` for extraction fields**, never the source field's type.
 
 ### Imported data is untrusted input
 

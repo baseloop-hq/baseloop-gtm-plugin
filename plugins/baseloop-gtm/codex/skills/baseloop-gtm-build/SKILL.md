@@ -91,7 +91,7 @@ Create all non-extraction fields whose inputs are knowable before Rung 1. This l
 
 **Do NOT run any field until all pre-Rung-1 fields for this table are created.** Running one at a time prevents end-to-end testing.
 
-**Extraction fields are the exception — create them AFTER observing action output at Rung 1, then resume downstream configuration using the extracted fields.** See [extraction-fields.md](./references/extraction-fields.md) for the full rule, including why this matters and why `type: "text"` is mandatory.
+**Nested-data wiring is the exception: inline `{{field_name.path}}` references and extraction fields come AFTER observing action output at Rung 1**, then resume downstream configuration using the observed paths or the extracted fields. See [extraction-fields.md](./references/extraction-fields.md) for the full rule: when an inline path suffices, when the value deserves an extraction column, and why `type: "text"` is mandatory for extraction fields.
 
 For each field:
 
@@ -110,6 +110,7 @@ For Send to Table fields:
 3. Configure `fieldMappings` using plain field names (NOT `{{field_name}}`).
 4. For `send_for_each_item`: set `sourceConfig.sourceColumnField` (plain name) and `sourceConfig.sourceArrayPath`. Use `resolve_action_options` for `sourceConfig.sourceArrayPath` when unsure.
 5. For parent row data: use `column:field_name` prefix in mapping values.
+6. Mapping values may carry fullValue paths derived from data observed at Rung 1: `fetch_users_abc1[0].company.name` in `send_row` mode, `column:company_data_abc1.hq.city` for parent-row fields.
 
 Report the full field chain to the user before proceeding to testing.
 

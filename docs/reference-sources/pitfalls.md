@@ -6,15 +6,15 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 ---
 
-## Referencing action field output instead of extracting fullValue
+## Referencing action field output instead of its fullValue data
 
 **Symptom:** Downstream action receives `"Found"`, `"Sent"`, or `"Created"` instead of the actual data it needs (e.g., HubSpot object ID). HubSpot Update rejects the recordId. HTTP Request sends wrong body.
 
-**Cause:** Used `{{action_field_name}}` directly. `{{field_name}}` resolves to display output, not `fullValue`. See SKILL.md "Action output vs fullValue" for details and extraction paths.
+**Cause:** Used `{{action_field_name}}` directly. `{{field_name}}` resolves to display output, not `fullValue`. See SKILL.md "Action output vs fullValue" for details.
 
-**Fix:** Create a data extraction field (`extractorFieldId` + `extractionPath`) and reference that instead.
+**Fix:** Reference the nested value with an inline path derived from the observed `fullValue` (e.g. `{{action_field_name.results[0].id}}`), or create a data extraction field (`extractorFieldId` + `extractionPath`) when the value should be a visible column, feeds a formula, or has several consumers.
 
-**Prevention:** Before using `{{field_name}}` for any action field, ask: "Does this field's display output contain the actual value I need, or is it just a status string?" If it's a status string (Found, Sent, etc.), you need extraction.
+**Prevention:** Before using `{{field_name}}` for any action field, ask: "Does this field's display output contain the actual value I need, or is it just a status string?" If it's a status string (Found, Sent, etc.), you need a path into `fullValue` or an extraction field.
 
 ---
 
@@ -48,7 +48,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Used `{{field_name}}` syntax in fieldMappings. The template engine (`variableService`) resolves `{{}}` to actual cell values before the action runs, so the action receives the resolved value instead of the field reference.
 
-**Fix:** Use plain field names in `send_row` mode (e.g., `company_name_abc`). In `send_for_each_item` mode, use `column:field_name` for parent row fields. Never wrap in `{{}}`.
+**Fix:** Use plain field names in `send_row` mode (e.g., `company_name_abc`). In `send_for_each_item` mode, use `column:field_name` for parent row fields. Never wrap in `{{}}`. Mapping values may carry fullValue paths derived from observed data (`fetch_users_abc1[0].company.name`; `column:company_data_abc1.hq.city` for parent-row fields), still without braces.
 
 ---
 
@@ -500,20 +500,20 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 
 ---
 
-## Guessing extraction paths without inspecting fullValue
+## Guessing paths without inspecting fullValue
 
 **Risk level:** HIGH — causes silent null values across entire fields, often not caught until downstream actions fail.
 
-**Symptom:** Extraction field is empty despite source action succeeding.
+**Symptom:** Extraction field or inline `{{field.path}}` reference is empty despite source action succeeding.
 
-**Cause:** Creating extraction fields with assumed JMESPath expressions instead of inspecting the actual action output. Different actions return different JSON structures (e.g., `hubspot_create_object` returns flat `{"id": "..."}` while `hubspot_lookup_object` returns nested `{"results": [...]}`). There is no universal pattern. See SKILL.md "Extraction Field Rule" for the mandatory inspection protocol.
+**Cause:** Writing extraction fields or inline path references with assumed JMESPath expressions instead of inspecting the actual action output. Different actions return different JSON structures (e.g., `hubspot_create_object` returns flat `{"id": "..."}` while `hubspot_lookup_object` returns nested `{"results": [...]}`). There is no universal pattern, and resolution is fail-empty: a wrong path yields an empty value, never an error. See the build skill's nested-data rule for the mandatory inspection protocol.
 
 **Prevention:**
 1. Create the action field first
 2. `run_field` on at least 1 row (Rung 1)
 3. `get_row_details` with the action field's `fieldId` — read the complete `fullValue`
-4. Derive the `extractionPath` from the actual JSON structure you see
-5. THEN create the extraction field
+4. Derive the path from the actual JSON structure you see
+5. THEN wire the inline reference or create the extraction field
 
 **If you already made this mistake:**
 1. `get_row_details` on a successful row to see the real `fullValue`
