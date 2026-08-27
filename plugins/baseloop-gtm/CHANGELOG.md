@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.10.0...baseloop-gtm-v0.10.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* workflow-patterns extraction note referenced the retired Extraction Field Rule ([#30](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/30)) ([83f0a88](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/83f0a8846040659ab34c60e1435a783908ca6fb4))
+
 ## [0.10.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.9.0...baseloop-gtm-v0.10.0) (2026-06-20)
 
 

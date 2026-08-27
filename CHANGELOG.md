@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.10.0...cli-v0.10.1) (2026-08-27)
+
+
+### Miscellaneous Chores
+
+* **cli:** Synchronize baseloop-gtm versions
+
 ## [0.10.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.9.0...cli-v0.10.0) (2026-06-20)
 
 
