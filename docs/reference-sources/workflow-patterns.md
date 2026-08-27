@@ -4,7 +4,7 @@ Workflow recipes for common Baseloop GTM patterns. Each pattern shows the archit
 
 **Runtime rule:** Action keys in these recipes are examples from workflows that existed when the pattern was written. Before using any action, call `list_actions` to choose the current backend action and `get_action_schema` to read its live `aiDescription`. If the backend action guide conflicts with a recipe, the backend guide wins.
 
-**Extraction note:** Patterns below that include extraction fields assume you follow the Extraction Field Rule from SKILL.md: run the source action on 1 row, inspect `fullValue` with `get_row_details`, then create extraction fields with verified paths. Never use example paths below without confirming them against actual action output.
+**Nested-data note:** Patterns below that reference nested action data assume you follow the Nested Data Rule from the build skill: run the source action on 1 row, inspect `fullValue` with `get_row_details`, then reference the value with an inline path (`{{field_name.path.to.value}}`) or create an extraction field with a verified path — deliverable values the user should see get extraction columns, step-to-step wiring goes inline. Never use example paths below without confirming them against actual action output.
 
 ## Table of Contents
 
