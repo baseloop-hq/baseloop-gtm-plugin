@@ -144,7 +144,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Ran `run_field` with default `skipCellsWithData: true`, which skipped cells that already had data from the previous (wrong) configuration.
 
-**Fix:** After fixing a field config with `update_field`, re-run with `skipCellsWithData: false` to overwrite existing data. But only on that specific field — not upstream fields.
+**Fix:** After fixing a field config with `update_field`, re-run that field on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs (a range such as `first_ten` is refused with the flag off). Only that specific field, not upstream fields.
 
 ---
 
@@ -520,7 +520,7 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 2. Delete the wrong extraction field
 3. Recreate with the correct path
 4. Update any downstream fields that referenced the old field name (see "Cascading name changes" below)
-5. Re-run with `skipCellsWithData: false`
+5. Re-run on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs (the recreated extraction field is empty and fills under the default)
 
 ---
 
@@ -539,7 +539,7 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 
 **If you already made this mistake:**
 - `update_field` to remove the enum field from fieldMapping
-- Re-run failed rows with `skipCellsWithData: false`
+- Re-run the failed rows: `run_field` with `runAction: "custom_range"`, `selectedIds` set to the `failedRowIds` from `get_run_status` and `skipCellsWithData: false` (allowed on named rows, so the retry runs even when a failed row kept its old value)
 
 ---
 
@@ -559,7 +559,7 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 **If you already made this mistake:**
 - `get_table_schema` to find the new name
 - `update_field` on every downstream field that referenced the old name
-- Re-run affected fields with `skipCellsWithData: false`
+- Re-run the affected fields on the affected rows: `custom_range` with their IDs and `skipCellsWithData: false` (failed cells alone need no flag)
 
 ---
 
