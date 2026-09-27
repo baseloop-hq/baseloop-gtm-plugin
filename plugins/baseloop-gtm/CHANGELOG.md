@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.10.1...baseloop-gtm-v0.10.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* re-run advice names its rows now that the API refuses a range re-run ([#32](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/32)) ([ca1823f](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/ca1823f0a6811843e12772f64d3e058036a3a7bc))
+
 ## [0.10.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.10.0...baseloop-gtm-v0.10.1) (2026-08-27)
 
 
