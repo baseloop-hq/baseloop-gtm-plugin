@@ -541,7 +541,7 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 
 **If you already made this mistake:**
 - `update_field` to remove the enum field from fieldMapping
-- Re-run the field: failed cells re-run under the default `skipCellsWithData`, no flag needed
+- Re-run the failed rows: `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed)
 
 ---
 

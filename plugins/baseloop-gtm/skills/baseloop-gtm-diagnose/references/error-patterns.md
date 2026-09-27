@@ -41,7 +41,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 3. Check upstream fields: is every `{{field_name}}` reference populated for this row?
 
 **Fix:**
-- Config mismatch: `update_field` with corrected config, then `run_field` again (failed cells re-run under the default `skipCellsWithData`; check one row first with `runAction: "first_one"`)
+- Config mismatch: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed); check one row first with `runAction: "first_one"`
 - Upstream empty: diagnose the upstream field first (recursive)
 
 ---
@@ -61,7 +61,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
    - "Authentication failed" -- platform connection expired
 
 **Fix:**
-- Config error: `update_field` with corrected config, then `run_field` again (failed cells re-run under the default `skipCellsWithData`; check one row first with `runAction: "first_one"`)
+- Config error: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed); check one row first with `runAction: "first_one"`
 - Rate limit: wait 60 seconds, re-run with `runAction: "first_one"`
 - Auth failure: tell user to reconnect the platform in Baseloop Settings > Integrations
 
@@ -210,7 +210,7 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 **Fix:**
 - Wrong condition: `update_field` with corrected autoRunCondition
 - Upstream format issue: fix the upstream field to produce the expected format
-- Re-run after fixing: skipped and failed cells re-run under the default `skipCellsWithData`
+- Re-run after fixing with `custom_range` and the affected row IDs: skipped and failed cells re-run under the default `skipCellsWithData`, no flag needed
 
 ---
 
@@ -233,7 +233,7 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 - Wrong combinator: `update_field` — flip "and" to "or" or vice versa
 - Multiple conditions that should be OR'd: merge into a single condition with `combinator: "or"`
 - Wrong operator: replace with valid operator name (see [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions))
-- Re-run after fixing: skipped and failed cells re-run under the default `skipCellsWithData`
+- Re-run after fixing with `custom_range` and the affected row IDs: skipped and failed cells re-run under the default `skipCellsWithData`, no flag needed
 
 ---
 
