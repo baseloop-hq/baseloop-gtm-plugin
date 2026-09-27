@@ -130,7 +130,7 @@ Based on the diagnosis:
 
 ### Step 4: Scale up
 
-1. `run_field` with `skipCellsWithData: false` and `runAction: "first_ten"` — re-run on 10 rows.
+1. `run_field` with `runAction: "first_ten"` and `skipCellsWithData` at its default: failed cells in the range re-run, cells that already hold good data are left alone. The tool refuses `skipCellsWithData: false` with `first_ten` or `first_hundred`. When the bad output was stored as data rather than an error, collect those row IDs (`list_rows` with the `hasNoError` filter, or the rows inspected in Step 3) and pass `runAction: "custom_range"` with `selectedIds` and `skipCellsWithData: false`.
 2. `wait_for_run`, then `get_run_status` — confirm 0 failures.
 3. If any failures remain, investigate the failing rows (they may have different data that triggers a different error).
 

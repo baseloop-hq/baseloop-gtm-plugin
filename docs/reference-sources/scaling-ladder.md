@@ -57,7 +57,7 @@ Only after Rung 1 passes with zero errors:
 Use `run_field` (single field) with explicit `runAction` when first testing each field individually. Once fields are validated, use `run_fields` to re-run multiple fields together:
 
 - **Dependency ordering:** fields referencing others via `{{fieldName}}` run in the correct order — independent fields run in parallel, dependent fields wait for their upstream to finish.
-- **`skipCellsWithData` defaults to `true`** — only empty/failed cells are processed. Set `false` to force re-run.
+- **`skipCellsWithData` defaults to `true`** — only empty/failed cells are processed. Set `false` to force a re-run, and only on rows you name: `run_field` refuses `false` with `first_ten` or `first_hundred` (use `custom_range`), and `run_fields` refuses it without `rowIds` unless `runAction` is `first_one`, because a range re-run pays again for every cell in it that already has data.
 - **Row selection:** use `rowIds` for a specific batch or `runAction` (`first_one`, `first_ten`, `first_hundred`) to auto-select. **Max 10 fields, 100 rows per call.**
 - **Async:** returns immediately. Use `wait_for_run` or `get_run_status` to monitor progress.
 - **Per-field `runIds`:** each field in a `run_fields` batch gets its own `runId` — monitor each separately.

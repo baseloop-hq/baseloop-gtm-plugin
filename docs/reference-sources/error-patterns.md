@@ -20,7 +20,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Fix:**
 1. `get_row_details` on the source action field — inspect the real `fullValue` shape
 2. `update_field` on the failing downstream field, replacing `{{action_field_name}}` with an inline path derived from that data (e.g. `{{action_field_name.results[0].id}}`). Use an extraction field instead (`create_field` with `extractorFieldId` + `extractionPath`, then reference `{{extraction_field_name}}`) when the value should be a visible column, feeds a formula, or has several consumers
-3. Re-run with `skipCellsWithData: false`
+3. Re-run the downstream field on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs (a range such as `first_ten` is refused with the flag off)
 
 ---
 
@@ -39,7 +39,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 3. Check upstream fields: is every `{{field_name}}` reference populated for this row?
 
 **Fix:**
-- Config mismatch: `update_field` with corrected config, then `run_field` with `skipCellsWithData: false`
+- Config mismatch: `update_field` with corrected config, then `run_field` again (failed cells re-run under the default `skipCellsWithData`; check one row first with `runAction: "first_one"`)
 - Upstream empty: diagnose the upstream field first (recursive)
 
 ---
@@ -59,7 +59,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
    - "Authentication failed" -- platform connection expired
 
 **Fix:**
-- Config error: `update_field` with corrected config, then `run_field` with `skipCellsWithData: false`
+- Config error: `update_field` with corrected config, then `run_field` again (failed cells re-run under the default `skipCellsWithData`; check one row first with `runAction: "first_one"`)
 - Rate limit: wait 60 seconds, re-run with `runAction: "first_one"`
 - Auth failure: tell user to reconnect the platform in Baseloop Settings > Integrations
 
@@ -83,7 +83,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 - Condition not met: fix upstream field or adjust autoRunCondition
-- Wrong sourceArrayPath: `update_field` with correct path, re-run with `skipCellsWithData: false`
+- Wrong sourceArrayPath: `update_field` with correct path, re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs
 - Wrong destination ID: `update_field` with current table ID from `list_tables`
 - Bad field mappings: `update_field` with corrected mappings using field `name` fields from `get_table_schema`
 
@@ -132,7 +132,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 - Prompt issue: `update_field` with improved prompt (add few-shot examples, tighten constraints)
 - Model issue: `update_field` to switch to a model better matched to the task complexity
 - Web search noise: `update_field` to disable `enableWebSearch` if not needed
-- Re-run with `skipCellsWithData: false` after any fix
+- After any fix, re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs
 
 ---
 
@@ -154,7 +154,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Fix:**
 - Replace display names with internal property names in `update_field`
 - Remove read-only properties from the mapping
-- Re-run with `skipCellsWithData: false`
+- Re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs
 
 ---
 
@@ -208,7 +208,7 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 **Fix:**
 - Wrong condition: `update_field` with corrected autoRunCondition
 - Upstream format issue: fix the upstream field to produce the expected format
-- Re-run with `skipCellsWithData: false` after fixing
+- Re-run after fixing: skipped and failed cells re-run under the default `skipCellsWithData`
 
 ---
 
@@ -231,7 +231,7 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 - Wrong combinator: `update_field` — flip "and" to "or" or vice versa
 - Multiple conditions that should be OR'd: merge into a single condition with `combinator: "or"`
 - Wrong operator: replace with valid operator name (see [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions))
-- Re-run with `skipCellsWithData: false` after fixing
+- Re-run after fixing: skipped and failed cells re-run under the default `skipCellsWithData`
 
 ---
 
@@ -250,7 +250,7 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 1. Delete the wrong extraction field
 2. Create a new one with `extractionPath` matching the actual `fullValue` structure
 3. Update any downstream fields referencing the old extraction field name (it will have a new auto-generated name)
-4. Re-run with `skipCellsWithData: false`
+4. Re-run: the new extraction field is empty, so the default `skipCellsWithData` fills it; downstream fields that hold wrong values re-run via `custom_range` with the affected row IDs and `skipCellsWithData: false`
 
 **Prevention:** Always run the action on 1 row and inspect `fullValue` before creating extraction fields. This applies to ALL action types — HubSpot, HTTP requests, AI agents, enrichment, email finders, lookups.
 

@@ -65,4 +65,4 @@ Avoid static action credit lists in the plugin. If a user needs current costs, r
 5. Avoid redundant web search. Enable it when the task requires current web evidence, missing data recovery, or confidence that deterministic sources cannot provide.
 6. Do company-level intelligence once, then propagate it to contact tables with `lookup_single_record`.
 7. Never re-run upstream AI fields just to fix downstream configuration. Re-run only the field whose configuration changed.
-8. Use `skipCellsWithData: true` when preserving existing good outputs, and explicitly set `skipCellsWithData: false` only when replacing known bad data.
+8. Use `skipCellsWithData: true` when preserving existing good outputs, and explicitly set `skipCellsWithData: false` only when replacing known bad data. Name the rows when you do: `first_one` or `custom_range` (`rowIds` for `run_fields`); a range re-run with the flag off is refused.
