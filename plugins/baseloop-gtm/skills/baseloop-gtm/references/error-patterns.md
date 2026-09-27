@@ -22,7 +22,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Fix:**
 1. `get_row_details` on the source action field — inspect the real `fullValue` shape
 2. `update_field` on the failing downstream field, replacing `{{action_field_name}}` with an inline path derived from that data (e.g. `{{action_field_name.results[0].id}}`). Use an extraction field instead (`create_field` with `extractorFieldId` + `extractionPath`, then reference `{{extraction_field_name}}`) when the value should be a visible column, feeds a formula, or has several consumers
-3. Re-run the downstream field on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs (a range such as `first_ten` is refused with the flag off)
+3. Re-run the downstream field on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs (a range such as `first_ten` is refused with the flag off)
 
 ---
 
@@ -41,7 +41,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 3. Check upstream fields: is every `{{field_name}}` reference populated for this row?
 
 **Fix:**
-- Config mismatch: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed); check one row first with `runAction: "first_one"`
+- Config mismatch: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed); check a single failed row first (one ID in `selectedIds`)
 - Upstream empty: diagnose the upstream field first (recursive)
 
 ---
@@ -61,7 +61,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
    - "Authentication failed" -- platform connection expired
 
 **Fix:**
-- Config error: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed); check one row first with `runAction: "first_one"`
+- Config error: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"` and `selectedIds` set to the `failedRowIds` from `get_run_status` (failed cells re-run under the default `skipCellsWithData`, no flag needed); check a single failed row first (one ID in `selectedIds`)
 - Rate limit: wait 60 seconds, re-run with `runAction: "first_one"`
 - Auth failure: tell user to reconnect the platform in Baseloop Settings > Integrations
 
@@ -85,7 +85,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 - Condition not met: fix upstream field or adjust autoRunCondition
-- Wrong sourceArrayPath: `update_field` with correct path, re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs
+- Wrong sourceArrayPath: `update_field` with correct path, re-run on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs
 - Wrong destination ID: `update_field` with current table ID from `list_tables`
 - Bad field mappings: `update_field` with corrected mappings using field `name` fields from `get_table_schema`
 
@@ -134,7 +134,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 - Prompt issue: `update_field` with improved prompt (add few-shot examples, tighten constraints)
 - Model issue: `update_field` to switch to a model better matched to the task complexity
 - Web search noise: `update_field` to disable `enableWebSearch` if not needed
-- After any fix, re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs
+- After any fix, re-run on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs
 
 ---
 
@@ -156,7 +156,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Fix:**
 - Replace display names with internal property names in `update_field`
 - Remove read-only properties from the mapping
-- Re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs
+- Re-run on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs
 
 ---
 

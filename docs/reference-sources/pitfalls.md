@@ -144,7 +144,7 @@ Known failure modes when building Baseloop workflows. Each entry: symptom, cause
 
 **Cause:** Ran `run_field` with default `skipCellsWithData: true`, which skipped cells that already had data from the previous (wrong) configuration.
 
-**Fix:** After fixing a field config with `update_field`, re-run that field on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs (a range such as `first_ten` is refused with the flag off). Only that specific field, not upstream fields.
+**Fix:** After fixing a field config with `update_field`, re-run that field on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs (a range such as `first_ten` is refused with the flag off). Only that specific field, not upstream fields.
 
 ---
 
@@ -520,7 +520,7 @@ This replaces N enrollment fields with 3 formulas + 1 HTTP request. Add new dime
 2. Delete the wrong extraction field
 3. Recreate with the correct path
 4. Update any downstream fields that referenced the old field name (see "Cascading name changes" below)
-5. Re-run on named rows with `skipCellsWithData: false`: `first_one` to check, then `custom_range` with the affected row IDs (the recreated extraction field is empty and fills under the default)
+5. Re-run on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs (the recreated extraction field is empty and fills under the default)
 
 ---
 
