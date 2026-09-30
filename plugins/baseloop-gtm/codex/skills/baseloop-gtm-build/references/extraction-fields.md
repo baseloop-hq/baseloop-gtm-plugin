@@ -12,7 +12,7 @@ For every action that produces structured output (HubSpot Lookup, `baseloop_send
 
 ## Two ways to reference nested data
 
-The decision test: **is this value part of the deliverable, or is it wiring?** Values the user will read, sort, filter, or export (found emails, scores, enrichment results) belong in visible extraction columns; a table of opaque action fields with everything hidden inside `fullValue` is not a usable deliverable. Values that only connect one step to the next (a record id handed to an update action, an array handed to Send to Table) go inline. When unsure, prefer the visible column: users trust what they can see.
+The decision test: **must this value be a column?** Prompts, field mappings and formula prompts all read `{{field_name.path}}` inline, so a value that only feeds a later step (a record id handed to an update action, an array handed to Send to Table, a detail a prompt or formula uses) goes inline. It gets a column only on the criteria under Extraction fields. Never extract what the action cell already displays: a waterfall email cell is the email.
 
 ### Inline path references (default when one field consumes the value)
 
@@ -26,14 +26,14 @@ Use an inline path when exactly one downstream field needs the value and nobody 
 
 Send to Table mapping values accept the same paths without braces: `fetch_users_abc1[0].company.name` in `send_row` mode, and `column:company_data_abc1.hq.city` for parent-row fields in `send_for_each_item` mode.
 
-### Extraction fields (when the value deserves a column)
+### Extraction fields (when the value must be a column)
 
-Create a data extraction field with `create_field` when any of these hold:
+Create a data extraction field with `create_field` only when one of these holds:
 
-- The value should be visible, sortable, or filterable as a column.
-- **A formula needs it.** Formulas cannot take inline paths; they only reference whole fields. There is no inline alternative here.
-- Several downstream fields consume the same value (one column to fix if the path changes).
+- A person reads, sorts or filters it as a column.
+- A run condition gates on it: rules take a `fieldId`, never a path.
 - The key contains spaces or special characters. The inline grammar has no quoting, so such keys are reachable only through an extraction field's JMESPath.
+- Several fields reuse it (one column to fix if the path changes).
 
 Set:
 
@@ -43,11 +43,12 @@ Set:
 
 ## Why not `{{field_name}}` alone?
 
-Because `{{field_name}}` resolves to the action field's **display output** (e.g. `"Found"`, `"Sent"`, `"Created"`), NOT the structured data in `fullValue`. Referencing an action field directly sends display text to the next step instead of actual data.
+Because `{{field_name}}` resolves to the action field's **display output** (e.g. `"Found"`, `"Sent"`, `"Created"`), NOT the structured data in `fullValue`. Referencing an action field directly sends display text to the next step instead of actual data. Two exceptions: an AI prompt (`custom_ai_agent`, `parallel_research`) also receives the column's `fullValue`, and a cell whose display value is the datum itself (a waterfall email) needs no path.
 
 The most common manifestation: a `hubspot_lookup_object` field whose display output is `"Found"`, and a downstream `hubspot_update_object.recordId` configured as `{{hubspot_lookup_field}}`. The update receives the literal string `"Found"` and fails. The fix is `{{hubspot_lookup_field.results[0].id}}` (inline) or an extraction field.
 
 ## Verification
 
 - Inline paths: after wiring, run the consumer on 1 row and confirm the resolved value matches what you saw in `fullValue`. An empty result means the path is wrong; re-inspect the real data instead of guessing again.
+- Extraction fields: `create_field` and `update_field` report `matchedRows`, `sample` and `availablePaths`. Fix a wrong path in place with `update_field` on `extractionPath`: the id, name and every reference survive, and existing rows re-extract in the same call. Never delete and recreate the column, and never re-run the source to fill an extraction column.
 - Extraction fields: before moving to Rung 2, verify every one uses `type: "text"`. No booleans. No numbers. No selects. Grep `get_table_schema` output if unsure.

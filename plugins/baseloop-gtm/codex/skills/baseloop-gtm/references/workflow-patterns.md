@@ -46,7 +46,7 @@ HubSpot Import → Enrich & Qualify → Qualified Companies → All Leads
 **Table 1: HubSpot Import** (source)
 | # | Field | Action | autoRunCondition | Purpose |
 |---|---|---|---|---|
-| 1 | Source | `hubspot_companies_list_import` | — | Import from HubSpot static list |
+| 1 | Source | `hubspot_companies_list_import` | none | Import from a HubSpot list (static or dynamic) |
 | 2 | Send to Enrichment | `send_to_table` | always | Route to enrichment table |
 
 **Table 2: Enrich & Qualify** (many fields)
@@ -64,7 +64,7 @@ HubSpot Import → Enrich & Qualify → Qualified Companies → All Leads
 | 10 | Country Qualification | formula | — | >1 country = Qualified |
 | 11 | ICP Check | formula | — | All 3 quals pass = Qualified |
 | 12 | HubSpot Update | `hubspot_update_object` | ICP Check `notNull` | Push enrichment back to HubSpot |
-| 13 | HubSpot Engagement | `hubspot_create_engagement` | ICP Check `notNull` | Create note with ICP summary |
+| 13 | HubSpot Engagement | `hubspot_create_engagement` | Note Needed = yes | Create note with ICP summary |
 | 14 | Send to Qualified | `send_to_table` | ICP Check = "Qualified" | Route qualified companies |
 
 **Table 3: Qualified Companies** (`autoRunOnNewRow: true`)
@@ -73,13 +73,14 @@ HubSpot Import → Enrich & Qualify → Qualified Companies → All Leads
 | 1 | Research: Trigger Events | `custom_ai_agent` | always | Office expansions, funding (web search) |
 | 2 | Research: Hiring Intel | `custom_ai_agent` | always | Hiring patterns, remote/local |
 | 3-9 | Find People (7x) | `li_find_people_at_company` | research `notNull` | Multiple persona searches (see below) |
-| 10 | Send to Leads | `send_to_table` | findPeople `notNull` | Route contacts to leads table |
+
+Open research like rows 1 and 2 goes to `parallel_research` by default today (see "Research Columns: Gather, Then Judge").
 
 **Multi-persona Find People** — 7 different searches per company:
 - Champions: IT Manager, IT Ops Manager, IT Infrastructure Manager
 - Budget holders: Rapid-Growth Startups, Tech Scale-Ups, Mid-Sized Companies, Large Companies
 
-Each search targets different roles/seniority based on the company segment. All results flow to the same leads table.
+Each search targets different roles/seniority based on the company segment. All seven write their contacts straight into the All Leads table through their `destinationListId`. Never add Send to Table after Find People: it duplicates the contacts.
 
 **Table 4: All Leads** (`autoRunOnNewRow: true`)
 | # | Field | Action | autoRunCondition | Purpose |
@@ -93,21 +94,21 @@ Each search targets different roles/seniority based on the company segment. All 
 | 7 | Email Check | formula | — | Domain match verification |
 | 8 | Contact Summary (HTML) | formula | — | HTML note for HubSpot |
 | 9 | Cold Call Summary | formula | — | Text summary for sales reps |
-| 10 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` | Create contact |
-| 11 | HubSpot Update | `hubspot_update_object` | lookup or create `notNull` | Update with enrichment |
-| 12 | HubSpot Engagement | `hubspot_create_engagement` | always | Contact summary note |
+| 10 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` AND email `notNull` | Create contact with every property the update writes |
+| 11 | HubSpot Update | `hubspot_update_object` | lookup `isFound` | Update found contacts with enrichment |
+| 12 | HubSpot Engagement | `hubspot_create_engagement` | Note Needed = yes | Contact summary note |
 | 13 | Email Campaign | `send_to_table` | email `notNull` | Route to email outreach |
-| 14 | Li+Phone | `send_to_table` | phone `notNull` AND email `isNull` | Route to LinkedIn + phone |
-| 15 | Only LI | `send_to_table` | email `isNull` AND phone `isNull` | Route to LinkedIn only |
+| 14 | Li+Phone | `send_to_table` | phone `notNull` AND email `null` | Route to LinkedIn + phone |
+| 15 | Only LI | `send_to_table` | email `null` AND phone `null` | Route to LinkedIn only |
 
 ### Key Decisions
-- **Standard enrichment stack**: LinkedIn slug formula → external enrichment HTTP request → employee distribution HTTP request → AI agents for structured extraction → formula gates. This reusable sequence appears across workflows.
-- **Formula-based ICP gates**: Three cheap formula checks (staff ≥200, country count >1, office count >1) combine into one ICP Check before expensive AI research.
+- **Enrichment stack (an example)**: LinkedIn slug formula → external enrichment HTTP request → employee distribution HTTP request → AI agents for structured extraction → formula gates. Company enrichment defaults to `enrich_company` (see "Standard Enrichment Stack" under Cross-Cutting Strategies).
+- **Formula-based ICP gates**: Three cheap formula checks combine into one ICP Check before expensive AI research. The thresholds here (staff ≥200, country count >1, office count >1) are an example: ask the user for theirs.
 - **Multi-persona findPeople**: 7 different search queries per company targeting different buyer roles. Each company segment gets different budget-holder searches.
 - **Lookup back to parent**: Leads table uses `lookup_single_record` to pull company data (AE assignment, HubSpot ID, trigger events) from the qualified companies table.
 - **Triple campaign routing**: Leads sorted into 3 outreach channels based on available contact info.
 - **HubSpot audit trail**: Engagement notes created at every stage — qualified, disqualified (with reason), research findings.
-- **`autoRunOnNewRow: true`** on downstream tables: When Send to Table creates rows, all fields cascade automatically.
+- **`autoRunOnNewRow: true`** on downstream tables: When Send to Table or Find People creates rows, all fields cascade automatically.
 
 ---
 
@@ -176,15 +177,21 @@ Qualified Accounts (webhook) → Qualified Contacts
 | 6 | Segment Classification | `custom_ai_agent` | LinkedIn enrichment `notNull` | Classify segment |
 | 7 | ICP Check | `custom_ai_agent` | all enrichment `notNull` | Final ICP decision |
 | 8 | HubSpot Lookup | `hubspot_lookup_object` | ICP = Qualified | Check if company exists |
-| 9 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` | Create company |
-| 10 | HubSpot Update | `hubspot_update_object` | lookup or create `notNull` | Update with data |
+| 9 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` | Create company with every property the update writes |
+| 10 | HubSpot Update | `hubspot_update_object` | lookup `isFound` | Update found companies with data |
 | 11 | Find People | `li_find_people_at_company` | ICP = Qualified | Find contacts |
-| 12 | HubSpot Engagement | `hubspot_create_engagement` | always | Audit note |
+| 12 | HubSpot Engagement | `hubspot_create_engagement` | Note Needed = yes | Audit note |
 
 ### Key Decisions
 - **Webhook source**: No import action needed. External system POSTs data to the table's webhook URL. `autoRunOnNewRow` handles the rest.
 - **Blocklist as early gate**: Lookup against existing customer/churn data runs before enrichment when the domain or account key is available.
-- **Bidirectional HubSpot sync**: Read existing records, create missing ones, update all with enrichment data.
+- **Bidirectional HubSpot sync**: Read existing records. Create missing ones with the enrichment data and update only the records the lookup found: create and update are the two branches of one lookup, never a sequence.
+
+### Guards
+- **Brands, not domains**: Event text names brands. Resolve the company with a research step that outputs a domain and a confidence score, gate automation on a threshold the user confirms (for example 0.8), and route the rest to a review table.
+- **Dedupe on the event id**: Switch on `set_auto_dedupe` on the signal or event id column, keep `oldest`. Get approval first, naming the table, the column and how many rows would go: dedupe deletions are permanent.
+- **Ask where prospects live**: The CRM, a master table, or both. Match against each before creating anything.
+- **Name the loop before writing back**: Before writing any flag back to a system that posts to this webhook, name what the sender watches and what stops it, or the table loops. A status only moves forward.
 
 ---
 
@@ -201,7 +208,7 @@ Qualified Accounts (webhook) → Qualified Contacts
 ```
 
 **Tables 0a + 0b: Enrichment** (two source tables, same field structure)
-Both run the standard enrichment stack independently, then **dual Send to Table** routes to two downstream tables simultaneously.
+Both send on to one shared Enrichment table, which runs the enrichment stack once, then **dual Send to Table** routes to two downstream tables simultaneously.
 
 **Table 1: Trigger Events** (`autoRunOnNewRow: true`)
 - AI research: office/funding expansions, hiring intel (web search enabled)
@@ -213,7 +220,7 @@ Both run the standard enrichment stack independently, then **dual Send to Table*
 - Results flow to All Leads
 
 ### Key Decisions
-- **Parallel entry points**: Same workflow processes companies from different sources. Each gets its own enrichment table so sources can run on different schedules.
+- **Parallel entry points**: Same workflow processes companies from different sources. Each source gets its own small import table so sources can run on different schedules; enrichment runs once downstream.
 - **Dual routing**: One enrichment table routes to BOTH trigger events AND lead finder simultaneously. Two Send to Table fields on the same table.
 - **Match verification**: AI agents compare HubSpot company names against LinkedIn names and verify domain matches. Catches data quality issues early.
 
@@ -234,15 +241,15 @@ Company Enrichment → Find People → All Leads
 |---|---|---|---|---|
 | — | Input | import/webhook | — | Pre-computed scores (account_tier, combined_score, growth_score) |
 | 1 | HubSpot Lookup | `hubspot_lookup_object` | always | Check if company exists |
-| 2 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` | Create in HubSpot |
-| 3 | Standard enrichment stack | ... | ... | External enrichment + AI agents + formula gates |
-| 4 | HubSpot Update | `hubspot_update_object` | enrichment done | Push back enrichment + scores |
-| 5 | HubSpot Engagement | `hubspot_create_engagement` | always | ICP summary note |
+| 2 | Enrichment stack | ... | ... | External enrichment + AI agents + formula gates |
+| 3 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` AND enrichment done | Create with every property the update writes |
+| 4 | HubSpot Update | `hubspot_update_object` | lookup `isFound` AND enrichment done | Update found companies with enrichment + scores |
+| 5 | HubSpot Engagement | `hubspot_create_engagement` | Note Needed = yes | ICP summary note |
 | 6 | Send to Find People | `send_to_table` | ICP = Qualified | Route qualified companies |
 
 ### Key Decisions
-- **External scores as input**: The table receives pre-computed ML scores (account_tier, acquisition_score, growth_expansion_score). These augment the standard enrichment stack.
-- **HubSpot sync first**: Lookup/create happens before enrichment so the HubSpot record ID is available for later updates.
+- **External scores as input**: The table receives pre-computed ML scores (account_tier, acquisition_score, growth_expansion_score). These augment the enrichment stack.
+- **Lookup first, write once**: the lookup runs before enrichment; the create (lookup `isNotFound`) and the update (lookup `isFound`) both run after it, so each record is written once.
 - **Workspace cloning as templates**: This exact structure gets cloned for each new campaign. Create the template once, clone for each batch.
 
 ---
@@ -250,7 +257,7 @@ Company Enrichment → Find People → All Leads
 ## Cross-Cutting Strategies
 
 ### Standard Enrichment Stack
-This exact sequence appears in most workflows:
+An example of the shape (slug, enrichment, AI extraction, formula gates), not the standard:
 1. Formula: LinkedIn slug extraction
 2. HTTP Request: LinkedIn company enrichment data (staff, HQ, offices, description)
 3. HTTP Request: Employee distribution data
@@ -260,12 +267,30 @@ This exact sequence appears in most workflows:
 7. AI Agent: Segment classification
 8. Formulas: Staff qualification (≥200), country count (EU=1), ICP check (all pass)
 
+Company enrichment defaults to `enrich_company` on Baseloop credits; use a third-party HTTP request (steps 2-3) only when the user brings that API. Office or country criteria read `enrich_company`'s `locations` (office addresses with `country`); an empty or missing list reads as unknown, not zero.
+
+### Research Columns: Gather, Then Judge
+Default open-ended, multi-source, cited research (ICP fit, funding, hiring, account briefs) to `parallel_research`, which takes typed `outputFields`. `custom_ai_agent` judges evidence the row already has (score, classify, extract, write). Use `custom_ai_agent` with web search for research only when the user names it, the answer is an array Send to Table fans out, or a specific model is required. With `enableWebSearch: true`, `custom_ai_agent` takes no system prompt and no examples: gather with web search in one column, judge with web search off and the profile in the system prompt in the next.
+
+### Design Guards
+- Personas inferred from a website are hypotheses for scoring, not a license to source or enroll every one: get the user's approval before Find People or a campaign step runs on them.
+- Outbound copy at scale starts from a campaign brief and real example emails the user supplies. Never invent the examples.
+
 ### autoRunOnNewRow Strategy
-- **Source/enrichment tables**: `autoRunOnNewRow: false` — run manually or on schedule
-- **Downstream tables** (populated by Send to Table): `autoRunOnNewRow: true` — cascade automatically when rows arrive
+- Imports, webhooks and Send to Table start a table's action fields only through `autoRunOnNewRow`.
+- **On** for any source table whose new rows must move on: a scheduled import, a webhook table, a Send to Table destination once the first send has created its Input field.
+- **Off** only on tables run by hand.
+- `update_table` refuses it until the table has a source field and at least one runnable field.
+
+### autoUpdateDependents Strategy
+- **Off by default, and off for one-shot enrichment tables.** It re-runs the columns that depend on a cell when its displayed value changes through `update_row`, a grid edit, or a field run (scheduled runs included), and every re-run spends credits. An import refresh and a Send to Table landing never trigger it, and a change visible only in `fullValue` (or its extraction columns) starts nothing.
+- **On for tables whose values must stay in sync after the first run**, such as a scheduled research or CRM-read column that feeds a CRM update. Switch it on with `update_table` only after the user has heard the credit consequence.
+- **Schedule chains**: A schedule re-runs only its own column, and schedules keep no order. Schedule each column whose answer must be fresh every cycle (the import, a research call, a CRM read); columns that only read other columns' output (formulas, sends, CRM writes) follow through `autoUpdateDependents`, never with their own schedule. A scheduled action field runs every row its run condition admits, filled cells included: the run condition is the per-row gate.
 
 ### HubSpot Engagement Notes as Audit Trail
 Write a note to HubSpot for every outcome — qualified (with ICP summary), disqualified (with specific reason: FTE too small, country count too low, LinkedIn not found). This creates a CRM audit trail.
+
+A note, task or record created twice cannot be undone from the table. Gate each note create on a key the destination or a history table already holds (a property the same run writes, a `lookup_single_record` into a delivered table), never on "always". In the patterns here that gate is **Note Needed**: a formula that is `yes` when the row's outcome differs from the outcome the CRM record last noted (a property the same run writes, read back by the HubSpot lookup). Run conditions compare a column with a fixed value, so the comparison lives in the formula. With `autoUpdateDependents` on, any change to a column the note reads re-runs it with skip-filled-cells off and posts again. The same holds for campaign adds: keep the sequencer's duplicate checks on. Events go in a dated note, states in a property.
 
 ### Blocklist/Exclusion Tables
 Maintain a "Master CRM Blocklist" table with closed-won + churned accounts. Use `lookup_single_record` as an early gate before enrichment when the matching key is available.
@@ -350,7 +375,7 @@ B. Leads (State of IT Report)  ──┘         │
 | 9 | IT Manager Filter | formula | — | Check if title matches target role |
 | 10 | Phone | `waterfall_phone_enrichment` | always | Find phone number |
 | 11 | Update Object | `hubspot_update_object` | always | Push enriched data to CRM |
-| 12 | Create Engagement | `hubspot_create_engagement` | always | Enrichment summary note |
+| 12 | Create Engagement | `hubspot_create_engagement` | Note Needed = yes | Enrichment summary note |
 
 ### Key Decisions
 - **Multi-asset funnel merging**: Each content asset (report, webinar) gets its own source table with literal content-source formulas. All merge into a single ALL LEADS table, then flow to centralized account qualification.
@@ -465,6 +490,8 @@ Build a workflow workspace once (with the full enrichment + qualification + lead
 
 Example: "One-off | Enrichment from HubSpot" (empty template) → "One-off | Enrichment from HubSpot - Feb 14th" (active clone with imported data).
 
+Clone only when batches truly differ. A chain cloned once per campaign, persona or language drifts: each copy's prompts, offers and gates get edited apart. When every batch runs the same judgment, send the batches into one shared table instead, and let each copy own only its list and destination (see `gtme-rules.md` in the plan skill).
+
 ### Dual-Domain HubSpot Lookup
 When external enrichment returns a different domain than the input (common with subsidiaries, regional domains, or rebrands), do two HubSpot lookups:
 1. Lookup based on the input domain
@@ -472,10 +499,10 @@ When external enrichment returns a different domain than the input (common with 
 Merge results with a formula (prioritize the one that found a match). This prevents missed CRM matches.
 
 ### Recency Gating
-Before re-enriching or re-contacting recently worked accounts, add a "Contacted Within 30 Days" formula:
-- Input: `hs_last_contacted_date` from HubSpot lookup
-- Logic: return "true" if last contact < 30 days ago
-- Gate downstream enrichment on this being "false" or empty
+Before re-enriching or re-contacting recently worked accounts, gate on when the account was last contacted:
+- Input: HubSpot's `notes_last_contacted` from the lookup (confirm the property with `resolve_action_options`).
+- What counts as an account to leave alone (customer, open deal, which stages, contacted within how long) is the user's call; 30 days is an example.
+- A formula comparing to today recomputes only when a cell it reads is rewritten or a HubSpot import refreshes the row, so on a recurring table that no import refreshes it goes stale. Compare against a date the cycle rewrites, or use `isDatePreset` (for example `last30Days`) in a run condition, which is evaluated when the step dispatches. `isDatePreset` matches dates inside the window and has no negated form, so it gates the step for recently contacted rows, not the step for the rest.
 
 ### Multi-Content-Asset Attribution
 When multiple content assets feed the same workflow, tag each with:
@@ -489,7 +516,7 @@ Every external system integration uses webhooks: ad analytics platforms (engagem
 2. `autoRunOnNewRow: true` triggers processing
 3. Action fields cascade automatically
 
-This is the preferred pattern over polling or manual imports for any real-time data source.
+This is the preferred pattern over polling or manual imports for any real-time data source. Before writing anything back to a system that posts to the webhook, name the sender, what it watches and what stops it (Pattern 3, Guards).
 
 ### Per-Person Per-Segment Sourcing Tables
 Instead of one monolithic contacts import, create separate tables per country × vertical × team member. Name them explicitly: "{name} - Pharma - ITA", "{name} - Transport - ITA", "Batch#2 - LUX - Compliance". Benefits:
@@ -497,6 +524,7 @@ Instead of one monolithic contacts import, create separate tables per country ×
 - Each table = one Sales Nav saved search (clear ownership)
 - Campaign iterations get prefixed (Batch#2 = second round)
 - All tables share identical schema — templatizable
+- Each one sends on to one shared table, where enrichment, dedupe and CRM sync run once. Never repeat the paid chain in every sourcing table
 
 ### Dynamic URL Construction via Formula
 When routing to an external API that has multiple endpoints (e.g., different outreach campaign IDs), compute the endpoint path via formulas instead of creating N separate HTTP request fields. The formula result becomes part of the URL: `https://api.example.com/campaigns/{{formula_computed_id}}/leads`. One action field handles all routing permutations.
@@ -516,25 +544,25 @@ Choose the right people-finding approach based on the target audience. **Do not 
 - Pros: Searches company websites, team pages, Crunchbase, press releases — finds people LinkedIn misses
 - Use this when the user's audience isn't on LinkedIn, or when they explicitly ask for web-based people finding
 - JSON Schema: array of contacts with `full_name`, `first_name`, `last_name`, `title`, `email`, `linkedin_url`
-- Route results via Send to Table `send_for_each_item` (same pattern as LinkedIn results)
+- Route the array into the contacts table via Send to Table `send_for_each_item` (Find People writes its own rows and needs no send)
 
 **Option C: Both with fallback** (LinkedIn first, AI web search for misses)
 - Best for: mixed audiences where some companies are LinkedIn-active and others aren't
-- How: `li_find_people_at_company` runs first, then `custom_ai_agent` gated on Find People field being `isNotFound`
-- Both paths feed the **same destination table** via Send to Table `send_for_each_item`, so downstream workflow (enrichment, CRM sync, outreach) is identical regardless of how the contact was found
+- How: `li_find_people_at_company` runs first and writes its found contacts directly into its `destinationListId` table. The `custom_ai_agent` fallback is gated on Find People `isNotFound` OR `hasError` (a provider error never sets not found), and its array goes into the same table via Send to Table `send_for_each_item`. Never add Send to Table after Find People.
+- Both paths land in the **same destination table**, so downstream workflow (enrichment, CRM sync, outreach) is identical regardless of how the contact was found. Found contacts already carry the LinkedIn URL, headline and role: no "find LinkedIn profile" step.
 - Cost: lower per-contact cost for LinkedIn hits plus higher variable cost for web-search misses
 
 **Decision signal:** If the user describes their target as "SMBs", "local businesses", "non-tech", or mentions a region with low LinkedIn adoption → default to Option B. If they describe "enterprise", "SaaS", "tech companies" → default to Option A. If unclear or mixed, suggest Option C and explain the tradeoff.
 
 ### OOO Auto-Reply Mining
-Use the current AI/web-research action returned by `list_actions` to parse Out-of-Office replies and extract backup/alternative contact email addresses. Gate on the outreach platform's OOO reply category. Prompt pattern: "Extract the email address of the alternative/backup contact person. Output ONLY the email address, or NONE if not found." This converts dead-end OOO responses into new lead opportunities.
+Use the current AI/web-research action returned by `list_actions` to parse Out-of-Office replies and extract backup/alternative contact email addresses. Gate on the outreach platform's OOO reply category. Prompt pattern: "Extract the email address of the alternative/backup contact person. Output ONLY the email address, or an empty value if none is found." A "NONE" answer passes every `notNull` gate. This converts dead-end OOO responses into new lead opportunities.
 
 ### Outreach Reply Slack Notification Filtering
 When processing outreach replies via webhook, filter Slack notifications to exclude noise:
-- Exclude bounces (reply_category = 4)
-- Exclude OOO auto-replies (reply_category = 6)
+- Exclude bounces
+- Exclude OOO auto-replies
 - Only notify for meaningful replies that need human review
-Use separate action fields for OOO mining (gated on category = 6) vs Slack notifications (gated on category != 4 AND != 6).
+The numeric reply categories differ per outreach platform: read the bounce and OOO values from the platform's schema or a real webhook payload, never hardcode them (the 4 and 6 in Pattern 11 are one platform's). Use separate action fields for OOO mining (gated on the OOO category) vs Slack notifications (gated on not bounce AND not OOO).
 
 ---
 
@@ -569,7 +597,7 @@ Outreach Platform (webhook: all events)
 | 5 | Update Object | `hubspot_update_object` | Lookup Object `isFound` | Set outbound_sentiment on contact |
 | 6 | Create Engagement | `hubspot_create_engagement` | Update Object `isFound` | Email timeline as engagement note |
 | 7 | OOO backup-contact research | current AI/web-research action from `list_actions` | reply_category = 6 + EMAIL_REPLY | Extract backup contact from OOO |
-| 8 | Send Slack Message | `baseloop_send_http_request` | EMAIL_REPLY + category != 4 + != 6 | Rich Slack notification |
+| 8 | Send Slack Message | `slack_send_message_to_channel` | EMAIL_REPLY + category != 4 + != 6 | Slack notification with fields |
 | 9 | Send to Table | `send_to_table` | always | Archive to downstream table |
 
 ### Key Decisions
@@ -578,7 +606,8 @@ Outreach Platform (webhook: all events)
 - **Sequential gating**: Create Engagement gates on Update Object success (not just Lookup). This ensures HubSpot is updated before the audit trail note is created.
 - **OOO mining**: AI/web research parses OOO auto-replies to extract backup contact email. Separate from the main reply flow — gated on reply_category = 6 specifically.
 - **Filtered Slack**: Excludes bounces (4) and OOO (6) from Slack notifications. Only meaningful replies that need human attention trigger alerts.
-- **Slack rich blocks via HTTP**: Uses `baseloop_send_http_request` to Slack webhook URL with Block Kit JSON (section blocks with fields for name, email, LinkedIn, company, campaign, HubSpot URL, and reply text).
+- **Slack through the connected action**: `slack_send_message_to_channel` with the reply text as the message and `fields` for name, email, LinkedIn, company, campaign and HubSpot URL. `baseloop_send_http_request` has no connection: a webhook URL in it is stored in the field config and returned by `get_table_schema` to everyone who can read the table, so use it only with the user's consent.
+- **A hard no is its own outcome**: "Remove me" never merges with a soft no ("not now"). It sets a do-not-contact flag, and that flag gates every add, send and enrolment on every channel and in every table that can reach the person.
 
 ---
 
@@ -586,7 +615,7 @@ Outreach Platform (webhook: all events)
 
 **Goal:** Route HubSpot contacts to the correct outreach campaign based on two dimensions: language (inferred from email domain) and job title cluster (inferred from title keywords). 8 possible campaigns from 2 dimensions.
 
-> **Note:** This pattern uses `baseloop_send_http_request` for enrollment because it needs **dynamic formula-based campaign routing** — the campaign ID is computed at runtime and placed in the API URL path. For standard single-campaign enrollment, use the current outreach campaign actions returned by `list_actions`; their `get_action_schema` guides are simpler to configure.
+> **Note:** Per-row campaign routing does not need an HTTP request. The lemlist, Instantly, HeyReach and Smartlead add-to-campaign actions all take a per-row campaign: `campaignId: "{{category_mapping_code}}"` with `campaignId__dynamic: true`. Use `baseloop_send_http_request` (row 6 below) only for a platform with no built-in action. `reply_create_contact` creates the contact and enrolls it in nothing. HeyReach needs first name, last name and LinkedIn URL, never an email.
 
 ### Architecture
 
@@ -684,15 +713,18 @@ Multiple LinkedIn import tables (region and company-size partitioned)
 | 3 | Company Intelligence | `custom_ai_agent` (web search) | always | Extract: company overview, target market, personas, prospecting signals |
 | 4 | Go-To-Market Motion | `custom_ai_agent` (web search) | always | Classify: PLG/SLG/Hybrid |
 | 5 | Funding Stage | `custom_ai_agent` (web search) | always | Stage/Amount/Date |
-| 6 | Hiring Signals | `custom_ai_agent` (web search) | always | Find careers page URL |
-| 7 | Extract GTM Roles | `custom_ai_agent` (web search) | careers URL != "Not Found" | List open GTM roles + job URLs |
+| 6 | Hiring Signals | `custom_ai_agent` (web search) | always | Find careers page URL, empty when none |
+| 7 | Extract GTM Roles | `custom_ai_agent` (web search) | careers URL `notNull` | List open GTM roles + job URLs |
 | 8 | Competitor Check: Open Jobs | `custom_ai_agent` (web search) | Hiring GTM = true | Check job descriptions for competitor mentions |
 | 9 | Competitor Check: Leads | `custom_ai_agent` | lookup result `notNull` | Scan employee profiles for competitor signals |
 | 10 | Competitor Usage Status | formula | — | Merge both competitor signals |
 | 11 | Domain Traffic | `baseloop_send_http_request` | always | Traffic estimation API |
 | 12 | Traffic Level | formula | — | ≥50K = "Qualified for Inbound" |
-| 13 | Merged Company HS ID | formula | — | Pick lookup ID or created ID |
-| 14 | Update/Create Object | `hubspot_update/create_object` | gated | CRM sync |
+| 13 | HubSpot Create | `hubspot_create_object` | lookup `isNotFound` | Create with every property the update writes |
+| 14 | HubSpot Update | `hubspot_update_object` | lookup `isFound` | Update the record the lookup found |
+| 15 | Company HS ID | formula | none | For downstream tables: lookup ID, else created ID. The update reads the lookup ID and is never gated on this |
+
+The research rows (3 to 8) go to `parallel_research` by default today; the classification rows read its output with web search off (see "Research Columns: Gather, Then Judge").
 
 ### Key Decisions
 - **Website validation before everything**: Shortened URLs (bit.ly, linktr.ee) and missing websites break all downstream enrichment. Fix once at the dedup stage.
@@ -718,8 +750,8 @@ HubSpot Contact Import
   → AI: Still at current company? (match employer to HubSpot company)
   → If NO: AI extracts new company URL + job title
     → Enrich New Company
-    → HubSpot Lookup + Create Company
-    → Update Contact in HubSpot
+    → HubSpot Lookup (misses go to a companies table that creates each company once)
+    → Look the company id back up, then Update Contact in HubSpot
   → Route to 3 destinations:
     ├→ Still at company (+ updated this month)
     ├→ New company started
@@ -738,8 +770,9 @@ HubSpot Contact Import
 | 7 | Enrich Company | `enrich_company` | new company URL `notNull` | Get new company details |
 | 7a | Resolve Company Domain | `custom_ai_agent` | email `notNull` AND companyWebsite is `null` | AI web search to find company domain when enrichment didn't return it. Skip if companyWebsite already populated. |
 | 8 | Lookup Object | `hubspot_lookup_object` | company domain `notNull` (from enrichment or AI) | Look up company by domain in CRM |
-| 9 | Create Company | `hubspot_create_object` | lookup `isNotFound` | Create new company with name, domain, industry |
-| 9a | Company HubSpot ID | formula or extraction | — | Consolidate company ID from Lookup (if found) or Create (if new) |
+| 9 | Send to New Companies | `send_to_table` | lookup `isNotFound` | Route to a companies table (auto-dedupe on domain, keep oldest) whose `hubspot_create_object` creates each company once with name, domain, industry |
+| 9a | Company Lookup Back | `hubspot_lookup_object` | lookup `isNotFound`, `autoRunEnabled: false` | Look up the new company by domain. No run condition waits on another table: run it with `custom_range` on the routed rows once the companies table's create has finished, or schedule it with a run condition on company ID `null` |
+| 9b | Company HubSpot ID | formula | none | Effective ID: first lookup if found, else the lookup back |
 | 10 | Update Contact | `hubspot_update_object` | company ID `notNull` | Update contact with `associateWithObject: true`, `associatedObjectType: "companies"`, `associatedObjectHubspotId` from consolidated company ID |
 | 11 | NEW Email | `waterfall_email_enrichment` | new company `notNull` | Get new email at new company |
 | 12 | Still working | `send_to_table` | match = "Yes" | Route to "still employed" table |
@@ -751,9 +784,9 @@ HubSpot Contact Import
 - **Conditional AI extraction**: Only extract new company details if the person changed jobs (match = "No"). Don't waste credits on people still at the same company.
 - **Three routing destinations**: Each employment status gets its own destination table for different follow-up workflows (re-engage, new company pitch, pause).
 - **Email re-enrichment at new company**: If someone changed jobs, their old email is likely invalid. Run waterfall email enrichment to get their new work email.
-- **Company object creation is mandatory**: Never update a contact's company as flat text. The workflow must create the Company object in HubSpot and associate the contact with it. This preserves HubSpot's relationship graph, reporting, deal pipelines, and ABM features.
+- **Company object creation is mandatory**: Never update a contact's company as flat text. The workflow must create the Company object in HubSpot and associate the contact with it. This preserves HubSpot's relationship graph, reporting, deal pipelines, and ABM features. Create it once from a companies table, never in this contacts table: a HubSpot company create never dedupes, so three contacts at one new company would create three companies.
 - **Domain resolution fallback**: `enrich_contact` may return null for `companyWebsite`. When this happens, an AI agent with web search resolves the domain before the HubSpot company lookup. Gate this step so it only runs when needed.
-- **Consolidated company ID**: The contact update needs a single company HubSpot ID regardless of whether the company was found via lookup or newly created. A formula or extraction field merges both sources.
+- **Consolidated company ID**: The contact update needs a single company HubSpot ID regardless of whether the company was found by the first lookup or created in the companies table. One Effective ID formula merges the first lookup and the lookup back.
 
 ---
 
@@ -807,7 +840,8 @@ Each email AI field uses a detailed system prompt with:
 - **Opener construction**: Reference the prospect's role + company intelligence. Never generic.
 - **Conditional SDR line**: If SDR/BDR lookup found a rep, include "{{rep_name}} on my team already works with companies like yours." If not, omit entirely.
 - **Locale-specific greetings**: French → "Cordialement", Italian → "Cordiali saluti", English → "Best".
-- **3+ complete few-shot examples**: Full input → full output. This is the single most important element for consistent format.
+- **3+ complete few-shot examples**: Full input → full output, taken from real emails the user supplies. Put them in `custom_ai_agent`'s `examples` property (`input-N` / `output-N` pairs, merge tags stripped), not pasted into the prompt. This is the single most important element for consistent format.
+- **Web search off**: With `enableWebSearch: true`, `custom_ai_agent` takes no system prompt and no examples, so every email field runs with web search off and reads research gathered in earlier columns.
 - **Model selection**: use a stronger writing model for nuanced first-touch copy and a faster model for simpler follow-ups.
 
 ### Formula-Assembled Final Email

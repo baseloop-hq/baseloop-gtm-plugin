@@ -57,16 +57,18 @@ Gather evidence without changing anything. Use the selected transport for every 
 
 1. `list_tables` — identify the table mentioned in the problem.
 2. `get_table_schema` — find the failing field. Look for fields whose action matches the problem description.
+   Then call `get_table_schema` with its `fieldId`: only the per-field call returns its `input`, `runConditions` and extraction path.
 3. If unclear which field is failing, `list_rows` with `filters` (e.g. `hasError` operator) to find rows with errors. For large tables, use `list_row_ids` with `hasError` filter to efficiently get just the IDs of failing rows without loading cell data.
-4. For action fields, call `get_connected_platforms` and `list_actions` to verify the provider is connected and the action is current. Inspect `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide`.
+4. For action fields, call `get_connected_platforms` and `list_actions` to verify the provider is connected and the action is current. Inspect `connectionMode`, `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide`. A missing connection is a cause only when `connectionMode` is `required`.
 5. Call `get_action_schema` for the failing action before changing config. Use `resolve_action_options` for dynamic dropdowns, CRM properties, Salesforce API names, campaign IDs, Send to Table array paths, and enum values. Use `get_table_schema` again immediately before writing field references.
 
 ### Step 2: Read the error
 
+If a `runId` is available, read `failureReasons` (why rows failed, most common first) from `get_run_status` or `wait_for_run` before opening rows, with the run-level stats (succeeded, skippedDueToConditions, failed, total). Then take failing rows from `failedRowIds` (`get_run_status` lists at most 10).
+
 1. `get_row_details` (without fieldId) — see all cell values for a failing row. Identify which cells show "error" or unexpected nulls.
 2. `get_row_details` (with fieldId) — read the `errorMessage` and `fullValue` for the failing field. The `fullValue` often contains partial execution data, API responses, or AI reasoning.
 3. Sanitize before reporting: redact emails, phone numbers, names, tokens, API keys, auth headers, raw API bodies, and AI reasoning. Report field names, row counts, error classes, and short sanitized excerpts only.
-3. If a `runId` is available, `get_run_status` — check run-level stats (succeeded, skippedDueToConditions, failed, total) and `failedRowIds`.
 
 ### Step 3: Trace upstream
 
@@ -83,7 +85,7 @@ Compare findings against error-patterns.md:
 - Send to Table 0 rows → sourceArrayPath or condition issue
 - Formula error → renamed fields or syntax
 - AI empty output → upstream nulls, vague prompt
-- HubSpot ignores fields → display names vs internal names
+- CRM or API destination ignores fields → invalid property names (display names vs internal names) or enum mismatches: check each against `resolve_action_options`
 - Run hangs → rate limits, web search, or stuck
 - autoRunCondition blocks → wrong operator or upstream data
 
@@ -120,7 +122,7 @@ Based on the diagnosis:
 
 ### Step 2: Re-run the fixed field
 
-1. `run_field` with `skipCellsWithData: false` and `runAction: "first_one"` — test on a single row.
+1. `run_field` with `runAction: "custom_range"`, `selectedIds` holding one failing row id from Phase 1, and `skipCellsWithData: false`: it retests a row that failed. Not `first_one`, which may re-run a row that never failed and overwrite a good cell with a paid run.
 2. `wait_for_run` to wait for completion.
 
 ### Step 3: Verify the fix
