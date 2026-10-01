@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.10.2...baseloop-gtm-v0.11.0) (2026-10-01)
+
+
+### Features
+
+* update the rules, add a use-case library and column schedules ([#34](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/34)) ([9936006](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/993600622117f472edf8c455479c06d178ec47ad))
+
 ## [0.10.2](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.10.1...baseloop-gtm-v0.10.2) (2026-09-27)
 
 
