@@ -21,14 +21,14 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Fix:**
 1. `get_row_details` on the source action field — inspect the real `fullValue` shape
-2. `update_field` on the failing downstream field, replacing `{{action_field_name}}` with an inline path derived from that data (e.g. `{{action_field_name.results[0].id}}`). Use an extraction field instead (`create_field` with `extractorFieldId` + `extractionPath`, then reference `{{extraction_field_name}}`) when the value should be a visible column, feeds a formula, or has several consumers
+2. `update_field` on the failing downstream field, replacing `{{action_field_name}}` with an inline path derived from that data (e.g. `{{action_field_name.results[0].id}}`). Use an extraction field instead (`create_field` with `extractorFieldId` + `extractionPath`, then reference `{{extraction_field_name}}`) only when the value must be a column: a person reads, sorts or filters it, a run condition gates on it (rules take a `fieldId`, never a path), its key contains spaces, or several fields reuse it
 3. Re-run the downstream field on named rows with `skipCellsWithData: false`: `custom_range` with one affected row ID to check the fix, then the remaining affected row IDs (a range such as `first_ten` is refused with the flag off)
 
 ---
 
-## Cell status "error" with empty or generic errorMessage
+## Cell status "failed" with empty or generic errorMessage
 
-**Seen in:** `get_row_details` returns `status: "error"` with null or unhelpful errorMessage.
+**Seen in:** `get_row_details` returns `status: "failed"` with null or unhelpful errorMessage.
 
 **Root causes:**
 1. Invalid action configuration (wrong property names, missing required fields)
@@ -37,7 +37,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 **Diagnosis:**
 1. `get_row_details` with fieldId -- check `fullValue` for partial execution data
-2. `get_table_schema` -- compare field config against `get_action_schema` output
+2. `get_table_schema` with the field's `fieldId` -- compare field config against `get_action_schema` output
 3. Check upstream fields: is every `{{field_name}}` reference populated for this row?
 
 **Fix:**
@@ -53,33 +53,36 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Root cause:** Every row hit the same error. Almost always a configuration problem, not a data problem.
 
 **Diagnosis:**
-1. `get_row_details` on a `failedRowIds` entry with the field's fieldId -- read errorMessage
-2. Common error messages:
+1. Read `failureReasons` in `get_run_status` or `wait_for_run` first (why rows failed, most common first), before opening rows or re-running. A re-run before that fails the same way and overwrites the cell that held the message.
+2. `get_row_details` on a `failedRowIds` entry with the field's fieldId -- read errorMessage
+3. Common error messages:
    - "Property X is required" -- missing input field in field config
    - "Invalid value for X" -- wrong format (display name instead of internal name)
+   - "... was not one of the allowed options" -- a HubSpot enum property received a label or free text instead of one of its options
    - "Rate limited" -- external API throttling
    - "Authentication failed" -- platform connection expired
 
 **Fix:**
 - Config error: `update_field` with corrected config, then `run_field` with `runAction: "custom_range"`, `selectedIds` set to the `failedRowIds` from `get_run_status` and `skipCellsWithData: false` (allowed on named rows, so the retry runs even when a failed row kept its old value); check a single failed row first (one ID in `selectedIds`)
-- Rate limit: wait 60 seconds, re-run with `runAction: "first_one"`
-- Auth failure: tell user to reconnect the platform in Baseloop Settings > Integrations
+- HubSpot enum error: get the property's allowed values with `resolve_action_options`, then `update_field` so the mapping sends one of them (through a formula or AI step when the source value is free text), or drop the property from the mapping
+- Rate limit: wait at least 60 seconds, then `run_field` with `runAction: "custom_range"`, `selectedIds` set to the `failedRowIds` and `skipCellsWithData: false`. `failedRowIds` lists at most 10; for more, with the user's approval, take the failed rows from `list_rows` with the field's `hasError` filter and retry them in batches of up to 100
+- Auth failure: tell user to reconnect the platform on the Integrations page (its own sidebar item, /integrations)
 
 ---
 
 ## Send to Table creates 0 rows in destination
 
-**Seen in:** `list_rows` on destination table returns 0 rows after Send to Table field ran successfully on source table.
+**Seen in:** `list_rows` on destination table returns 0 rows after the Send to Table field ran on the source table (it may show success, "No items to send", or a failed row).
 
 **Root causes (in order of likelihood):**
 1. autoRunCondition on the Send to Table field is not met for any source row
-2. `send_for_each_item` mode with wrong `sourceArrayPath` -- array is empty or path doesn't match
+2. `send_for_each_item` mode: an empty array succeeds and shows "No items to send", while a wrong `sourceArrayPath` fails the row with "No array found at ..."
 3. Destination table ID in config doesn't match the actual table (e.g., table was recreated)
 4. Field mappings reference fields that don't exist in source table
 
 **Diagnosis:**
 1. `get_row_details` on a source row with the Send to Table field's fieldId -- check `value` and `fullValue`
-2. If value is null: check autoRunCondition in `get_table_schema` -- is the gating field populated?
+2. If value is null: check the autoRunCondition in `get_table_schema` with the field's `fieldId` -- is the gating field populated?
 3. If mode is `send_for_each_item`: inspect the source field's `fullValue` to see the actual array, verify `sourceArrayPath` matches the array structure
 4. Verify destination table ID with `list_tables`
 
@@ -126,7 +129,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 **Diagnosis:**
 1. `get_row_details` with fieldId -- check `fullValue` for AI reasoning, confidence, sources
 2. Check all input fields referenced in the prompt: are they populated?
-3. Review prompt in `get_table_schema` -- is it specific enough? Does it have examples?
+3. Review prompt in `get_table_schema` with the field's `fieldId` -- is it specific enough? Does it have examples?
 4. Check output format configuration: `outputFormat`, `outputFields`
 
 **Fix:**
@@ -160,9 +163,11 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 
 ---
 
-## Run hangs (in_progress for >5 minutes on small batch)
+## Run hangs (processing for >5 minutes on small batch)
 
-**Seen in:** `get_run_status` shows `status: "in_progress"` for extended time with no progress change.
+**Seen in:** `get_run_status` shows `status: "processing"` for extended time with no progress change.
+
+**Source imports are the exception:** an import runs 10 to 30+ minutes, `processing` with 0 rows is normal, and a `wait_for_run` timeout is not a failure. Never cancel one as frozen or re-run it: poll `get_run_status` and report its status, elapsed time (since `createdAt`) and rows so far (`tableRowCount`).
 
 **Root causes:**
 1. External API is slow or rate-limited
@@ -170,7 +175,7 @@ Error signatures observed in Baseloop workflow runs, mapped to root causes and f
 3. Run is stuck (infrastructure issue)
 
 **Diagnosis:**
-1. Poll `get_run_status` 2-3 times, 30 seconds apart -- is `progress.completed` increasing?
+1. Poll `get_run_status` 2-3 times, 30 seconds apart -- is `progress.percent` increasing?
 2. If progress is moving slowly: normal for web search AI or enrichment with rate limits
 3. If progress is frozen for 3+ polls: likely stuck
 
@@ -184,7 +189,19 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 
 **Fix:**
 - Slow but progressing: wait. Web search AI fields can take 30-60 seconds per row.
-- Frozen: cancel with `cancel_run`, then re-run with `run_field`
+- Frozen (never a source import): cancel with `cancel_run`, then re-run with `run_field`
+
+---
+
+## `run_field` returns `RUN_IN_PROGRESS` (409)
+
+**Seen in:** `run_field` on a source import field returns `code: "RUN_IN_PROGRESS"`, `statusCode: 409` and a `runId`.
+
+**Root cause:** An import on this field is still running. Baseloop refuses a second one so the import cannot be paid for twice.
+
+**Fix:**
+- Follow the `runId` the error carries with `get_run_status` or `wait_for_run`. Do not call `run_field` on the field again.
+- Start a new run only after that run ends `failed` or `canceled`.
 
 ---
 
@@ -198,14 +215,14 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 3. Condition uses `isNotFound` but lookup returned an error instead of "not found"
 
 **Diagnosis:**
-1. `get_table_schema` -- read the autoRunCondition for the field
+1. `get_table_schema` with the field's `fieldId` -- read the autoRunCondition for the field
 2. `get_row_details` on a row where the field did NOT run -- check the gating field's exact value
 3. Compare the actual value against the condition operator:
    - `notNull`: passes if value is any non-null string (including "Not Found", "Error")
-   - `isNull`: passes only if value is null/empty
+   - `null`: passes only if value is null/empty
    - `isNotFound`: passes only if lookup returned "not found" status
    - `isFound`: passes only if lookup returned a match
-   - `equals`: exact string match
+   - `=`: exact string match
 
 **Fix:**
 - Wrong condition: `update_field` with corrected autoRunCondition
@@ -221,17 +238,17 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 **Root causes:**
 1. Using AND when OR is needed: e.g., `Country = "USA" AND Country = "Canada"` — impossible, no row matches both
 2. Using OR when AND is needed: e.g., `Status = "Active" OR ICP Score > 80` — too permissive
-3. Multiple autoRunCondition objects are always AND'd together. For OR logic, put rules in a **single** condition with `combinator: "or"`.
+3. An update sent only the new rule: a field has exactly one `autoRunCondition`, and `update_field` replaces it whole, so the rules it left out are gone. Groups nest one level deep.
 4. Wrong operator name: using a display label instead of the operator name. See full operator reference in [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions).
 
 **Diagnosis:**
-1. `get_table_schema` — read the `autoRunCondition`. Check `combinator` value at each level.
-2. Count how many condition objects exist. If >1, they're AND'd regardless of internal combinator.
+1. `get_table_schema` with the field's `fieldId`: read the `autoRunCondition`. Check `combinator` value at each level.
+2. Check that every rule the field needs is in that one condition: a rule an earlier update set is gone if a later update left it out.
 3. `get_row_details` on an incorrectly skipped/included row — check gating field values against condition rules.
 
 **Fix:**
 - Wrong combinator: `update_field` — flip "and" to "or" or vice versa
-- Multiple conditions that should be OR'd: merge into a single condition with `combinator: "or"`
+- Missing rules: read the current condition (`get_table_schema` with `fieldId`) and send every existing rule back plus the new one in one `update_field`; for OR logic set `combinator: "or"` or nest one `or` group
 - Wrong operator: replace with valid operator name (see [pitfalls.md](./pitfalls.md#available-operators-for-filters-and-autorunconditions))
 - Re-run after fixing with `custom_range`, the affected row IDs and `skipCellsWithData: false` (allowed on named rows)
 
@@ -249,10 +266,9 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 3. The path will be wrong (e.g., `id` when the actual structure is `results[0].id`, or `email` when it's `data.email`)
 
 **Fix:**
-1. Delete the wrong extraction field
-2. Create a new one with `extractionPath` matching the actual `fullValue` structure
-3. Update any downstream fields referencing the old extraction field name (it will have a new auto-generated name)
-4. Re-run: the new extraction field is empty, so the default `skipCellsWithData` fills it; downstream fields that hold wrong values re-run via `custom_range` with the affected row IDs and `skipCellsWithData: false`
+1. `update_field` on the same extraction field with an `extractionPath` matching the actual `fullValue` structure. The field id, name and every reference survive, and existing rows re-extract in the same call (above 10,000 rows, the first 10,000 now and the rest in the background); the result reports `matchedRows`, `sample` and `availablePaths`. Never delete and recreate the column, and never re-run the source to fill it.
+2. `list_rows` on a few rows to confirm the column now holds the right values.
+3. Downstream fields that hold wrong values: state how many rows will be charged again, then re-run them with `custom_range`, the affected row IDs and `skipCellsWithData: false`.
 
 **Prevention:** Always run the action on 1 row and inspect `fullValue` before creating extraction fields. This applies to ALL action types — HubSpot, HTTP requests, AI agents, enrichment, email finders, lookups.
 
@@ -260,19 +276,23 @@ Use the action's current `get_action_schema` guide and observed Rung 1/Rung 2 ru
 
 ## Enrichment returns partial or no data
 
-**Seen in:** `enrich_company` or `enrich_contact` runs successfully but key fields (email, phone, LinkedIn URL) are null.
+**Seen in:** `enrich_company` or `enrich_contact` runs successfully but key fields are null, or rows fail.
+
+`enrich_contact` takes only a LinkedIn profile URL and `enrich_company` only a LinkedIn company URL, and neither returns an email or phone. Emails come from `waterfall_email_enrichment`, phones from `waterfall_phone_enrichment`. A row without a URL fails with "LinkedIn URL is required"; a URL of the wrong kind fails with "Invalid LinkedIn URL. Expected format: ...".
 
 **Root causes:**
-1. Input data is insufficient (no LinkedIn URL, no domain, misspelled name)
+1. Input data is insufficient (no LinkedIn URL, or a company URL given to `enrich_contact` / a profile URL given to `enrich_company`)
 2. The person/company has limited public profile data
 3. Enrichment provider rate limit or temporary outage
+4. The workflow expects an email or phone from these actions
 
 **Diagnosis:**
-1. `get_row_details` with fieldId -- check which fields were returned vs null
-2. Check input: does the row have a valid LinkedIn URL or domain?
+1. `get_row_details` with fieldId -- check which fields were returned vs null, or read the errorMessage
+2. Check input: does the row have a valid LinkedIn URL of the right kind?
 3. Try a different row -- if it works, the issue is data quality on the failing row
 
 **Fix:**
-- Bad input: add an upstream AI agent or formula to find/validate the LinkedIn URL or domain before enrichment
+- Bad input: add an upstream step to find or validate the LinkedIn URL before enrichment
+- Email or phone needed: add `waterfall_email_enrichment` or `waterfall_phone_enrichment`
 - Provider issue: wait and re-run
 - Sparse data: this is expected for some profiles -- no fix needed, just gate downstream fields on the specific field they need

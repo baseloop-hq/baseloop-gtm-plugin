@@ -51,7 +51,7 @@ Before designing anything, read [transport.md](./references/transport.md) and [p
 
 1. **`list_tables`** — See what tables already exist. The user may have existing data to build on.
 2. **`get_connected_platforms`** — See which integrations are connected (HubSpot, Salesforce, Slack, LinkedIn, etc.).
-3. **`list_actions`** — Load the current backend action list and inspect `provider`, `creationMethod`, `requiresConnection`, `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide`.
+3. **`list_actions`**: Load the current backend action list and inspect `provider`, `creationMethod`, `connectionMode`, `connectionStatus`, `creditCostHint`, `isBeta`, `deprecationNotice`, and `hasDetailedGuide`.
 
 If relevant tables already exist, also call `get_table_schema` on each to understand current fields, data types, and what's already been built.
 
@@ -60,6 +60,8 @@ If the user mentions specific actions or integrations, call `get_action_schema` 
 ## Phase 2: Design the Architecture
 
 Based on the goal and available tools, design the workflow:
+
+**Start from the use-case library.** Read [use-cases.md](./references/use-cases.md). It routes the goal to one recipe in this skill's references (signals, prospecting, TAM sourcing, outbound, ABM, inbound enrichment, CRM enrichment, CRM cleanup, deal reactivation, a CRM audit), each with the questions to ask, the depth levels, and the tables and gates each one needs. The recipes cite the shared rules in [gtme-rules.md](./references/gtme-rules.md) and [gtme-rules-crm-and-delivery.md](./references/gtme-rules-crm-and-delivery.md). Read only the recipe the goal needs. The build skill cannot read these files, so carry every specific the build needs into the plan: tables, columns, action keys, gates, dedupe keys and run order.
 
 Use runtime metadata to choose actions: prefer connected providers and non-deprecated stable actions. Treat `creditCostHint` as context for the cost/value tradeoff, not as the deciding factor. If the best action requires a missing connection, call it out as a setup prerequisite instead of silently swapping in a weaker workflow.
 
@@ -70,17 +72,20 @@ When it would help the user choose between materially different cost-quality pat
 - **Recommended** — best outcome per credit; include the steps that materially improve the workflow.
 - **High confidence** — extra enrichment, fallback research, QA, or validation for higher coverage and lower operational risk.
 
+**Per-row answers are columns.** "Find X for each row" and "score this list" are action columns, tested on 1, then 10, then all rows. Never research values with your own tools and write them with `update_row`. Answer directly only when the user asks for an answer rather than a build, then offer the column once.
+
 ### 1. Identify entity types
 What data entities are involved? Companies, contacts, deals? Each gets its own table.
 
 ### 2. Map the data flow
 For each table, define the field chain in order:
-- **Source**: Where does data come from? (LinkedIn import, HubSpot list, webhook, manual)
+- **Source**: Where does data come from? (LinkedIn import, HubSpot list, webhook, manual). A source attaches only at `create_table`; a table created without one never gains one. Name the source of every table the plan creates; if the user has not said, ask before presenting the plan. Never plan a table whose rows "will be imported later". In HubSpot, "leads" means contacts unless the user names the Leads object: name the object in the plan. CRM records come in through a source import with a filter and a record limit, never typed in with `create_rows`, which is for data the user hands over.
 - **Enrichment**: What data needs to be added? (enrich_company, enrich_contact, email/phone enrichment)
+- **Research**: `parallel_research` for open-ended, cited research; `custom_ai_agent` to judge evidence the row already has. Two jobs, two columns. See "Research Columns: Gather, Then Judge" in [workflow-patterns.md](./references/workflow-patterns.md).
 - **People finding**: If the workflow needs to find contacts at companies, choose the right method based on target audience:
   - **LinkedIn-heavy** (tech, enterprise, B2B): `li_find_people_at_company` only
   - **Non-LinkedIn** (small businesses, non-tech, low-LinkedIn regions): `custom_ai_agent` with web search + JSON Schema only
-  - **Mixed/uncertain**: both, with AI web search gated on LinkedIn `isNotFound`
+  - **Mixed/uncertain**: both, with AI web search gated on Find People `isNotFound` OR `hasError` (a provider error never sets not found), its array routed with `send_for_each_item` into the Find People destination table
   - See [workflow-patterns.md](./references/workflow-patterns.md) "People-Finding Strategy" for details. **Do not build both unless the audience warrants it.**
   - If target audience, region, or buyer channel is unclear, ask before choosing LinkedIn, AI web search, or both.
 - **Qualification**: What filtering/scoring is needed? (formula, `custom_ai_agent`, or another current AI/web-research action from `list_actions`). Use formulas only for compact deterministic logic; use `custom_ai_agent` for semantic or high-cardinality classification such as deciding whether a mixed location value is a country or a city.
@@ -97,13 +102,22 @@ Which fields gate on which upstream results? Apply outcome-preserving gates:
 Any CRM sync MUST follow the lookup-before-create pattern. Verify that:
 - Lookup fields exist before create fields
 - Create fields are gated on lookup returning `isNotFound`
+- Update fields are gated on the same lookup's `isFound`, and the create carries every property the update writes. Never gate the update on an id existing (the create's output, an Effective ID `notNull`): it writes each new record twice. A later update is its own field only for values produced after the create (a score, a reply), gated on that value.
 - Parent record IDs are passed through (e.g., company HubSpot ID to contacts)
-- **Company association rule:** If the workflow pushes contacts to HubSpot after a job change or company enrichment, the plan MUST include company lookup-before-create and contact-company association. Never update a contact's company as a flat text field without also creating/linking the Company object. This means: resolve company domain → lookup company in HubSpot → create if not found → update contact with `associateWithObject: true` pointing to the company's HubSpot ID.
+- **Company association rule:** If the workflow pushes contacts to HubSpot after a job change or company enrichment, the plan MUST include company lookup-before-create and contact-company association. Never update a contact's company as a flat text field without also creating/linking the Company object. This means: resolve company domain → lookup company in HubSpot → create if not found (on the companies table, see below) → update contact with `associateWithObject: true` pointing to the company's HubSpot ID.
+- **Companies come from a companies table.** A HubSpot company create never dedupes. Plan it once, on a companies table with auto-dedupe on domain, never on a contacts table, where three contacts at one company create three companies. Then look the company id back up and associate. Keep one create, one update and one note per record: merge several lookup paths into one Effective ID formula first.
 - For CRM updates, CRM activity creation, outreach syncs, and feedback POSTs, plan an explicit resolved target record ID, resolved property/enum options via `resolve_action_options`, and user approval before overwriting owner, lifecycle stage, email, domain, association, or similarly identity/routing-critical fields.
+
+### 5. Plan recurring refresh
+When data must stay fresh, use native schedules (on the import field and on action fields) before any outside scheduler. Follow "Schedule chains" in [workflow-patterns.md](./references/workflow-patterns.md): schedule only the columns that must be fresh every cycle, the rest follow through `autoUpdateDependents`. Switch `autoRunOnNewRow` on for a scheduled import's table so its new rows move on. State the rows per fire (the rows its run condition admits; `table.rowCount` is the ceiling), and what else the `autoUpdateDependents` switch would re-run on that table: if it already runs other action columns, offer a separate monitor table.
 
 ## Phase 3: Present the Plan
 
 Output the workflow architecture in this format:
+
+### Workspace
+
+A new workflow gets a new workspace named after it. Use an existing one only when the user named it or the new tables read from or feed tables there.
 
 ### Tables
 
@@ -133,6 +147,9 @@ Flag any concerns: missing integrations, data quality requirements, rate limits,
 Standard risk items to check:
 - **Company domain availability:** If the workflow enriches contacts and the enrichment may return null for `companyWebsite`, the plan must include a gated AI domain resolution step (custom_ai_agent with web search) before HubSpot company lookup. Flag this as a variable-cost step in the estimate.
 - **Oversized classification formulas:** If a proposed formula would embed a long list of countries, cities, industries, titles, or synonyms, replace it with a tightly gated `custom_ai_agent` classification step and reserve formulas for downstream deterministic gates.
+- **Duplicate producers:** check what the upstream action already returns before adding a producer. Find People rows carry the LinkedIn URL, headline, role and company; Sales Navigator import rows already carry profile and company columns. Add a second producer only as a fallback gated on the first finding nothing (`isNotFound`, or `hasError` for a provider error).
+- **Plan-gated actions:** read `canAccess` and `minimumPlan` for each planned action from `list_actions` (webhook sources: `sourceCapabilities.webhook`; schedules: `scheduleAccess`). Do not plan a step whose `canAccess` is false; name the plan it needs.
+- **Inputs the plan cannot invent:** a persona inferred from a website is a hypothesis to confirm. Outbound copy needs a campaign brief with real examples. A Sales Navigator import needs a real search URL: ask the user for an existing one (these tools cannot build one), and never compose one. Never plan a runnable CRM, outreach, notification or HTTP field with a placeholder id (`PENDING_*`, `TODO`, `TBD`, a sample id): resolve the real value, leave `autoRunEnabled: false`, or ask.
 
 ### Testing Strategy
 
@@ -143,6 +160,10 @@ Define how the workflow will be validated before running on the full dataset:
 3. **Test cost** — estimated credits for Rung 1 (1 row × full chain) + Rung 2 (10 rows × full chain).
 4. **Full-scale cost** — estimated credits for all rows. This number will be reported to the user before Rung 3.
 5. **Rung 3 batch strategy** — for tables with >100 rows, plan to use `list_row_ids` (with `hasNotRun` filter) to paginate row IDs, then batch through `run_fields` with `rowIds` (100 rows per batch).
+
+### Run Intent
+
+State what the build creates (tables, fields, CRM records, campaign adds), what it re-runs, and which existing cells or CRM fields it overwrites. For each key output, name its source and whether it can arrive empty.
 
 ## Phase 4: Confirm and Handoff
 

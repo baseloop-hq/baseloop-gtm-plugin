@@ -27,7 +27,7 @@ Treat `creditCostHint` as a planning hint, not a billable guarantee. If the acti
 
 Most workflow costs fall into a few shapes:
 
-- **Per input row:** one action run per source row.
+- **Per input row:** one action run per source row. A scheduled field pays again on every fire: each fire reserves credits for every row its run condition admits, filled cells included.
 - **Per returned result:** people-finding or enrichment fan-out where cost scales with contacts or records found.
 - **Per model/search workload:** AI and research actions where prompt length, web search, model choice, and output size affect consumption.
 - **External account cost:** actions that are free in Baseloop but may consume quota or budget in a connected provider.
@@ -65,4 +65,4 @@ Avoid static action credit lists in the plugin. If a user needs current costs, r
 5. Avoid redundant web search. Enable it when the task requires current web evidence, missing data recovery, or confidence that deterministic sources cannot provide.
 6. Do company-level intelligence once, then propagate it to contact tables with `lookup_single_record`.
 7. Never re-run upstream AI fields just to fix downstream configuration. Re-run only the field whose configuration changed.
-8. Use `skipCellsWithData: true` when preserving existing good outputs, and explicitly set `skipCellsWithData: false` only when replacing known bad data. Name the rows when you do: `first_one` or `custom_range` (`rowIds` for `run_fields`); a range re-run with the flag off is refused.
+8. Use `skipCellsWithData: true` when preserving existing good outputs. Re-running completed rows charges them again: after a config change, re-run only the test row with `skipCellsWithData: false`, and re-run completed rows only when the user asks, after stating how many rows will be charged again. Name the rows when you do: `first_one` or `custom_range` (`rowIds` for `run_fields`); a range re-run with the flag off is refused.
