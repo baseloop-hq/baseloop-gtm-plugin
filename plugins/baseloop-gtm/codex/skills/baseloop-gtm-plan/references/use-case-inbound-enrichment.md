@@ -111,7 +111,7 @@ The lead is already in the CRM; the job is to make the record useful and route i
 | Phone eligible | formula on fit, size, seniority, persona | | free | the yes or no a person can read before the expensive step |
 | Result | formula | | free | adds ICP, Not ICP, Unclear |
 
-**Depth 3, write and route and alert.**
+**Depth 3, write and route and alert.** The owner, the task and the alert are proposed from the rules: run them on a small slice first.
 
 | Field | Action | Gate | Cost | Purpose |
 |---|---|---|---|---|
@@ -152,7 +152,7 @@ The parts worth copying: the gather-then-judge split with a helper between; the 
 
 ### 5.3 A referral from a partner
 
-A partner sends a list of their clients with the partner's own client id. The job is to match each referral to a company the CRM already holds, or say honestly that it does not.
+A partner sends a list of their clients with the partner's own client id. The job is to match each referral to a company the CRM already holds, or say honestly that it does not. Proposed from the rules: run it on a small slice first.
 
 | Field | Action | Gate | Cost | Purpose |
 |---|---|---|---|---|

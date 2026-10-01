@@ -144,7 +144,7 @@ The full run of the update waits for the data review in section 5.
 | Verify association | `hubspot_lookup_object` on contacts, the record id plus the search API's association filter on the new company id, where the portal accepts that filter | association write completed | free | no action reads a record's associations back; where the filter is refused the word is Association unverified and the owner checks in the CRM |
 | Result | formula | | free | New employer written, Company created, No domain, Email conflict, Identity review, Association repair needed, Pending |
 
-Old-link removal is the owner's step in the CRM: establish and verify the new link, and never call the move complete until a read confirms it. Newer design: run the recovery sequence on a small slice first.
+Old-link removal is the owner's step in the CRM: establish and verify the new link, and never call the move complete until a read confirms it. The recovery sequence is proposed from the rules: run it on a small slice first.
 
 **Depth 4, the person for the rep.** A leaver is a hole at the old account and a warm contact at a new one, and those belong to two different people. A `hubspot_create_engagement` task on the old account's owner says the relationship there is gone and who else is on the account; a task on the new account's owner, or the unowned queue, carries the person, the new company and the history. Both gated on a surviving finding and on an Already logged key read through `hubspot_get_engagements`, so a re-run writes nothing twice.
 
@@ -242,7 +242,7 @@ The providers run cheapest first, each gated on the one before leaving a gap, an
 
 Offers on connected tools: a Slack line per repaired record, gated on the number write and never on the clear; the whole ladder at zero Baseloop credits on an own key; a task on the owner for a record that came out empty, gated on the nothing-found stamp.
 
-The blocklist does real work for free: a stored primary number is often one a rep already rejected. What breaks is at the end: a write from a stale candidate list blanks numbers people typed, and a Slack line gated on the clear announces syncs that did not happen.
+The blocklist does real work for free: a stored primary number is often one a rep already rejected. What breaks is at the end: a write from a stale candidate list blanks numbers people typed, and a Slack line gated on the clear announces syncs that did not happen. Check on a test row that the nothing-found stamp is actually written.
 
 ### 2.5 Value audit against a public constraint
 
@@ -316,7 +316,7 @@ A failed cell reads as empty in a formula, so the dead-domain word tests for a 2
 
 ### 2.8 Clean on the way into a new CRM
 
-Cleaning is cheapest before the move, because everything wrong today is copied into the new system and becomes permanent there. This recipe runs the other recipes first, moves only what passed, and keeps the map between the old ids and the new ones; its write lands in the new CRM. Newer design: run the destination half on a small slice first, with Salesforce, Pipedrive and Attio each carrying a native import, lookup, create and update.
+Cleaning is cheapest before the move, because everything wrong today is copied into the new system and becomes permanent there. This recipe runs the other recipes first, moves only what passed, and keeps the map between the old ids and the new ones; its write lands in the new CRM. The destination half is proposed from the rules: run it on a small slice first, with Salesforce, Pipedrive and Attio each carrying a native import, lookup, create and update.
 
 Entry point: the old CRM, object by object, companies before contacts before deals, because each one needs the ids the one before it created.
 

@@ -197,7 +197,7 @@ What changes against 4.2, and why: the row carries the event, and the event writ
 
 Where the signal lands on the account and the campaign runs on people, the join back is a lookup on the account key and a column, because the version people build instead is a person copying the signal across by hand.
 
-A note per person needs a key that stops a second one, and every destination takes the same gates. The merged email carries a validity test, because a provider's error sentence can land in the email column and reach the CRM as the email. The lookup back to a job posting keys on the posting, never on the company page, or a company with several open roles gets one of them at random attached to every person.
+A note per person needs a key that stops a second one, and every destination takes the same send gates. The merged email carries a validity test, because a provider's error sentence can land in the email column and reach the CRM as the email. The lookup back to a job posting keys on the posting, never on the company page, or a company with several open roles gets one of them at random attached to every person.
 
 ### 4.4 Cold, from a list of people
 

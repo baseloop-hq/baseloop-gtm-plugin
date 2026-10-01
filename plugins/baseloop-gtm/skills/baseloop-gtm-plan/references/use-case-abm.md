@@ -82,7 +82,7 @@ Cost below is shape only. Read the figure from `creditCostHint` in `list_actions
 
 ### 6.1 Existing contacts at the accounts
 
-The rows arrive with a record id, so there is no identity step; the CRM record is re-read live because the import's copy is a snapshot; the position check comes before any paid lookup, because a mobile for someone who left is the most expensive credit in the catalogue spent on nothing; and the write is an update, not a create, on almost every row. Taking the request adds two questions: how stale the contacts on these accounts are, which decides whether the position check is base or an offer, and what the team does with a leaver, which is a different sales conversation and never a silent skip.
+The rows arrive with a record id, so there is no identity step; the CRM record is re-read live because the import's copy is a snapshot; the position check comes before any paid lookup, because a mobile for someone who left is the most expensive credit in the catalogue spent on nothing; and the write is an update, not a create, on almost every row. Taking the request adds two questions: how stale the contacts on these accounts are, which decides whether the position check is base or an offer, and what the team does with a leaver, which is a different sales conversation and never a silent skip. Proposed from the rules: run it on a small slice first.
 
 **Depth 1, complete the committee.** The roles are also a tag written onto the contacts the CRM already holds, not only seats to search for: tag champions, influencers and economic buyers on the existing contacts so reps filter on the role in the CRM, and read the tag on a re-run to know which seat is empty. On the accounts table, the rows both streams share and this stream's own:
 
@@ -130,7 +130,7 @@ A refused email is a duplicate found, not an error. When the create meets an ema
 
 **Depth 3, the mobiles.** Prospecting chain A depth 3, cited, with two things specific to a campaign: the gate carries Campaign open AND Selected, so only the seats that get called are paid for, and only after a verified email; and the write goes to the mobile property (`mobilephone` on a standard portal; confirm with `resolve_action_options`), never the phone property. `waterfall_phone_enrichment` needs first name, last name and company name (the LinkedIn URL is optional and finds the most). Mobile already known is read by content: a switchboard number, a do-not-call placeholder and a formatted blank are none of them a mobile.
 
-**Depth 4, the committee view.** Back on the accounts table, after the people table has run. This is the word the account owner reads, and the only place that can answer which accounts are covered. Read the existing role counts from the CRM where it owns them, and show the selected candidates by role and department alongside. Count distinct people and keep candidate, selected and written counts separate: selecting an influencer does not fill a missing economic-buyer seat.
+**Depth 4, the committee view.** Back on the accounts table, after the people table has run. This is the word the account owner reads, and the only place that can answer which accounts are covered. Read the existing role counts from the CRM where it owns them, and show the selected candidates by role and department alongside. Count distinct people and keep candidate, selected and written counts separate: selecting an influencer does not fill a missing economic-buyer seat. The complete coverage write-back and the recurring refill are proposed from the rules: run them on a small slice first.
 
 | Field | Action | Gate | Cost | Purpose |
 |---|---|---|---|---|
@@ -162,7 +162,7 @@ Prospecting recipe 9.5 is the seed: the same accounts-plus-people shape, one rep
 
 On the people table, 6.2 rows take 6.1's chain with one row of their own: **Employer check**, a formula normalising both company names with the legal suffixes stripped, and `custom_ai_agent` only on a mismatch. Mismatch blocks the write; it does not silence the row. A seat can also be gated on another seat having found nobody, where one role stands in for another at a smaller company. A failed or unfinished buyer search is Search pending, not proof of weak coverage. A cap of three returns fewer than three per account where LinkedIn finds anybody, which is the number to cost with.
 
-Remove a superseded set of find-people fields rather than leave it on the table beside the live set, both pointed at the same destination, and gate a second people source on the first, or both are paid for on the same accounts.
+Never leave a superseded set of find-people fields beside the live set when both point at the same destination: remove it. Gate a second people source on the first, or both are paid for on the same accounts.
 
 ### 6.3 The audience for a channel play
 
