@@ -1,5 +1,6 @@
 {
   "name": "baseloop-gtm",
+  "displayName": "Baseloop GTM",
   "version": "0.11.0",
   "description": "GTM workflow engineering for Baseloop. 5 skills, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
   "author": {
@@ -9,6 +10,9 @@
   "homepage": "https://baseloop.io",
   "repository": "https://github.com/baseloop-hq/baseloop-gtm-plugin",
   "privacyPolicyUrl": "https://baseloop.io/privacy-policy",
+  "termsOfServiceUrl": "https://baseloop.io/terms-of-service",
+  "documentationUrl": "https://docs.baseloop.io",
+  "supportUrl": "https://help.baseloop.io",
   "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "gtm",
