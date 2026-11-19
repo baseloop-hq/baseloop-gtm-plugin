@@ -17,6 +17,13 @@ Codex installs from the sibling `plugins/baseloop-gtm-codex/`, not this director
 - `skills/baseloop-gtm-review/SKILL.md` — Proactive workflow audit (prompt-enforced read-only)
 - `skills/baseloop-gtm-diagnose/SKILL.md` — 3-phase debugging (investigate → diagnose → fix)
 
+### Manifests
+- `.claude-plugin/plugin.json`: Claude Code plugin manifest with `mcpServers.baseloop`. Listing fields for the Claude plugin directory (`displayName`, links, keywords, icon) live here.
+- `../baseloop-gtm-codex/.codex-plugin/plugin.json`: Codex plugin manifest with the `interface` block for native install.
+- `../baseloop-gtm-codex/.mcp.json`: Codex MCP server config referenced by the Codex manifest.
+
+`README.md` in this directory is shown to users in the Claude plugin directory listing. Keep it written for someone installing the plugin; contributor notes belong in this file.
+
 Shared reference content (`pitfalls.md`, `error-patterns.md`, `workflow-patterns.md`) is duplicated per consuming skill via a sync mechanism — see `docs/reference-sources/README.md` at the repo root.
 
 ## Runtime vs Authoring Context
