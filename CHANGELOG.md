@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.11.1...cli-v0.11.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* set the listing name, description, links and keywords ([#38](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/38)) ([f6be1ee](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/f6be1eea1da17039059eb276270f4d080df10aef))
+
 ## [0.11.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.11.0...cli-v0.11.1) (2026-11-19)
 
 
