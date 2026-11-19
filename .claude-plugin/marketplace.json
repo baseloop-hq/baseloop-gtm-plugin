@@ -27,7 +27,7 @@
         "sales-prospecting",
         "gtm",
         "crm",
-        "hubspot",
+        "outbound",
         "baseloop"
       ],
       "source": "./plugins/baseloop-gtm"
