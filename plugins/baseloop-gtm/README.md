@@ -48,6 +48,14 @@ Start with `/baseloop-gtm` and say what you want to build.
 
 Enrichment and other paid steps spend your workspace's Baseloop credits. The skills test on 1 row and then 10 before anything larger, and a full run starts only after you approve it with the row count and a credit estimate in front of you. Deleting existing data always asks first.
 
+## What it runs, sends and stores
+
+- **Connects to Baseloop.** The plugin declares one remote MCP server, `https://api-v2.baseloop.io/v1/mcp`. You sign in with your Baseloop account; the plugin ships no keys and stores none.
+- **Runs the Baseloop CLI if you have it.** The plugin bundles no scripts, hooks or binaries. If you installed the `baseloop` CLI yourself, the skills run its commands (`baseloop doctor`, `baseloop tools ...`) in place of the MCP server. The CLI talks to the same Baseloop API. Without the CLI, everything goes through the MCP server.
+- **Sends data only to Baseloop.** The skills call no other service. Baseloop then passes data to the enrichment providers, CRMs and sequencers you connected, for the steps you asked for.
+- **Handles personal data.** Workflows read and store names, work emails, phone numbers and CRM records in your Baseloop workspace. Tables, columns and rows your agent creates stay there until you delete them or close the account. Baseloop does not receive your conversation, only the tool calls your agent makes.
+- **Writes one local file, only on request.** If you ask the agent to save a workflow learning, it writes a Markdown note under `docs/solutions/` in your current project.
+
 ## More
 
 The same skills install in Codex and Gemini CLI: see the [repository README](https://github.com/baseloop-hq/baseloop-gtm-plugin#readme).
