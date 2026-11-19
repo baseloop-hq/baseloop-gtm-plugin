@@ -73,14 +73,14 @@
               "expected_behavior": "States the workspace it will write to, creates the Review Test table with exactly 3 rows and an enrichment column, runs that column on 1 row first and checks the result, then runs the remaining rows. Reports industry, employee count and HQ country for each company, any gaps, and the credits used (a few credits for 3 rows)."
             },
             {
-              "description": "Add a filtered view to an existing table. A free, additive change.",
-              "prompt": "In the Review Test table, create a view called Large companies that shows only companies with more than 1,000 employees.",
+              "description": "Add a filtered view to an existing table. A free, additive change. Uses the Sample Companies table that is already in the reviewer workspace.",
+              "prompt": "In the Sample Companies table, create a view called Large companies that shows only companies with more than 1,000 employees.",
               "tools_triggered": "list_tables, get_table_schema, create_view, set_view_filters, list_rows",
-              "expected_behavior": "Finds the Review Test table and its employee count column, creates the Large companies view with a filter on that column, and reports which rows match. Changes no row data and spends no credits."
+              "expected_behavior": "Finds the Sample Companies table and its employee count column, creates the Large companies view with a filter on that column, and reports which rows match. Changes no row data and spends no credits."
             },
             {
-              "description": "Read-only audit of an existing table for pitfalls and data-quality risks.",
-              "prompt": "Review the Review Test table and tell me what could go wrong before I run it on 5,000 companies.",
+              "description": "Read-only audit of an existing table for pitfalls and data-quality risks. Uses the Sample Companies table that is already in the reviewer workspace.",
+              "prompt": "Review the Sample Companies table and tell me what could go wrong before I run it on 5,000 companies.",
               "tools_triggered": "list_tables, get_table_schema, list_views, list_rows, list_runs",
               "expected_behavior": "Reads the table's columns, settings and recent runs, then lists findings by severity, such as columns that would run on every row without a run condition, missing duplicate checks, and the projected credit cost at 5,000 rows. Changes nothing, runs nothing and spends no credits."
             }
