@@ -105,6 +105,8 @@ describe("OpenAI plugin directory package", () => {
     const plugin = await readJson<Manifest>(PLUGIN_JSON)
     expect(plugin.hooks).toBeUndefined()
     expect(plugin.apps).toBeUndefined()
+    // The upload is refused with "Remove `interface.screenshots` from the plugin manifest", even for an empty list.
+    expect(plugin.interface.screenshots).toBeUndefined()
     const raw = await fs.readFile(PLUGIN_JSON, "utf8")
     expect(raw).not.toContain("test_credentials")
     expect(raw).not.toContain("reviewer_instructions")
