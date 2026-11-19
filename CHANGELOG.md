@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.12.0...cli-v0.12.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* remove interface.screenshots, which the OpenAI portal rejects ([#44](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/44)) ([815662b](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/815662b9095ceb4cd3d2849b63b718fb63899dce))
+
 ## [0.12.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.11.2...cli-v0.12.0) (2026-11-19)
 
 
