@@ -19,11 +19,15 @@
       "homepage": "https://baseloop.io",
       "repository": "https://github.com/baseloop-hq/baseloop-gtm-plugin",
       "tags": [
-        "gtm",
-        "data-pipeline",
+        "lead-generation",
+        "lead-lists",
         "enrichment",
+        "waterfall-enrichment",
+        "linkedin-outreach",
+        "sales-prospecting",
+        "gtm",
+        "crm",
         "hubspot",
-        "mcp",
         "baseloop"
       ],
       "source": "./plugins/baseloop-gtm"
