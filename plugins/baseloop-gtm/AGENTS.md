@@ -22,6 +22,8 @@ Codex installs from the sibling `plugins/baseloop-gtm-codex/`, not this director
 - `../baseloop-gtm-codex/.codex-plugin/plugin.json`: Codex plugin manifest with the `interface` block for native install.
 - `../baseloop-gtm-codex/.mcp.json`: Codex MCP server config referenced by the Codex manifest.
 
+The Codex package is also what the OpenAI plugin directory (ChatGPT and Codex) takes, as a ZIP built with `bun run package:zip:openai`. Its listing fields live in the Codex manifest's `interface` block, the review test cases and release notes under `extensions.com.openai`, and the OAuth declaration in `.mcp.json`. `tests/openai-package.test.ts` holds the directory's limits (30-character short description, 128-character prompts, five positive and three negative cases). Reviewer credentials go in the OpenAI portal, never in the package.
+
 `README.md` in this directory is shown to users in the Claude plugin directory listing. Keep it written for someone installing the plugin; contributor notes belong in this file.
 
 Shared reference content (`pitfalls.md`, `error-patterns.md`, `workflow-patterns.md`) is duplicated per consuming skill via a sync mechanism — see `docs/reference-sources/README.md` at the repo root.

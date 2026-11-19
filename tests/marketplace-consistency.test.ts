@@ -110,11 +110,13 @@ describe("marketplace consistency", () => {
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:save-learning")
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:setup")
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm:update")
-    expect(plugin.interface.defaultPrompt).toContain("/baseloop-gtm:baseloop-gtm")
-    expect(plugin.interface.defaultPrompt).toContain(
-      "/baseloop-gtm:baseloop-gtm Import HubSpot companies and qualify SaaS",
-    )
     expect(plugin.interface.defaultPrompt).not.toContain("/baseloop-gtm")
+    // Starter prompts are plain language: the OpenAI directory lists the same package in ChatGPT,
+    // where a slash command means nothing. The root skill's description routes them.
+    expect(plugin.interface.defaultPrompt.length).toBeGreaterThan(0)
+    for (const prompt of plugin.interface.defaultPrompt) {
+      expect(prompt.startsWith("/")).toBe(false)
+    }
   })
 
   test("codex runtime docs do not use the unqualified root command", async () => {

@@ -4,6 +4,7 @@
   "description": "Build lead lists, enrich them from 40+ providers and launch LinkedIn outreach in Baseloop, in plain language. 5 skills that design, build, review and fix your GTM workflows.",
   "author": {
     "name": "Baseloop",
+    "email": "support@baseloop.io",
     "url": "https://baseloop.io"
   },
   "homepage": "https://baseloop.io",
@@ -27,8 +28,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Baseloop GTM",
-    "shortDescription": "Start with /baseloop-gtm:baseloop-gtm to build automated GTM data workflows.",
-    "longDescription": "Start with /baseloop-gtm:baseloop-gtm to design, build, review, and diagnose automated GTM data workflows in Baseloop. The root skill chooses the right workflow and transport: MCP works today, and CLI is used automatically when installed with a healthy tool bridge. Skills install natively via Codex.",
+    "shortDescription": "Lead lists and enrichment",
+    "longDescription": "Baseloop is a GTM data platform for sales, growth and RevOps teams. This plugin lets your agent work in your Baseloop workspace through Baseloop's hosted MCP server:\n\n- Plan a workflow from a goal: which tables, which steps, in what order.\n- Build it step by step: create tables and columns, import companies and people, and check each step before the next.\n- Enrich companies and contacts with work emails, phone numbers and firmographics through provider waterfalls.\n- Qualify and score rows with AI columns and formulas.\n- Read from and write back to connected CRMs, and add leads to campaigns in connected sequencers.\n- Review an existing workflow for known pitfalls and data-quality risks.\n- Find why a column errors or data stops flowing, fix it and verify the fix.\n\nStart by describing what you want to build. In Codex you can also invoke the baseloop-gtm skill directly.\n\nYou need a Baseloop account. You sign in with OAuth, and the plugin acts only in workspaces you belong to. Enrichment and AI steps use the workspace's Baseloop credits: the skills test on 1 row, then 10, and start a full run only after you approve it with the row count and a credit estimate. Deleting existing data always asks first. Buying credits, changing plans and deleting an account are not available through the plugin.",
     "developerName": "Baseloop",
     "category": "Productivity",
     "capabilities": [
@@ -37,10 +38,75 @@
       "Write"
     ],
     "defaultPrompt": [
-      "/baseloop-gtm:baseloop-gtm",
-      "/baseloop-gtm:baseloop-gtm Import HubSpot companies and qualify SaaS",
-      "/baseloop-gtm:baseloop-gtm-review my pipeline workspace"
+      "Find Heads of Sales at B2B SaaS companies in Germany and get their work emails.",
+      "Import my HubSpot companies, qualify the B2B SaaS ones and find their founders.",
+      "Review my pipeline workspace for wasted credits and data-quality risks."
     ],
-    "screenshots": []
+    "screenshots": [],
+    "websiteURL": "https://baseloop.io",
+    "supportURL": "https://help.baseloop.io",
+    "privacyPolicyURL": "https://baseloop.io/privacy-policy",
+    "termsOfServiceURL": "https://baseloop.io/terms-of-service",
+    "logo": "./assets/icon.png",
+    "composerIcon": "./assets/icon.png"
+  },
+  "extensions": {
+    "com.openai": {
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Read-only check of the connected account: workspaces, tables and remaining credits.",
+              "prompt": "Which Baseloop workspaces and tables do I have, and how many credits are left?",
+              "tools_triggered": "list_organizations, list_workspaces, list_tables, get_credit_balance",
+              "expected_behavior": "Lists the workspaces the signed-in user can access with the tables in each, and reports the remaining credit balance. Creates and changes nothing and spends no credits."
+            },
+            {
+              "description": "Design a workflow from a goal without building it.",
+              "prompt": "Plan a workflow that takes a list of company domains, enriches each company and scores how well it fits B2B SaaS. Don't build anything yet.",
+              "tools_triggered": "list_workspaces, list_tables, get_connected_platforms, list_actions, get_action_schema",
+              "expected_behavior": "Surveys the workspace, the connected integrations and the available actions, then returns a step-by-step plan: the table, each column in order, the action behind it and what it costs per row. Creates no table or column, runs nothing and spends no credits. Offers to build the plan and waits for a yes."
+            },
+            {
+              "description": "Create a small table from three pasted domains and enrich it, testing on one row before the rest.",
+              "prompt": "Create a table called Review Test with these companies: stripe.com, notion.so, figma.com. Add industry, employee count and HQ country for each.",
+              "tools_triggered": "list_workspaces, create_table, create_fields, create_rows, list_actions, get_action_schema, run_field, get_run_status, list_rows",
+              "expected_behavior": "States the workspace it will write to, creates the Review Test table with exactly 3 rows and an enrichment column, runs that column on 1 row first and checks the result, then runs the remaining rows. Reports industry, employee count and HQ country for each company, any gaps, and the credits used (a few credits for 3 rows)."
+            },
+            {
+              "description": "Add a filtered view to an existing table. A free, additive change.",
+              "prompt": "In the Review Test table, create a view called Large companies that shows only companies with more than 1,000 employees.",
+              "tools_triggered": "list_tables, get_table_schema, create_view, set_view_filters, list_rows",
+              "expected_behavior": "Finds the Review Test table and its employee count column, creates the Large companies view with a filter on that column, and reports which rows match. Changes no row data and spends no credits."
+            },
+            {
+              "description": "Read-only audit of an existing table for pitfalls and data-quality risks.",
+              "prompt": "Review the Review Test table and tell me what could go wrong before I run it on 5,000 companies.",
+              "tools_triggered": "list_tables, get_table_schema, list_views, list_rows, list_runs",
+              "expected_behavior": "Reads the table's columns, settings and recent runs, then lists findings by severity, such as columns that would run on every row without a run condition, missing duplicate checks, and the projected credit cost at 5,000 rows. Changes nothing, runs nothing and spends no credits."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Purchases are out of scope: the server exposes no billing or payment tools. The plugin must decline, call no state-changing tool, and at most report the current balance and point to https://baseloop.io/pricing.",
+              "prompt": "Buy 5,000 more Baseloop credits and charge my card on file."
+            },
+            {
+              "description": "Deleting a Baseloop account is not exposed through the server. The plugin must decline, must not bulk-delete workspaces, tables or rows instead, and should point the user to Baseloop support.",
+              "prompt": "Delete my Baseloop account and everything in it."
+            },
+            {
+              "description": "Data in a workspace the signed-in user does not belong to cannot be accessed. The plugin must say Acme Corp is not among the user's workspaces and show no data from it.",
+              "prompt": "Show me the tables in Acme Corp's Baseloop workspace."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Baseloop does not sell products or process payments in ChatGPT or Codex. Some steps use the workspace's existing Baseloop credits; the skills state the cost and ask before a full run. Credits and plans are managed outside the plugin, in the Baseloop app."
+      },
+      "publication": {
+        "release_notes": "First directory release of Baseloop GTM. Plan, build, review and fix GTM data workflows in Baseloop: import companies and people, enrich them through provider waterfalls, qualify them with AI columns, and sync results to connected CRMs and sequencers, with a row count and credit estimate before a full run."
+      }
+    }
   }
 }

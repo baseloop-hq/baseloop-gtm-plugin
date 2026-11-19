@@ -11,16 +11,26 @@
  *
  * Use this for local-dev iteration. Production users install via the
  * marketplace, not via uploaded zips.
+ *
+ * With `--openai` it packages the Codex package instead, for upload to the
+ * OpenAI plugin directory (platform.openai.com/plugins), which takes a ZIP
+ * with the plugin in one top-level folder.
+ *
+ * Output: dist/baseloop-gtm-openai-<version>.zip
  */
 import { promises as fs } from "fs"
 import path from "path"
 import { spawn } from "child_process"
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
-const PLUGIN_DIR_NAME = "baseloop-gtm"
+const OPENAI = process.argv.includes("--openai")
+const PLUGIN_DIR_NAME = OPENAI ? "baseloop-gtm-codex" : "baseloop-gtm"
+const ZIP_BASENAME = OPENAI ? "baseloop-gtm-openai" : "baseloop-gtm"
 const PLUGIN_PARENT = path.join(REPO_ROOT, "plugins")
 const PLUGIN_DIR = path.join(PLUGIN_PARENT, PLUGIN_DIR_NAME)
-const PLUGIN_MANIFEST = path.join(PLUGIN_DIR, ".claude-plugin", "plugin.json")
+const PLUGIN_MANIFEST = OPENAI
+  ? path.join(PLUGIN_DIR, ".codex-plugin", "plugin.json")
+  : path.join(PLUGIN_DIR, ".claude-plugin", "plugin.json")
 const DIST_DIR = path.join(REPO_ROOT, "dist")
 
 async function readVersion(): Promise<string> {
@@ -60,7 +70,7 @@ function runZip(zipPath: string): Promise<void> {
 const version = await readVersion()
 await fs.mkdir(DIST_DIR, { recursive: true })
 
-const zipPath = path.join(DIST_DIR, `${PLUGIN_DIR_NAME}-${version}.zip`)
+const zipPath = path.join(DIST_DIR, `${ZIP_BASENAME}-${version}.zip`)
 // Wipe a stale zip with the same name so the output is reproducible.
 try {
   await fs.unlink(zipPath)
@@ -75,6 +85,11 @@ const stat = await fs.stat(zipPath)
 const sizeKb = (stat.size / 1024).toFixed(1)
 
 console.log(`\n✓ wrote ${path.relative(REPO_ROOT, zipPath)} (${sizeKb} KB)`)
-console.log(`\nUpload in Claude Desktop:`)
-console.log(`  Cowork tab → Customize → Browse plugins → Personal → + → Add from file`)
+if (OPENAI) {
+  console.log(`\nUpload to the OpenAI plugin directory:`)
+  console.log(`  platform.openai.com/plugins → Upload new or existing plugin → With MCP`)
+} else {
+  console.log(`\nUpload in Claude Desktop:`)
+  console.log(`  Cowork tab → Customize → Browse plugins → Personal → + → Add from file`)
+}
 console.log(`  Pick: ${zipPath}`)
