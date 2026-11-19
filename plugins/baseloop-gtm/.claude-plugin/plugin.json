@@ -1,7 +1,8 @@
 {
   "name": "baseloop-gtm",
+  "displayName": "Baseloop GTM",
   "version": "0.11.1",
-  "description": "GTM workflow engineering for Baseloop. 5 skills, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.",
+  "description": "Build lead lists, enrich them from 40+ providers and launch LinkedIn outreach in Baseloop, in plain language. 5 skills that design, build, review and fix your GTM workflows.",
   "author": {
     "name": "Baseloop",
     "url": "https://baseloop.io"
@@ -9,13 +10,22 @@
   "homepage": "https://baseloop.io",
   "repository": "https://github.com/baseloop-hq/baseloop-gtm-plugin",
   "privacyPolicyUrl": "https://baseloop.io/privacy-policy",
+  "termsOfServiceUrl": "https://baseloop.io/terms-of-service",
+  "documentationUrl": "https://docs.baseloop.io",
+  "supportUrl": "https://help.baseloop.io",
   "license": "SEE LICENSE IN LICENSE",
   "keywords": [
-    "gtm",
-    "data-pipeline",
+    "lead-generation",
+    "lead-lists",
     "enrichment",
-    "hubspot",
-    "mcp",
+    "waterfall-enrichment",
+    "linkedin-outreach",
+    "sales-prospecting",
+    "gtm",
+    "crm",
+    "crm-enrichment",
+    "gtm-engineering",
+    "outbound",
     "baseloop"
   ],
   "mcpServers": {

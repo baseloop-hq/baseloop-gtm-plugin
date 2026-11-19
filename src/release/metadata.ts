@@ -55,13 +55,13 @@ export async function getBaseloopGtmCounts(pluginDir: string = PLUGIN_DIR): Prom
 
 export function buildBaseloopGtmDescription(counts: PluginCounts): string {
   return (
-    `GTM workflow engineering for Baseloop. ${counts.skills} skills, CLI-ready instructions, and MCP compatibility for designing, building, reviewing, diagnosing, and autonomously operating data workflows that source, enrich, qualify, and route leads.`
+    `Build lead lists, enrich them from 40+ providers and launch LinkedIn outreach in Baseloop, in plain language. ${counts.skills} skills that design, build, review and fix your GTM workflows.`
   )
 }
 
 export function buildBaseloopGtmMarketplaceDescription(counts: PluginCounts): string {
   return (
-    `Build automated GTM data workflows in Baseloop with ${counts.skills} skills, CLI-ready instructions, and MCP compatibility.`
+    `Build lead lists, enrich them and launch LinkedIn outreach in Baseloop with ${counts.skills} skills.`
   )
 }
 

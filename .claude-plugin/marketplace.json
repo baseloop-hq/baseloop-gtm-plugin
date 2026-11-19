@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "baseloop-gtm",
-      "description": "Build automated GTM data workflows in Baseloop with 5 skills, CLI-ready instructions, and MCP compatibility.",
+      "description": "Build lead lists, enrich them and launch LinkedIn outreach in Baseloop with 5 skills.",
       "author": {
         "name": "Baseloop",
         "url": "https://baseloop.io"
@@ -19,11 +19,17 @@
       "homepage": "https://baseloop.io",
       "repository": "https://github.com/baseloop-hq/baseloop-gtm-plugin",
       "tags": [
-        "gtm",
-        "data-pipeline",
+        "lead-generation",
+        "lead-lists",
         "enrichment",
-        "hubspot",
-        "mcp",
+        "waterfall-enrichment",
+        "linkedin-outreach",
+        "sales-prospecting",
+        "gtm",
+        "crm",
+        "crm-enrichment",
+        "gtm-engineering",
+        "outbound",
         "baseloop"
       ],
       "source": "./plugins/baseloop-gtm"
