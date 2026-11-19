@@ -8,6 +8,7 @@
   },
   "homepage": "https://baseloop.io",
   "repository": "https://github.com/baseloop-hq/baseloop-gtm-plugin",
+  "privacyPolicyUrl": "https://baseloop.io/privacy-policy",
   "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "gtm",

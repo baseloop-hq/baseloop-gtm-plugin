@@ -5,7 +5,7 @@ import { load } from "js-yaml"
 import { parseFrontmatter } from "../src/utils/frontmatter"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex", "skills")
+const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm-codex", "skills")
 const REFERENCE_SOURCES_DIR = path.resolve(import.meta.dir, "..", "docs", "reference-sources")
 const VALID_PLATFORMS = new Set(["claude", "codex", "gemini"])
 const ROOT_SKILL = "baseloop-gtm"

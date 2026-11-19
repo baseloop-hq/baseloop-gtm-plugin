@@ -5,7 +5,7 @@ import { load } from "js-yaml"
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..")
 const PLUGIN_JSON = path.join(REPO_ROOT, "plugins", "baseloop-gtm", ".claude-plugin", "plugin.json")
-const CODEX_PACKAGE_ROOT = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex")
+const CODEX_PACKAGE_ROOT = path.join(REPO_ROOT, "plugins", "baseloop-gtm-codex")
 const CODEX_PLUGIN_JSON = path.join(CODEX_PACKAGE_ROOT, ".codex-plugin", "plugin.json")
 const CODEX_MCP_JSON = path.join(CODEX_PACKAGE_ROOT, ".mcp.json")
 const MARKETPLACE_JSON = path.join(REPO_ROOT, ".claude-plugin", "marketplace.json")
@@ -74,7 +74,7 @@ describe("marketplace consistency", () => {
     expect(market.plugins[0].name).toBe("baseloop-gtm")
     expect(market.plugins[0].source).toEqual({
       source: "local",
-      path: "./plugins/baseloop-gtm/codex",
+      path: "./plugins/baseloop-gtm-codex",
     })
     expect(market.plugins[0].policy).toEqual({
       installation: "AVAILABLE",

@@ -36,7 +36,7 @@
         },
         {
           "type": "json",
-          "path": "codex/.codex-plugin/plugin.json",
+          "path": "/plugins/baseloop-gtm-codex/.codex-plugin/plugin.json",
           "jsonpath": "$.version"
         }
       ]

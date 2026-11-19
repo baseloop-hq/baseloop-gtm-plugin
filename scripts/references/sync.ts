@@ -19,7 +19,7 @@ import path from "path"
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const REF_SOURCES_DIR = path.join(REPO_ROOT, "docs", "reference-sources")
 const SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm", "codex", "skills")
+const CODEX_SKILLS_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm-codex", "skills")
 const REGISTRY_PATH = path.join(REF_SOURCES_DIR, "registry.json")
 const INTERACTION_METHOD_PATH = path.join(REF_SOURCES_DIR, "interaction-method.md")
 const INTERACTION_START = "<!-- INTERACTION-METHOD-START -->"

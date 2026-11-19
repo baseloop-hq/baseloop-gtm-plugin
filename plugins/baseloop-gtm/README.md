@@ -13,8 +13,8 @@ Build automated GTM data workflows through conversation. This plugin teaches you
 
 The repo-root [`README.md`](../../README.md) has install instructions for all three platforms. The summary:
 
-- **Claude Code:** native install — `/plugin marketplace add baseloop-hq/baseloop-gtm-plugin` then `/plugin install baseloop-gtm`. Start with `/baseloop-gtm`.
-- **Codex:** native install end-to-end (`codex plugin marketplace add` + `/plugins` in the TUI). Start from the Baseloop GTM `baseloop-gtm` skill. The Codex marketplace points at `codex/`, a Codex-only package root with one `skills/` tree, so Claude-compatible skills are not double-discovered. CLI is used only when installed and healthy.
+- **Claude Code:** native install — `/plugin install baseloop-gtm --marketplace baseloop-hq/baseloop-gtm-plugin`. Start with `/baseloop-gtm`.
+- **Codex:** native install end-to-end (`codex plugin marketplace add` + `/plugins` in the TUI). Start from the Baseloop GTM `baseloop-gtm` skill. The Codex marketplace points at `plugins/baseloop-gtm-codex/`, a Codex-only package root with one `skills/` tree, so Claude-compatible skills are not double-discovered. CLI is used only when installed and healthy.
 - **Gemini CLI:** Bun converter (`bun run src/index.ts install --to gemini`) — installs skills and merges MCP config into `~/.gemini/settings.json`.
 
 ## Skills
@@ -55,10 +55,10 @@ Claude Code and Gemini show these commands directly. Codex may present them unde
 
 - `skills/<name>/SKILL.md` — Claude/Gemini canonical skills. Each skill is self-contained with its own `references/` and (optionally) `assets/`.
 - `skills/baseloop-gtm/SKILL.md` — root router, transport selection, domain mental model, design principles, and critical rules.
-- `codex/skills/<name>/SKILL.md` — generated Codex mirror with plugin-local skill names. Do not edit directly; run `bun run references:sync`.
+- `../baseloop-gtm-codex/skills/<name>/SKILL.md` — generated Codex mirror with plugin-local skill names. Do not edit directly; run `bun run references:sync`.
 - `.claude-plugin/plugin.json` — Claude Code plugin manifest with `mcpServers.baseloop`.
-- `codex/.codex-plugin/plugin.json` — Codex plugin manifest with `interface` block for native install.
-- `codex/.mcp.json` — Codex MCP server config referenced by the Codex manifest.
+- `../baseloop-gtm-codex/.codex-plugin/plugin.json` — Codex plugin manifest with `interface` block for native install.
+- `../baseloop-gtm-codex/.mcp.json` — Codex MCP server config referenced by the Codex manifest.
 
 See [`AGENTS.md`](./AGENTS.md) (this directory) for plugin-development conventions.
 

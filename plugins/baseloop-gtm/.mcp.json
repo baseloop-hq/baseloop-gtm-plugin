@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "baseloop": {
-      "type": "http",
-      "url": "https://api-v2.baseloop.io/v1/mcp"
-    }
-  }
-}

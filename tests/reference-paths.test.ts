@@ -3,7 +3,7 @@ import { promises as fs } from "fs"
 import path from "path"
 
 const SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "skills")
-const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm", "codex", "skills")
+const CODEX_SKILLS_DIR = path.resolve(import.meta.dir, "..", "plugins", "baseloop-gtm-codex", "skills")
 
 type Issue = { skill: string; ref: string; reason: string }
 
