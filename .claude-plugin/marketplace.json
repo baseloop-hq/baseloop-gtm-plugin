@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "baseloop-gtm",
-      "description": "Build automated GTM data workflows in Baseloop with 5 skills, CLI-ready instructions, and MCP compatibility.",
+      "description": "Build lead lists, enrich them and launch LinkedIn outreach in Baseloop with 5 skills.",
       "author": {
         "name": "Baseloop",
         "url": "https://baseloop.io"
