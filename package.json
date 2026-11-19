@@ -11,7 +11,8 @@
     "release:validate": "bun run scripts/release/validate.ts",
     "release:preview": "bun run scripts/release/preview.ts",
     "release:sync-metadata": "bun run scripts/release/sync-metadata.ts",
-    "package:zip": "bun run scripts/package/zip.ts"
+    "package:zip": "bun run scripts/package/zip.ts",
+    "package:zip:openai": "bun run scripts/package/zip.ts --openai"
   },
   "bin": {
     "baseloop-plugin": "src/index.ts"

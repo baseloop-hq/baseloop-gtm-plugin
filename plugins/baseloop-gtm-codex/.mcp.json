@@ -2,7 +2,17 @@
   "mcpServers": {
     "baseloop": {
       "type": "http",
-      "url": "https://api-v2.baseloop.io/v1/mcp"
+      "url": "https://api-v2.baseloop.io/v1/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "dcr"
+            }
+          }
+        }
+      }
     }
   }
 }
