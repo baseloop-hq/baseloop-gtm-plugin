@@ -25,7 +25,7 @@ After install, run `/baseloop-gtm` to let the plugin choose planning, building, 
 
 ### Codex
 
-The repository includes native marketplace metadata for Codex plugin discovery. Codex installs from the Codex-only package root at `plugins/baseloop-gtm/codex` so it sees one skill tree, not the Claude-compatible `skills/` directory next to it.
+The repository includes native marketplace metadata for Codex plugin discovery. Codex installs from the Codex-only package root at `plugins/baseloop-gtm-codex` so it sees one skill tree, not the Claude-compatible `skills/` directory next to it.
 The MCP server auto-registers from the plugin's `.mcp.json` and remains the deployable default until the Baseloop CLI is available. When the `baseloop` CLI is installed and its tool bridge is healthy, skills prefer CLI calls.
 
 ```bash

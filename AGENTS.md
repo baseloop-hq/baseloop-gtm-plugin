@@ -2,12 +2,12 @@
 
 This repo packages and distributes the **baseloop-gtm** Claude Code plugin: skills and the Baseloop MCP server declaration that together let users design, build, review, and diagnose automated GTM data workflows in Baseloop.
 
-This file is the canonical contributor instruction file. `CLAUDE.md` is a one-line shim that includes this file via the `@AGENTS.md` directive. Both Claude Code and Codex resolve `@file.md` references at load time.
+This file is the canonical contributor instruction file. `CLAUDE.md` is a shim that includes this file and `plugins/baseloop-gtm/AGENTS.md` via `@file.md` directives (the plugin folder ships no `CLAUDE.md` of its own: the plugin directory warns on one). Both Claude Code and Codex resolve `@file.md` references at load time.
 
 ## Working Agreement
 
 - **Branching:** create a feature branch for any non-trivial change. Use conventional-commit prefixes (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`, `ci:`, `build:`, `perf:`, `revert:`) so release-please can classify changes correctly.
-- **Releases:** release-please owns versions across `plugin.json`, `marketplace.json`, and `codex/.codex-plugin/plugin.json`. **Never hand-bump versions** in routine PRs.
+- **Releases:** release-please owns versions across `plugin.json`, `marketplace.json`, and `plugins/baseloop-gtm-codex/.codex-plugin/plugin.json`. **Never hand-bump versions** in routine PRs.
 - **Test before push:** run `bun test` and `bun run release:validate` locally. CI will fail otherwise.
 - **Reference content:** edits to `pitfalls.md`, `error-patterns.md`, `workflow-patterns.md` go to `docs/reference-sources/<file>.md` first, then run `bun run references:sync`. Do not hand-edit per-skill copies under `plugins/baseloop-gtm/skills/*/references/<synced-file>.md`. CI fails on drift.
 - **Safety:** never delete or overwrite user data. Avoid destructive commands.
@@ -22,6 +22,7 @@ docs/
   solutions/                        Captured workflow learnings (user-owned content).
   plans/                            Authoring artifacts (gitignored — never ship).
 plugins/baseloop-gtm/               The plugin itself (see plugin-level AGENTS.md).
+plugins/baseloop-gtm-codex/         Generated Codex package (manifest, MCP config, skill mirror).
 scripts/
   references/sync.ts                Reference-duplication sync script.
   release/                          Release validation, preview, metadata-sync (Phase 3).
@@ -40,7 +41,7 @@ bun run release:validate       # Release-config + metadata + reference-sync drif
 
 ## Release Posture
 
-- Versions live in four places: `plugin.json`, `codex/.codex-plugin/plugin.json`, `marketplace.json` (`.metadata.version` only — per-plugin version field is dropped), `package.json`.
+- Versions live in four places: `plugin.json`, `plugins/baseloop-gtm-codex/.codex-plugin/plugin.json`, `marketplace.json` (`.metadata.version` only — per-plugin version field is dropped), `package.json`.
 - Release-please syncs them via `extra-files` in `.github/release-please-config.json`. Manual edits to any of these version fields trigger a release-please PR conflict on next run.
 - Plugin description strings auto-sync from skill/MCP counts via `bun run release:sync-metadata --write`. Hand-editing description text drifts from disk reality and fails `release:validate`.
 

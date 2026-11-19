@@ -3,9 +3,9 @@
 ## Structure
 
 ### Skills
-Each canonical skill is a directory under `skills/` with `SKILL.md` and its own `references/` (and optionally `assets/`). No cross-skill reference paths — every skill is self-contained. `codex/skills/` is a generated runtime mirror for Codex native plugin discovery; do not edit it directly. Run `bun run references:sync` after canonical skill/reference edits so the mirror stays in sync and excludes Claude-only skills.
+Each canonical skill is a directory under `skills/` with `SKILL.md` and its own `references/` (and optionally `assets/`). No cross-skill reference paths — every skill is self-contained. `../baseloop-gtm-codex/skills/` is a generated runtime mirror for Codex native plugin discovery; do not edit it directly. Run `bun run references:sync` after canonical skill/reference edits so the mirror stays in sync and excludes Claude-only skills.
 
-Codex installs from `codex/`, not this parent directory. Keep the Codex manifest at `codex/.codex-plugin/plugin.json` and point the Codex marketplace source at `./plugins/baseloop-gtm/codex`; otherwise Codex will also discover this directory's Claude-compatible `skills/` tree and show duplicate, double-prefixed skills.
+Codex installs from the sibling `plugins/baseloop-gtm-codex/`, not this directory. It lives outside this folder because the Claude plugin directory rejects a nested `.mcp.json`. Keep the Codex manifest at `plugins/baseloop-gtm-codex/.codex-plugin/plugin.json` and point the Codex marketplace source at `./plugins/baseloop-gtm-codex`; otherwise Codex will also discover this directory's Claude-compatible `skills/` tree and show duplicate, double-prefixed skills.
 
 - `skills/baseloop-gtm/SKILL.md` — Root router, transport selection, domain mental model, design principles, critical rules. Shared foundation; `name: baseloop-gtm`.
 - `skills/baseloop-gtm/references/` — Loaded on demand by the root skill itself.
@@ -31,7 +31,7 @@ Consequences:
 ## Updating
 
 When modifying:
-1. **Never hand-bump versions.** Release-please owns versions across `.claude-plugin/plugin.json`, `codex/.codex-plugin/plugin.json`, `marketplace.json`, and `package.json`.
+1. **Never hand-bump versions.** Release-please owns versions across `.claude-plugin/plugin.json`, `plugins/baseloop-gtm-codex/.codex-plugin/plugin.json`, `marketplace.json`, and `package.json`.
 2. Keep each `SKILL.md` focused on the decision framework. Move long-form detail to `references/`.
 3. When editing a shared reference (pitfalls, error-patterns, workflow-patterns), edit `docs/reference-sources/<name>.md` first, then run `bun run references:sync`.
 4. Verify frontmatter fields match the plugin spec.

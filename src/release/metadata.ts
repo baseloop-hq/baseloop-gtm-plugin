@@ -4,8 +4,9 @@ import type { ManifestUpdate, PluginCounts, SyncOptions, SyncResult } from "./ty
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const PLUGIN_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm")
+const CODEX_PLUGIN_DIR = path.join(REPO_ROOT, "plugins", "baseloop-gtm-codex")
 const PLUGIN_JSON = path.join(PLUGIN_DIR, ".claude-plugin", "plugin.json")
-const CODEX_PLUGIN_JSON = path.join(PLUGIN_DIR, "codex", ".codex-plugin", "plugin.json")
+const CODEX_PLUGIN_JSON = path.join(CODEX_PLUGIN_DIR, ".codex-plugin", "plugin.json")
 const MARKETPLACE_JSON = path.join(REPO_ROOT, ".claude-plugin", "marketplace.json")
 
 export async function countSkillDirectories(pluginDir: string): Promise<number> {
@@ -104,7 +105,7 @@ export async function syncReleaseMetadata(options: SyncOptions = {}): Promise<Sy
   const counts = await getBaseloopGtmCounts()
   const codexCounts: PluginCounts = {
     ...counts,
-    skills: await countSkillDirectories(path.join(PLUGIN_DIR, "codex")),
+    skills: await countSkillDirectories(CODEX_PLUGIN_DIR),
   }
   const pluginDescription = buildBaseloopGtmDescription(counts)
   const codexPluginDescription = buildBaseloopGtmDescription(codexCounts)
