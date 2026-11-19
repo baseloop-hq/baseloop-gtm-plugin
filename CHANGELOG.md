@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.11.2...cli-v0.12.0) (2026-11-19)
+
+
+### Features
+
+* prepare the Codex package for the OpenAI plugin directory ([#42](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/42)) ([62ef720](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/62ef720f6e271f1cce8d4adeea3f943893ae7130))
+
 ## [0.11.2](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.11.1...cli-v0.11.2) (2026-11-19)
 
 
