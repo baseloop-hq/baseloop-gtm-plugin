@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.11.0...baseloop-gtm-v0.11.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* pass the Claude plugin directory validation ([#36](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/36)) ([9feb415](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/9feb4158f3f576fa721ab4f3dcf3a24d5ac71044))
+
 ## [0.11.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.10.2...baseloop-gtm-v0.11.0) (2026-10-01)
 
 
