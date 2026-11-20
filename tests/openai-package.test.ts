@@ -33,6 +33,48 @@ function pngSize(buf: Buffer): { width: number; height: number } {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
 }
 
+const OVERRIDES_ROOT = path.resolve(import.meta.dir, "..", "scripts", "package", "openai-overrides")
+const OUTBOUND_RECIPE = path.join("skills", "baseloop-gtm-plan", "references", "use-case-outbound.md")
+
+async function listFiles(dir: string, prefix = ""): Promise<string[]> {
+  const entries = await fs.readdir(dir, { withFileTypes: true })
+  const nested = await Promise.all(
+    entries.map((entry) =>
+      entry.isDirectory() ? listFiles(path.join(dir, entry.name), path.join(prefix, entry.name)) : [path.join(prefix, entry.name)],
+    ),
+  )
+  return nested.flat()
+}
+
+describe("OpenAI build overrides", () => {
+  test("every override replaces a file the Codex package has", async () => {
+    const overrides = await listFiles(OVERRIDES_ROOT)
+    expect(overrides.length).toBeGreaterThan(0)
+    for (const relative of overrides) {
+      await fs.access(path.join(CODEX_PACKAGE_ROOT, relative))
+    }
+  })
+
+  // OpenAI's skill scan refused baseloop-gtm-plan under "Spam mass abuse" with the full recipe in the
+  // package and passed it with the recipe gone (2026-11-19). The note that stands in for it must stay a note.
+  test("the outbound campaign recipe is replaced by a short note", async () => {
+    const note = await fs.readFile(path.join(OVERRIDES_ROOT, OUTBOUND_RECIPE), "utf8")
+    const recipe = await fs.readFile(path.join(CODEX_PACKAGE_ROOT, OUTBOUND_RECIPE), "utf8")
+    expect(note.length).toBeLessThan(1500)
+    expect(recipe.length).toBeGreaterThan(note.length * 10)
+    expect(note).not.toMatch(/\bcold\b|first line|add_to_campaign/i)
+  })
+
+  test("the note links only to files the package has", async () => {
+    const note = await fs.readFile(path.join(OVERRIDES_ROOT, OUTBOUND_RECIPE), "utf8")
+    const links = [...note.matchAll(/\]\(\.\/([^)]+)\)/g)].map((match) => match[1])
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      await fs.access(path.join(CODEX_PACKAGE_ROOT, path.dirname(OUTBOUND_RECIPE), link))
+    }
+  })
+})
+
 describe("OpenAI plugin directory package", () => {
   test("package identity fields are set", async () => {
     const plugin = await readJson<Manifest>(PLUGIN_JSON)
