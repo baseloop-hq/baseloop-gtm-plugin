@@ -17,8 +17,16 @@
  * with the plugin in one top-level folder.
  *
  * Output: dist/baseloop-gtm-openai-<version>.zip
+ *
+ * The OpenAI build is the Codex package with the files under
+ * scripts/package/openai-overrides/ laid over it, path for path. An override
+ * may only replace a file the package already has. Today there is one: the
+ * outbound campaign recipe, which OpenAI's skill scan refuses under its
+ * "Spam mass abuse" policy, is replaced by a short note. Codex installs from
+ * the repository are not affected: they read the package as committed.
  */
 import { promises as fs } from "fs"
+import os from "os"
 import path from "path"
 import { spawn } from "child_process"
 
@@ -32,6 +40,7 @@ const PLUGIN_MANIFEST = OPENAI
   ? path.join(PLUGIN_DIR, ".codex-plugin", "plugin.json")
   : path.join(PLUGIN_DIR, ".claude-plugin", "plugin.json")
 const DIST_DIR = path.join(REPO_ROOT, "dist")
+const OPENAI_OVERRIDES_DIR = path.join(REPO_ROOT, "scripts", "package", "openai-overrides")
 
 async function readVersion(): Promise<string> {
   const manifest = JSON.parse(await fs.readFile(PLUGIN_MANIFEST, "utf8")) as { version: string }
@@ -41,8 +50,37 @@ async function readVersion(): Promise<string> {
   return manifest.version
 }
 
-function runZip(zipPath: string): Promise<void> {
-  // Run from PLUGIN_PARENT so the archive contains `baseloop-gtm/...` at root.
+async function listFiles(dir: string, prefix = ""): Promise<string[]> {
+  const entries = await fs.readdir(dir, { withFileTypes: true })
+  const files = await Promise.all(
+    entries.map((entry) => {
+      const relative = path.join(prefix, entry.name)
+      return entry.isDirectory() ? listFiles(path.join(dir, entry.name), relative) : Promise.resolve([relative])
+    }),
+  )
+  return files.flat()
+}
+
+/** Copies the Codex package to a temp folder and lays the OpenAI overrides over it. Returns the folder holding the copy. */
+async function stageOpenAiPackage(): Promise<string> {
+  const stageParent = await fs.mkdtemp(path.join(os.tmpdir(), "baseloop-gtm-openai-"))
+  const staged = path.join(stageParent, PLUGIN_DIR_NAME)
+  await fs.cp(PLUGIN_DIR, staged, { recursive: true })
+  for (const relative of await listFiles(OPENAI_OVERRIDES_DIR)) {
+    const target = path.join(staged, relative)
+    try {
+      await fs.access(target)
+    } catch {
+      throw new Error(`OpenAI override ${relative} replaces no file in ${PLUGIN_DIR_NAME}`)
+    }
+    await fs.copyFile(path.join(OPENAI_OVERRIDES_DIR, relative), target)
+    console.log(`  override: ${relative}`)
+  }
+  return stageParent
+}
+
+function runZip(zipPath: string, cwd: string): Promise<void> {
+  // Run from the plugin's parent folder so the archive contains `baseloop-gtm/...` at root.
   // -r: recurse, -X: strip extra metadata (uid/gid/extra attrs), -q: quiet.
   // -x: exclude OS cruft and irrelevant files.
   const args = [
@@ -58,7 +96,7 @@ function runZip(zipPath: string): Promise<void> {
     `${PLUGIN_DIR_NAME}/**/*.log`,
   ]
   return new Promise((resolve, reject) => {
-    const child = spawn("zip", args, { cwd: PLUGIN_PARENT, stdio: "inherit" })
+    const child = spawn("zip", args, { cwd, stdio: "inherit" })
     child.on("error", reject)
     child.on("exit", (code) => {
       if (code === 0) resolve()
@@ -79,7 +117,12 @@ try {
 }
 
 console.log(`Packaging ${PLUGIN_DIR_NAME} v${version}...`)
-await runZip(zipPath)
+const stageParent = OPENAI ? await stageOpenAiPackage() : null
+try {
+  await runZip(zipPath, stageParent ?? PLUGIN_PARENT)
+} finally {
+  if (stageParent) await fs.rm(stageParent, { recursive: true, force: true })
+}
 
 const stat = await fs.stat(zipPath)
 const sizeKb = (stat.size / 1024).toFixed(1)
