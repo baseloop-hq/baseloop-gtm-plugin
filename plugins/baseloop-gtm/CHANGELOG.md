@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.12.0...baseloop-gtm-v0.12.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* get the OpenAI package through the skill scan and tidy its review cases ([#46](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/46)) ([884f06e](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/884f06e6591a70c23c964b623c7a0397ac5bd011))
+
 ## [0.12.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/baseloop-gtm-v0.11.2...baseloop-gtm-v0.12.0) (2026-11-19)
 
 
