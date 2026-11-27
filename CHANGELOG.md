@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.1](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.12.0...cli-v0.12.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* get the OpenAI package through the skill scan and tidy its review cases ([#46](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/46)) ([884f06e](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/884f06e6591a70c23c964b623c7a0397ac5bd011))
+* remove interface.screenshots, which the OpenAI portal rejects ([#44](https://github.com/baseloop-hq/baseloop-gtm-plugin/issues/44)) ([815662b](https://github.com/baseloop-hq/baseloop-gtm-plugin/commit/815662b9095ceb4cd3d2849b63b718fb63899dce))
+
 ## [0.12.0](https://github.com/baseloop-hq/baseloop-gtm-plugin/compare/cli-v0.11.2...cli-v0.12.0) (2026-11-19)
 
 
